@@ -1,7 +1,8 @@
 import React from 'react';
-import {View} from 'react-native';
+import {SafeAreaView, View} from 'react-native';
 import Header from './components/Layout/Header';
 import Footer from './components/Mobile/Footer';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
 
 const Layout = ({children}) => {
   return (
@@ -14,10 +15,24 @@ const Layout = ({children}) => {
 
 export const FooterLayout = ({children}) => {
   return (
-    <View>
-      <View>{children}</View>
-      <Footer />
-    </View>
+    <SafeAreaProvider>
+      <SafeAreaView style={{flex: 1}}>
+        <View
+          style={{
+            position: 'relative',
+            flex: 1,
+          }}>
+          <View
+            style={{
+              flex: 1,
+              // paddingBottom: 60,
+            }}>
+            {children}
+          </View>
+          <Footer />
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

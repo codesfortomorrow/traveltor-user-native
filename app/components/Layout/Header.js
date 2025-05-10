@@ -6,7 +6,7 @@ import React, {useContext, useEffect, useState} from 'react';
 // import ReactionCounter from '../ReactionCounter';
 // import InstallPWA from '@/utils/InstallPWA';
 // import {setBadge} from '@/redux/slices/badgeCount';
-import {TouchableOpacity, Image, StyleSheet, SafeAreaView} from 'react-native';
+import {TouchableOpacity, Image, StyleSheet, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -139,7 +139,7 @@ const Header = ({handleSignUp, handleSignIn}) => {
   // }, []);
 
   return (
-    <SafeAreaView style={style.container}>
+    <View style={style.container}>
       <Image
         style={{width: 220, height: 50, resizeMode: 'contain'}}
         source={require('../../../public/images/logo-1.png')}
@@ -147,7 +147,7 @@ const Header = ({handleSignUp, handleSignIn}) => {
       <TouchableOpacity>
         <Icon name="bell-ring-outline" size={30} color="black" />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   );
 };
 

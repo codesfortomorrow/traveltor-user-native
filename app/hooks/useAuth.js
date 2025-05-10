@@ -159,7 +159,75 @@ const useAuth = () => {
     [],
   );
 
-  return {logout, login, setAuthToken, sendOtp};
+  const getUserDetails = useCallback(async (id, type, followById) => {
+    const params = new URLSearchParams({
+      ...(type && {type}),
+      ...(followById && {followById}),
+    });
+    const url = `/users/profile/${id}?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+    }
+  }, []);
+
+  const getUserFeeds = useCallback(async (id, reactionUserId, pageNumber) => {
+    const params = new URLSearchParams({
+      skip: pageNumber * 5,
+      take: 5,
+      ...(reactionUserId && {reactionUserId}),
+    });
+    const url = `/check-ins/users/${id}?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+    }
+  }, []);
+
+  const reactionOnFeed = useCallback(async (id, type) => {
+    const payload = {
+      type: type,
+    };
+    const response = await postAuthReq(
+      `/check-ins/users/${id}/reactions`,
+      payload,
+    );
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      console.log(response?.error);
+    }
+  }, []);
+
+  return {
+    logout,
+    login,
+    setAuthToken,
+    sendOtp,
+    getUserDetails,
+    getUserFeeds,
+    reactionOnFeed,
+  };
 };
 
 export default useAuth;

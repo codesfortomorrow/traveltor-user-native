@@ -6,8 +6,11 @@ import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {AuthProvider} from './app/context/AuthContext';
-import {Provider, useSelector} from 'react-redux';
+import {Provider} from 'react-redux';
 import {store} from './app/redux/store';
+import UserProfile from './app/components/Mobile/UserProfile';
+import {FooterLayout} from './app/Layout';
+import Setting from './app/containers/MobilePages/Setting';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,11 +29,24 @@ function App() {
                     headerShown: false,
                   }}
                 />
-                {/* <Stack.Screen
-                name="Profile"
-                component={<></>}
-                options={{headerShown: false}}
-              /> */}
+                <Stack.Screen
+                  name="Profile"
+                  children={() => (
+                    <FooterLayout>
+                      <UserProfile />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="Setting"
+                  children={() => (
+                    <FooterLayout>
+                      <Setting />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
               </Stack.Navigator>
             </NavigationContainer>
             <Toast />

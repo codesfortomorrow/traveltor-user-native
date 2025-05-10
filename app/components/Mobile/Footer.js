@@ -8,13 +8,14 @@ import {
   Easing,
 } from 'react-native';
 import Constant from '../../utils/constant';
-import {useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import Login from '../Modal/Login';
 import Signup from '../Signup';
 import Menu from '../../containers/MobilePages/Menu';
 import CheckInIcon from '../../../public/images/footer/footerCheckinIcon.svg';
 import {AuthContext} from '../../context/AuthContext';
 import useAuth from '../../hooks/useAuth';
+import {useSelector} from 'react-redux';
 
 const Footer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +26,8 @@ const Footer = () => {
   const {logout} = useAuth();
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const {isLoggedIn} = useContext(AuthContext);
+  const {navigate} = useNavigation();
+  const user = useSelector(state => state?.user);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -43,6 +46,13 @@ const Footer = () => {
       setIsOpen(true);
     } else if (item.title === 'MyFeeds') {
       await logout();
+    } else if (item?.title === 'Profile') {
+      navigate('Profile', {
+        userType: user?.type,
+        id: user?.id,
+      });
+    } else if (item?.title === 'Home') {
+      navigate('Home');
     } else {
       setIsLoginOpen(true);
     }
@@ -122,7 +132,7 @@ const Footer = () => {
                       <CheckInIcon width={50} height={50} />
                     </Animated.View>
                   </View>
-                ) : route?.name === item?.path ? (
+                ) : route?.name === item?.title ? (
                   item.activeIcon
                 ) : (
                   item.icon
@@ -131,7 +141,7 @@ const Footer = () => {
               <Text
                 style={[
                   styles.itemTitle,
-                  {color: route?.name === item?.path ? '#e93c00' : '#000'},
+                  {color: route?.name === item?.title ? '#e93c00' : '#000'},
                 ]}>
                 {item?.title}
               </Text>

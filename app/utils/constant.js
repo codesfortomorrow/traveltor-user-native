@@ -2,6 +2,12 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import User from 'react-native-vector-icons/AntDesign';
 import Feeds from 'react-native-vector-icons/FontAwesome';
 import {Platform} from 'react-native';
+import Profile from '../../public/images/profile/profile.svg';
+import Wallet from '../../public/images/profile/wallet.svg';
+import Credit from '../../public/images/profile/credit.svg';
+import Transfer from '../../public/images/profile/transfer.svg';
+import Settings from '../../public/images/profile/settings.svg';
+import Link from '../../public/images/profile/link.svg';
 
 const Constant = () => {
   const heroSlider = [
@@ -135,6 +141,93 @@ const Constant = () => {
         // {
         //   name: 'Blogs',
         //   path: '/blogs',
+        // },
+      ],
+    },
+  ];
+
+  const profileLinks = [
+    {
+      title: 'Account',
+      children: [
+        // {
+        //   name: 'Trip',
+        //   icon: <Transfer />,
+        //   path: '/trip',
+        // },
+        {
+          name: 'Edit Profile',
+          icon: <Profile />,
+          path: '/edit-profile',
+        },
+        {
+          name: 'Wallet & Earnings',
+          icon: <Wallet />,
+          path: '/wallet',
+        },
+        {
+          name: 'Trekcard Collection',
+          icon: <Credit />,
+          path: '/coming-soon',
+        },
+        {
+          name: 'Your Traveltor Journey',
+          icon: <Transfer />,
+          path: '/my-activity',
+        },
+        {
+          name: 'Referral & Bonus',
+          icon: <Settings />,
+          path: '/referral',
+        },
+        // {
+        //   name: 'Suggestion box',
+        //   icon: require('../../public/images/profile/email.svg'),
+        //   path: '/coming-soon',
+        // },
+        {
+          name: 'Logout',
+          icon: <User name="logout" size={25} color="#000" />,
+        },
+      ],
+    },
+    {
+      title: 'Links',
+      children: [
+        {
+          name: 'Community',
+          icon: <Link />,
+          path: '/community',
+        },
+        {
+          name: 'How it works',
+          icon: <Link />,
+          path: '/how-it-work',
+        },
+        {
+          name: 'Alpinist Program',
+          icon: <Link />,
+          path: '/alpinist-program',
+        },
+        // {
+        //   name: 'Blogs',
+        //   icon: <Link />,
+        //   path: '/blogs',
+        // },
+        // {
+        //   name: 'Innovation & Technology',
+        //   icon: <Link />,
+        //   path: '/coming-soon',
+        // },
+        // {
+        //   name: 'Privacy Policy',
+        //   icon: <Link />,
+        //   path: '/coming-soon',
+        // },
+        // {
+        //   name: 'Terms & Conditions',
+        //   icon: <Link />,
+        //   path: '/coming-soon',
         // },
       ],
     },
@@ -514,6 +607,7 @@ const Constant = () => {
     loginItems,
     logoutItems,
     MenuLinks,
+    profileLinks,
     isIOSDevice,
     convertHindiToEnglishNumbers,
     countryList,
