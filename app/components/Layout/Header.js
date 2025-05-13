@@ -117,13 +117,13 @@ const Header = ({handleSignUp, handleSignIn}) => {
     // fetchCounts();
   }, [data?.mustGo, data?.comment, data?.newFollower]);
 
-  useEffect(() => {
-    AsyncStorage.getAllKeys().then(keys => {
-      AsyncStorage.multiGet(keys).then(result => {
-        console.log('Stored items:', result);
-      });
-    });
-  }, []);
+  // useEffect(() => {
+  //   AsyncStorage.getAllKeys().then(keys => {
+  //     AsyncStorage.multiGet(keys).then(result => {
+  //       console.log('Stored items:', result);
+  //     });
+  //   });
+  // }, []);
 
   // const checkIsLoggedIn = async () => {
   //   try {

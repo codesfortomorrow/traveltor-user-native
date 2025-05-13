@@ -2,7 +2,7 @@ import React from 'react';
 import * as yup from 'yup';
 import {isYupError, parseYupError} from './Yup';
 import {emailRegex, passwordRegex} from './regex';
-import {View} from 'react-native';
+import {Text} from 'react-native';
 
 export const validateData = async (schema, data) => {
   return await schema
@@ -22,7 +22,7 @@ export const validateData = async (schema, data) => {
 export const renderError = (error = '') => {
   if (error)
     return (
-      <View style={{color: 'red', marginTop: 4, fontSize: 12}}>{error}</View>
+      <Text style={{color: 'red', marginTop: 4, fontSize: 12}}>{error}</Text>
     );
 };
 
@@ -118,4 +118,81 @@ export const changePasswordSchema = yup.object().shape({
     .string()
     .required('Confirm password is required')
     .oneOf([yup.ref('Password'), null], 'Passwords must match'),
+});
+
+export const updateUserSchema = yup.object({
+  firstname: yup
+    .string()
+    .required('First name is required')
+    .min(3, 'First name must be at least 3 characters')
+    .max(25, 'First name must not exceed 25 characters')
+    .matches(/^[A-Za-z]+$/, 'First name must be letters only')
+    .matches(/^\S.*\S$/, 'First name must not start or end with a space'),
+  lastname: yup
+    .string()
+    .required('Last name is required')
+    .min(3, 'Last name must be at least 3 characters')
+    .max(25, 'Last name must not exceed 25 characters')
+    .matches(/^[A-Za-z]+$/, 'Last name must be letters only')
+    .matches(/^\S.*\S$/, 'Last name must not start or end with a space'),
+  username: yup
+    .string()
+    .required('Username is required')
+    .min(3, 'Username must be at least 3 characters')
+    .max(25, 'Username must not exceed 25 characters')
+    .matches(
+      /^[A-Za-z0-9_]+$/,
+      'Username can only contain letters, numbers, and underscores',
+    )
+    .matches(/^\S.*\S$/, 'Username must not start or end with a space'),
+  email: yup.string().matches(emailRegex, 'Invalid email address'),
+  mobile: yup
+    .string()
+    .required('Mobile number is required')
+    .matches(/^\+?[0-9]+$/, 'Mobile number must contain only digits'),
+  dateOfBirth: yup.string(),
+});
+
+export const passwordSchema = yup.object().shape({
+  oldPassword: yup.string().required('Old password is required'),
+  newPassword: yup
+    .string()
+    .required('New password is required')
+    .matches(passwordRegex, 'Password must not contain spaces')
+    .test(
+      'not-same-as-old',
+      'New password cannot be the same as old password',
+      function (value) {
+        const {oldPassword} = this.parent;
+        // Check if oldPassword is present and if newPassword matches it
+        return oldPassword ? value !== oldPassword : true;
+      },
+    ),
+  confirmPassword: yup
+    .string()
+    .required('Confirm password is required')
+    .oneOf([yup.ref('newPassword'), null], 'Passwords must match'),
+});
+
+export const addWalletSchema = yup.object({
+  address: yup
+    .string()
+    .required('Please Enter Wallet Address')
+    .transform(value => value.replace(/\s+/g, ''))
+    .matches(
+      /^(0x)?[0-9a-fA-F]{40}$/,
+      'Wallet address must be a valid hexadecimal string with or without a "0x" prefix.',
+    ),
+
+  password: yup
+    .string()
+    .required('Password is required')
+    .matches(
+      passwordRegex,
+      'Password must be at least 8 characters, including one uppercase letter, one special character, and alphanumeric characters',
+    ),
+  confirmPassword: yup
+    .string()
+    .required('Confirm password is required')
+    .oneOf([yup.ref('password')], 'Passwords must match'),
 });

@@ -11,6 +11,14 @@ import {store} from './app/redux/store';
 import UserProfile from './app/components/Mobile/UserProfile';
 import {FooterLayout} from './app/Layout';
 import Setting from './app/containers/MobilePages/Setting';
+import EditProfile from './app/containers/EditProfile';
+import Wallet from './app/containers/MobilePages/Wallet';
+import ComingSoon from './app/containers/MobilePages/ComingSoon';
+import MyActivity from './app/containers/MobilePages/MyActivity';
+import Referral from './app/containers/MobilePages/Referral';
+import Community from './app/containers/links/Community';
+import HowItWorks from './app/containers/links/HowItWorks';
+import AlpinistProgram from './app/containers/links/AlphinistProgram';
 
 const Stack = createNativeStackNavigator();
 
@@ -43,6 +51,78 @@ function App() {
                   children={() => (
                     <FooterLayout>
                       <Setting />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="EditProfile"
+                  children={() => (
+                    <FooterLayout>
+                      <EditProfile />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="Wallet"
+                  children={() => (
+                    <FooterLayout>
+                      <Wallet />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="ComingSoon"
+                  children={() => (
+                    <FooterLayout>
+                      <ComingSoon />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="MyActivity"
+                  children={() => (
+                    <FooterLayout>
+                      <MyActivity />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="Referral"
+                  children={() => (
+                    <FooterLayout>
+                      <Referral />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="Community"
+                  children={() => (
+                    <FooterLayout>
+                      <Community />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="HowItWorks"
+                  children={() => (
+                    <FooterLayout>
+                      <HowItWorks />
+                    </FooterLayout>
+                  )}
+                  options={{headerShown: false}}
+                />
+                <Stack.Screen
+                  name="AlpinistProgram"
+                  children={() => (
+                    <FooterLayout>
+                      <AlpinistProgram />
                     </FooterLayout>
                   )}
                   options={{headerShown: false}}

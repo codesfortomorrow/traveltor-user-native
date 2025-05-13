@@ -9,11 +9,19 @@ import {
   removeAuthToken,
 } from '../utils/apiHandlers';
 import Toast from 'react-native-toast-message';
-import {emailValidation, loginSchema, validateData} from '../utils/validation';
+import {
+  addWalletSchema,
+  emailValidation,
+  loginSchema,
+  passwordSchema,
+  updateUserSchema,
+  validateData,
+} from '../utils/validation';
 import {AuthContext} from '../context/AuthContext';
 
 const useAuth = () => {
   const {setIsLoggedIn} = useContext(AuthContext);
+
   const requestNotificationPermission = useCallback(() => {
     if (
       'Notification' in window &&
@@ -219,6 +227,140 @@ const useAuth = () => {
     }
   }, []);
 
+  const userFollowUnFollow = async id => {
+    const response = await postAuthReq(`/users/${id}/follow`);
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+    }
+  };
+
+  const updateUser = useCallback(async data => {
+    const [valid, error] = await validateData(updateUserSchema, data);
+    if (error) return {error};
+    if (valid) {
+      const response = await patchApiReq('/users/me', data);
+      if (response?.status) {
+        // dispatch(cleanSuccess());
+        // dispatch(
+        //   setSuccess({
+        //     open: true,
+        //     custom_message: ' updated your details.',
+        //   }),
+        // );
+        // dispatch(init());
+        return {response};
+      } else {
+        // dispatch(
+        //   setError({
+        //     open: true,
+        //     custom_message: ` ${response.error.message}`,
+        //   }),
+        // );
+        return {response};
+      }
+    }
+  }, []);
+
+  const updatePassword = useCallback(async data => {
+    const [valid, error] = await validateData(passwordSchema, data);
+    if (error) return error;
+    if (valid) {
+      const response = await postAuthReq('/users/me/change-password', data);
+      if (response?.status) {
+        // dispatch(cleanSuccess());
+        // dispatch(
+        //   setSuccess({
+        //     open: true,
+        //     custom_message: ' updated your password.',
+        //   }),
+        // );
+        // dispatch(init());
+        Toast.show({type: 'success', text1: 'Update Password Successfully'});
+      } else {
+        // dispatch(
+        //   setError({
+        //     open: true,
+        //     custom_message: ` ${response.error.message}`,
+        //   }),
+        // );
+        Toast.show({type: 'error', text1: response?.error?.message});
+      }
+    }
+  }, []);
+
+  const getWalletTransaction = useCallback(async pageNumber => {
+    const response = await getAuthReq(
+      `/users/me/transactions?skip=${pageNumber * 50}&take=${50}`,
+    );
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const addWallet = useCallback(async data => {
+    const [valid, error] = await validateData(addWalletSchema, data);
+    if (error) return error;
+    if (valid) {
+      const response = await postAuthReq('/users/wallet', data);
+      if (response?.status) {
+        // dispatch(cleanSuccess());
+        // dispatch(
+        //   setSuccess({
+        //     open: true,
+        //     custom_message: ' updated your wallet address.',
+        //   }),
+        // );
+        // dispatch(init());
+        Toast.show({
+          type: 'success',
+          text1: 'Wallet Address Updated Successfully',
+        });
+      } else {
+        // dispatch(
+        //   setError({
+        //     open: true,
+        //     custom_message: ` ${response.error.message}`,
+        //   }),
+        // );
+        Toast.show({type: 'error', text1: response?.error?.message});
+      }
+    }
+  }, []);
+
+  const getReferralData = useCallback(async page => {
+    const params = new URLSearchParams({
+      skip: page * 10,
+      take: 10,
+    });
+    const url = `/users/me/transactions/referrals?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+    }
+  }, []);
+
   return {
     logout,
     login,
@@ -227,6 +369,12 @@ const useAuth = () => {
     getUserDetails,
     getUserFeeds,
     reactionOnFeed,
+    userFollowUnFollow,
+    updateUser,
+    updatePassword,
+    getWalletTransaction,
+    addWallet,
+    getReferralData,
   };
 };
 

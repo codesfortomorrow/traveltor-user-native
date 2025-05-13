@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState} from 'react';
 import {
   Modal,
   StyleSheet,
@@ -6,7 +6,6 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Platform,
 } from 'react-native';
 import Constant from '../../utils/constant';
 import EyeIcon from 'react-native-vector-icons/FontAwesome5';

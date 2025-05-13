@@ -1,13 +1,14 @@
 import Icon from 'react-native-vector-icons/Ionicons';
 import User from 'react-native-vector-icons/AntDesign';
 import Feeds from 'react-native-vector-icons/FontAwesome';
-import {Platform} from 'react-native';
+import {Linking, PermissionsAndroid, Platform} from 'react-native';
 import Profile from '../../public/images/profile/profile.svg';
 import Wallet from '../../public/images/profile/wallet.svg';
 import Credit from '../../public/images/profile/credit.svg';
 import Transfer from '../../public/images/profile/transfer.svg';
 import Settings from '../../public/images/profile/settings.svg';
 import Link from '../../public/images/profile/link.svg';
+import Toast from 'react-native-toast-message';
 
 const Constant = () => {
   const heroSlider = [
@@ -111,7 +112,7 @@ const Constant = () => {
     {
       icon: <User name="user" color="#000" size={25} />,
       activeIcon: <User name="user" color="#e93c00" size={25} />,
-      title: 'LogIn',
+      title: 'Login',
       // path: '/',
     },
     {
@@ -128,15 +129,15 @@ const Constant = () => {
       children: [
         {
           name: 'Community',
-          path: '/community',
+          path: 'Community',
         },
         {
           name: 'How it works',
-          path: '/how-it-work',
+          path: 'HowItWorks',
         },
         {
           name: 'Alpinist Program',
-          path: '/alpinist-program',
+          path: 'AlpinistProgram',
         },
         // {
         //   name: 'Blogs',
@@ -153,37 +154,37 @@ const Constant = () => {
         // {
         //   name: 'Trip',
         //   icon: <Transfer />,
-        //   path: '/trip',
+        //   path: 'Trip',
         // },
         {
           name: 'Edit Profile',
           icon: <Profile />,
-          path: '/edit-profile',
+          path: 'EditProfile',
         },
         {
           name: 'Wallet & Earnings',
           icon: <Wallet />,
-          path: '/wallet',
+          path: 'Wallet',
         },
         {
           name: 'Trekcard Collection',
           icon: <Credit />,
-          path: '/coming-soon',
+          path: 'ComingSoon',
         },
         {
           name: 'Your Traveltor Journey',
           icon: <Transfer />,
-          path: '/my-activity',
+          path: 'MyActivity',
         },
         {
           name: 'Referral & Bonus',
           icon: <Settings />,
-          path: '/referral',
+          path: 'Referral',
         },
         // {
         //   name: 'Suggestion box',
         //   icon: require('../../public/images/profile/email.svg'),
-        //   path: '/coming-soon',
+        //   path: 'ComingSoon',
         // },
         {
           name: 'Logout',
@@ -197,37 +198,37 @@ const Constant = () => {
         {
           name: 'Community',
           icon: <Link />,
-          path: '/community',
+          path: 'Community',
         },
         {
           name: 'How it works',
           icon: <Link />,
-          path: '/how-it-work',
+          path: 'HowItWorks',
         },
         {
           name: 'Alpinist Program',
           icon: <Link />,
-          path: '/alpinist-program',
+          path: 'AlpinistProgram',
         },
         // {
         //   name: 'Blogs',
         //   icon: <Link />,
-        //   path: '/blogs',
+        //   path: 'Blogs',
         // },
         // {
         //   name: 'Innovation & Technology',
         //   icon: <Link />,
-        //   path: '/coming-soon',
+        //   path: 'ComingSoon',
         // },
         // {
         //   name: 'Privacy Policy',
         //   icon: <Link />,
-        //   path: '/coming-soon',
+        //   path: 'ComingSoon',
         // },
         // {
         //   name: 'Terms & Conditions',
         //   icon: <Link />,
-        //   path: '/coming-soon',
+        //   path: 'ComingSoon',
         // },
       ],
     },
@@ -602,6 +603,48 @@ const Constant = () => {
     {name: 'Zimbabwe', flag: '🇿🇼', code: 'ZW', dial_code: '+263'},
   ];
 
+  const generateDays = () => Array.from({length: 31}, (_, i) => i + 1);
+
+  const generateMonths = () => Array.from({length: 12}, (_, i) => i + 1);
+
+  const generateYears = () =>
+    Array.from({length: 100}, (_, i) => new Date().getFullYear() - i);
+
+  const requestStoragePermission = async () => {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        {
+          title: 'Storage Permission',
+          message:
+            'App needs access to your photo library to update your avatar.',
+          buttonNeutral: 'Ask Me Later',
+          buttonNegative: 'Cancel',
+          buttonPositive: 'OK',
+        },
+      );
+
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+        return true;
+      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+        Toast.show({
+          type: 'error',
+          text1: 'Permission permanently denied',
+          text2: 'Please enable storage permission from settings.',
+        });
+        Linking.openSettings(); // Opens the app settings screen
+      } else {
+        // Toast.show({
+        //   type: 'error',
+        //   text1: 'Permission denied',
+        // });
+      }
+
+      return false;
+    }
+    return true;
+  };
+
   return {
     heroSlider,
     loginItems,
@@ -611,6 +654,10 @@ const Constant = () => {
     isIOSDevice,
     convertHindiToEnglishNumbers,
     countryList,
+    generateDays,
+    generateMonths,
+    generateYears,
+    requestStoragePermission,
   };
 };
 

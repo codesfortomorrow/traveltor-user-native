@@ -45,7 +45,7 @@ const Footer = () => {
     if (item.title === 'Menu') {
       setIsOpen(true);
     } else if (item.title === 'MyFeeds') {
-      await logout();
+      // await logout();
     } else if (item?.title === 'Profile') {
       navigate('Profile', {
         userType: user?.type,
@@ -53,7 +53,7 @@ const Footer = () => {
       });
     } else if (item?.title === 'Home') {
       navigate('Home');
-    } else {
+    } else if (item?.title === 'Login') {
       setIsLoginOpen(true);
     }
   };

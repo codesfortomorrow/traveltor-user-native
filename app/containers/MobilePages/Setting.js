@@ -132,7 +132,9 @@ const Setting = () => {
                   //     : navigation.navigate(link.path)
                   // }
                   onPress={() => {
-                    link?.name === 'Logout' ? handleLogout() : null;
+                    link?.name === 'Logout'
+                      ? handleLogout()
+                      : navigation.navigate(link?.path);
                   }}
                   key={i}
                   style={styles.linkButton}>

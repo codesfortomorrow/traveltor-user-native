@@ -113,12 +113,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 60,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
     backgroundColor: 'white',
+
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+
+    // Android shadow
+    elevation: 8,
+
+    zIndex: 10,
   },
   leftSection: {
     flexDirection: 'row',
@@ -128,7 +134,6 @@ const styles = StyleSheet.create({
   headingText: {
     fontFamily: 'Inter',
     fontSize: 18,
-    // paddingVertical: 10,
     textTransform: 'capitalize',
     maxWidth: 290,
     overflow: 'hidden',

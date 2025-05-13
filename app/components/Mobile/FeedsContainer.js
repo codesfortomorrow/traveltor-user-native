@@ -25,6 +25,7 @@ import {getAuthReq} from '@/utils/apiHandlers';
 import ReactionIcon from 'react-native-vector-icons/AntDesign';
 import CheckIcon from '../../../public/images/icons/check.svg';
 import Marker from '../../../public/images/icons/marker.svg';
+import FeedDot from 'react-native-vector-icons/Entypo';
 
 const FeedsContainer = ({
   item,
@@ -151,7 +152,7 @@ const FeedsContainer = ({
   const navigateToProfile = () => {
     navigation.navigate('Profile', {
       id: item?.userId,
-      type: item?.user?.type.toLowerCase(),
+      type: item?.user?.type,
     });
   };
 
@@ -238,6 +239,7 @@ const FeedsContainer = ({
             setIsDeleteModal={setIsDeleteModal}
             setFeedId={setFeedId}
           /> */}
+          <FeedDot name="dots-three-vertical" color="#000" size={14} />
         </View>
       </View>
 
@@ -247,7 +249,11 @@ const FeedsContainer = ({
           dotStyle={styles.swiperDot}
           activeDotStyle={styles.swiperActiveDot}
           showsButtons={false}
-          loop={false}
+          loop={true}
+          autoplay={false}
+          scrollEnabled={true}
+          bounces={true}
+          paginationStyle={{bottom: 10}}
           removeClippedSubviews={false}>
           {item?.media?.map((image, index) => (
             <TouchableWithoutFeedback
@@ -590,7 +596,6 @@ const styles = StyleSheet.create({
     maxWidth: '100%',
   },
   trailPointName: {
-    flexShrink: 1,
     fontSize: 14,
   },
   locationRow: {
@@ -603,11 +608,9 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   menuContainer: {
-    flexDirection: 'row',
-    gap: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
     width: '5%',
+    marginLeft: 10,
+    marginTop: 4,
   },
   swiperContainer: {
     width: '100%',

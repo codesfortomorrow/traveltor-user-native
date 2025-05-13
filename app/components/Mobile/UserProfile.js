@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn} from '../../utils/apiHandlers';
@@ -17,6 +18,7 @@ import Login from '../Modal/Login';
 import Signup from '../Signup';
 import Backheading from './Backheading';
 import FeedsContainer from './FeedsContainer';
+import Toast from 'react-native-toast-message';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -41,7 +43,9 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
-  const {getUserDetails, getUserFeeds, reactionOnFeed} = useAuth();
+  const [isFollowDisable, setIsFollowDisable] = useState(false);
+  const {getUserDetails, getUserFeeds, reactionOnFeed, userFollowUnFollow} =
+    useAuth();
 
   // Initialize state from AsyncStorage
   useEffect(() => {
@@ -124,38 +128,33 @@ const UserProfile = () => {
   }, [id, user?.id]);
 
   const handleFollowUnFollow = async id => {
-    // if (isLogin) {
-    //   try {
-    //     const response = await trailBlazerFollowUnFollowed(id);
-    //     if (response?.status) {
-    //       if (response?.data?.follow) {
-    //         toast.success('Successfully Follow');
-    //       } else {
-    //         toast.success('Successfully UnFollow');
-    //       }
-    //       setTrailblazer(prev => ({
-    //         ...prev,
-    //         isFollow: !prev?.isFollow,
-    //       }));
-    //       setIsLoading(false);
-    //     }
-    //   } catch (err) {
-    //     setIsLoading(false);
-    //     dispatch(
-    //       setError({
-    //         open: true,
-    //         custom_message: err || 'Something went wrong',
-    //       }),
-    //     );
-    //   }
-    // } else {
-    //   dispatch(
-    //     setError({
-    //       open: true,
-    //       custom_message: 'Please login to cast your vote on the post.',
-    //     }),
-    //   );
-    // }
+    try {
+      setIsFollowDisable(true);
+      const response = await userFollowUnFollow(id);
+      if (response?.status) {
+        if (response?.data?.follow) {
+          // Toast.show({type: 'success', text1: 'Successfully Follow'});
+        } else {
+          // Toast.show({type: 'success', text1: 'Successfully UnFollow'});
+        }
+        setTrailblazer(prev => ({
+          ...prev,
+          isFollow: !prev?.isFollow,
+          followers: response?.data?.follow
+            ? prev?.followers + 1
+            : prev?.followers - 1,
+        }));
+      }
+    } catch (err) {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: err || 'Something went wrong',
+      //   }),
+      // );
+    } finally {
+      setIsFollowDisable(false);
+    }
   };
 
   const handleReactionOnFeed = async (id, index, type) => {
@@ -163,7 +162,6 @@ const UserProfile = () => {
       try {
         setReactionDisabled(true);
         const response = await reactionOnFeed(id, type);
-        console.log(response, 'response');
         if (response?.status) {
           const newFeeds = [...feeds];
           if (type === 'Like') {
@@ -220,7 +218,7 @@ const UserProfile = () => {
         }
         setLoading(false);
       } catch (error) {
-        return error;
+        console.log(error);
       } finally {
         if (response?.data?.data?.length == 0) {
           setIsLoading(false);
@@ -241,12 +239,21 @@ const UserProfile = () => {
     }
   }, [id, user?.id, pageNumber]);
 
+  // Helper function to detect when scrolled to bottom
+  const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
+    const paddingToBottom = 50;
+    return (
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom
+    );
+  };
+
   // Replace IntersectionObserver with React Native's onEndReached for FlatList
-  const handleEndReached = () => {
-    if (hasMore && !loading) {
+  const handleEndReached = useCallback(() => {
+    if (!loading && hasMore) {
       setPageNumber(prev => prev + 1);
     }
-  };
+  }, [loading, hasMore, pageNumber]);
 
   const moveToLogin = () => {
     setIsSignUpOpen(false);
@@ -318,8 +325,8 @@ const UserProfile = () => {
           </Text>
         </View>
         {user?.id !== trailblazer?.id && (
-          <TouchableOpacity
-            style={styles.followButton}
+          <TouchableWithoutFeedback
+            disabled={isFollowDisable}
             onPress={() => {
               if (isLogin) {
                 handleFollowUnFollow(trailblazer?.id);
@@ -327,14 +334,20 @@ const UserProfile = () => {
                 setIsLoginOpen(true);
               }
             }}>
-            <Text style={styles.followButtonText}>
-              {!isLoggedIn()
-                ? 'Follow'
-                : trailblazer?.isFollow === false
-                ? 'Follow'
-                : 'Unfollow'}
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.followButton}>
+              <Text style={styles.followButtonText}>
+                {isFollowDisable ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : !isLogin ? (
+                  'Follow'
+                ) : trailblazer?.isFollow === false ? (
+                  'Follow'
+                ) : (
+                  'Unfollow'
+                )}
+              </Text>
+            </View>
+          </TouchableWithoutFeedback>
         )}
       </View>
 
@@ -342,7 +355,9 @@ const UserProfile = () => {
 
       <View style={styles.statsContainer}>
         <View style={[styles.statColumn, styles.statWithBorder]}>
-          <Text style={styles.statValue}>{trailblazer?.trekscapesCount}</Text>
+          <Text style={styles.statValue}>
+            {trailblazer?.trekscapesCount || 0}
+          </Text>
           <Text style={styles.statLabel}>Trekscape</Text>
         </View>
         <View style={[styles.statColumn, styles.statWithBorder]}>
@@ -409,7 +424,12 @@ const UserProfile = () => {
             handleEndReached();
           }
         }}
-        scrollEventThrottle={400}>
+        scrollEventThrottle={16}
+        onMomentumScrollEnd={({nativeEvent}) => {
+          if (isCloseToBottom(nativeEvent)) {
+            handleEndReached();
+          }
+        }}>
         {isLoading ? renderSkeleton() : renderProfile()}
 
         <View style={isLoading ? styles.hidden : styles.feedsContainer}>
@@ -437,7 +457,7 @@ const UserProfile = () => {
 
         {loading && (
           <View style={styles.loaderContainer}>
-            <ActivityIndicator size="large" color="#FC8D67" />
+            <ActivityIndicator size="large" color="#e93c00" />
           </View>
         )}
 
@@ -483,15 +503,6 @@ const UserProfile = () => {
         />
       )} */}
     </View>
-  );
-};
-
-// Helper function to detect when scrolled to bottom
-const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
-  const paddingToBottom = 20;
-  return (
-    layoutMeasurement.height + contentOffset.y >=
-    contentSize.height - paddingToBottom
   );
 };
 
@@ -635,10 +646,11 @@ const styles = StyleSheet.create({
   loaderContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 20,
+    height: 60,
   },
   endTrigger: {
-    height: 50,
+    height: 100,
   },
 
   // Skeleton styles
