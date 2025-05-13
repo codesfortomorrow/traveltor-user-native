@@ -63,7 +63,7 @@ const Backheading = ({
         </View>
       )}
 
-      {/* {(nextTrip || notifyIcon) && (
+      {(nextTrip || notifyIcon) && (
         <View style={styles.rightIconsContainer}>
           {nextTrip && (
             <TouchableOpacity
@@ -78,13 +78,14 @@ const Backheading = ({
             <TouchableOpacity
               style={styles.notificationIcon}
               onPress={() => navigation.navigate('Notification')}>
-              <Badge count={0} style={styles.badge}>
+              {/* <Badge count={0} style={styles.badge}>
                 <NotificationsActiveIcon size={30} />
-              </Badge>
+              </Badge> */}
+              <Notification name="bell-ring-outline" size={26} color="black" />
             </TouchableOpacity>
           )}
         </View>
-      )} */}
+      )}
 
       {setting && route.name === 'Profile' && (
         <View style={styles.settingsContainer}>

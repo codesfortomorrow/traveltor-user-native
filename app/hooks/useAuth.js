@@ -91,7 +91,7 @@ const useAuth = () => {
   };
 
   const login = useCallback(
-    async (data, setForm) => {
+    async data => {
       const [valid, error] = await validateData(loginSchema, data);
       if (error) return error;
       if (valid) {
@@ -105,7 +105,6 @@ const useAuth = () => {
           //   );
           await setAuthToken(response?.data?.accessToken);
           setIsLoggedIn(true);
-          setForm({identifire: '', password: ''});
           Toast.show({
             type: 'success',
             text1: 'Login Successfully',
@@ -121,6 +120,7 @@ const useAuth = () => {
           //       custom_message: ` ${response.error.message}`,
           //     }),
           //   );
+          Toast.show({type: 'error', text1: response?.error?.message});
         }
       }
     },
@@ -361,6 +361,45 @@ const useAuth = () => {
     }
   }, []);
 
+  const getMyFeed = useCallback(async (page, refresh) => {
+    const url = `/check-ins/users?refresh=${refresh}&skip=${5 * page}&take=5`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const FeedReactionAction = async (id, type) => {
+    const payload = {
+      type: type,
+    };
+    const response = await postAuthReq(
+      `/check-ins/users/${id}/reactions`,
+      payload,
+    );
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+
+      return response;
+    }
+  };
+
   return {
     logout,
     login,
@@ -375,6 +414,8 @@ const useAuth = () => {
     getWalletTransaction,
     addWallet,
     getReferralData,
+    getMyFeed,
+    FeedReactionAction,
   };
 };
 

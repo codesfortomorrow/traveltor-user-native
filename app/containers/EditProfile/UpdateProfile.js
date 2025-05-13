@@ -73,7 +73,6 @@ const UpdateProfile = () => {
 
   useEffect(() => {
     if (user && Object.keys(user).length > 0) {
-      console.log(user);
       const dateOfBirth = user?.dateOfBirth
         ? moment(user.dateOfBirth).toISOString() // Ensure ISO format if needed
         : '';
@@ -224,7 +223,6 @@ const UpdateProfile = () => {
           <Text style={styles.label}>Date of Birth</Text>
           <View style={styles.dateRow}>
             <View style={styles.datePickerContainer}>
-              {console.log(date)}
               <Picker
                 selectedValue={Number(date.day)}
                 style={styles.datePicker}

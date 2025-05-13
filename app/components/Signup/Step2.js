@@ -120,6 +120,7 @@ const Step2 = ({
       const {status, data, error} = res;
       if (status) {
         await setAuthToken(data?.accessToken);
+        setIsLoggedIn(true);
         // dispatch(init());
         handleContinueStep3();
         // dispatch(cleanSuccess());
@@ -133,9 +134,6 @@ const Step2 = ({
         setStep2open(false);
         Toast.show({type: 'success', text1: 'Signup successsfully'});
         // navigate('/');
-        setTimeout(() => {
-          handleContinueStep3();
-        }, 2000);
         // openBGScroll();
       } else {
         Toast.show({type: 'error', text1: error?.message});

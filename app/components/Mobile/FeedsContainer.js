@@ -62,7 +62,7 @@ const FeedsContainer = ({
   const slug = route.params?.slug;
 
   const isTrekscapeNameShow =
-    route.name === 'MyFeed' ||
+    route.name === 'MyFeeds' ||
     (route.name === 'Profile' && route.params?.id === user?.id) ||
     (route.name === 'TrekscapeFeed' && route.params?.slug === slug);
 
@@ -256,26 +256,30 @@ const FeedsContainer = ({
           paginationStyle={{bottom: 10}}
           removeClippedSubviews={false}>
           {item?.media?.map((image, index) => (
-            <TouchableWithoutFeedback
+            <View
               key={index}
-              onPress={e =>
-                onDoubleTap(e, item, handleLike, setShowHeart, lastTapRef, true)
-              }>
-              <View
-                style={[
-                  styles.slideContainer,
-                  {height: (windowWidth * 4) / 3},
-                ]}>
+              style={[styles.slideContainer, {height: (windowWidth * 4) / 3}]}>
+              <TouchableWithoutFeedback
+                onPress={e =>
+                  onDoubleTap(
+                    e,
+                    item,
+                    handleLike,
+                    setShowHeart,
+                    lastTapRef,
+                    true,
+                  )
+                }>
                 <Image
                   source={{uri: image}}
                   style={styles.slideImage}
                   onTouchStart={e =>
-                    handleTouchStart && handleTouchStart(e, indexed)
+                    handleTouchStart && handleTouchStart(e, index)
                   }
-                  onTouchEnd={() => handleTouchEnd && handleTouchEnd(indexed)}
+                  onTouchEnd={() => handleTouchEnd && handleTouchEnd(index)}
                 />
-              </View>
-            </TouchableWithoutFeedback>
+              </TouchableWithoutFeedback>
+            </View>
           ))}
         </Swiper>
 

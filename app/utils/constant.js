@@ -75,7 +75,7 @@ const Constant = () => {
       icon: <Feeds name="file-text-o" color="#000" size={25} />,
       activeIcon: <Feeds name="file-text-o" color="#e93c00" size={25} />,
       title: 'MyFeeds',
-      path: '/my-feed',
+      path: 'MyFeeds',
     },
     {
       icon: <Icon name="star-outline" color="#000" size={25} />,

@@ -86,8 +86,6 @@ const Referral = () => {
     }
   }, [isLoading, hasMore, pageNumber]);
 
-  console.log(user?.meta, 'user');
-
   return (
     <View style={styles.container}>
       <Backheading heading={'Referral & Bonus'} />

@@ -16,9 +16,11 @@ import Wallet from './app/containers/MobilePages/Wallet';
 import ComingSoon from './app/containers/MobilePages/ComingSoon';
 import MyActivity from './app/containers/MobilePages/MyActivity';
 import Referral from './app/containers/MobilePages/Referral';
-import Community from './app/containers/links/Community';
-import HowItWorks from './app/containers/links/HowItWorks';
-import AlpinistProgram from './app/containers/links/AlphinistProgram';
+import Community from './app/containers/Links/Community';
+import HowItWorks from './app/containers/Links/HowItWorks';
+import AlpinistProgram from './app/containers/Links/AlphinistProgram';
+import {FeedProvider} from './app/context/FeedContext';
+import MyFeeds from './app/containers/MobilePages/MyFeeds';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,112 +28,123 @@ function App() {
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <Provider store={store}>
-        <AuthProvider>
-          <SafeAreaProvider>
-            <NavigationContainer>
-              <Stack.Navigator initialRouteName="Home">
-                <Stack.Screen
-                  name="Home"
-                  component={HomePage}
-                  options={{
-                    headerShown: false,
-                  }}
-                />
-                <Stack.Screen
-                  name="Profile"
-                  children={() => (
-                    <FooterLayout>
-                      <UserProfile />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="Setting"
-                  children={() => (
-                    <FooterLayout>
-                      <Setting />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="EditProfile"
-                  children={() => (
-                    <FooterLayout>
-                      <EditProfile />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="Wallet"
-                  children={() => (
-                    <FooterLayout>
-                      <Wallet />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="ComingSoon"
-                  children={() => (
-                    <FooterLayout>
-                      <ComingSoon />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="MyActivity"
-                  children={() => (
-                    <FooterLayout>
-                      <MyActivity />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="Referral"
-                  children={() => (
-                    <FooterLayout>
-                      <Referral />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="Community"
-                  children={() => (
-                    <FooterLayout>
-                      <Community />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="HowItWorks"
-                  children={() => (
-                    <FooterLayout>
-                      <HowItWorks />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-                <Stack.Screen
-                  name="AlpinistProgram"
-                  children={() => (
-                    <FooterLayout>
-                      <AlpinistProgram />
-                    </FooterLayout>
-                  )}
-                  options={{headerShown: false}}
-                />
-              </Stack.Navigator>
-            </NavigationContainer>
-            <Toast />
-          </SafeAreaProvider>
-        </AuthProvider>
+        <FeedProvider>
+          <AuthProvider>
+            <SafeAreaProvider>
+              <NavigationContainer>
+                <Stack.Navigator initialRouteName="Home">
+                  <Stack.Screen
+                    name="Home"
+                    component={HomePage}
+                    options={{
+                      headerShown: false,
+                    }}
+                  />
+                  <Stack.Screen
+                    name="Profile"
+                    children={() => (
+                      <FooterLayout>
+                        <UserProfile />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Setting"
+                    children={() => (
+                      <FooterLayout>
+                        <Setting />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="EditProfile"
+                    children={() => (
+                      <FooterLayout>
+                        <EditProfile />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Wallet"
+                    children={() => (
+                      <FooterLayout>
+                        <Wallet />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="ComingSoon"
+                    children={() => (
+                      <FooterLayout>
+                        <ComingSoon />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="MyActivity"
+                    children={() => (
+                      <FooterLayout>
+                        <MyActivity />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Referral"
+                    children={() => (
+                      <FooterLayout>
+                        <Referral />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Community"
+                    children={() => (
+                      <FooterLayout>
+                        <Community />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="HowItWorks"
+                    children={() => (
+                      <FooterLayout>
+                        <HowItWorks />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="AlpinistProgram"
+                    children={() => (
+                      <FooterLayout>
+                        <AlpinistProgram />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="MyFeeds"
+                    children={() => (
+                      <FooterLayout>
+                        <MyFeeds />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                </Stack.Navigator>
+              </NavigationContainer>
+              <Toast />
+            </SafeAreaProvider>
+          </AuthProvider>
+        </FeedProvider>
       </Provider>
     </GestureHandlerRootView>
   );

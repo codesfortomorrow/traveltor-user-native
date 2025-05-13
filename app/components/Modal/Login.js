@@ -47,13 +47,14 @@ const Login = ({
     e.preventDefault();
     setIsDisabled(true);
     setError({});
-    const error = await login(form, setForm);
+    const error = await login(form);
     if (error) {
       setError(error);
       setIsDisabled(false);
     } else {
       onRequestClose();
       onCloseMenu();
+      setForm({identifire: '', password: ''});
       setIsDisabled(false);
     }
   };

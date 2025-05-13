@@ -14,7 +14,6 @@ const UploadProfile = () => {
 
   const handlePickImage = async () => {
     const hasPermission = await requestStoragePermission();
-    console.log(hasPermission, 'hasPermission');
     if (!hasPermission) {
       // Toast.show({
       //   type: 'error',
@@ -30,7 +29,6 @@ const UploadProfile = () => {
         includeBase64: false,
       },
       async response => {
-        console.log(response, 'response');
         if (response.didCancel) {
           return;
         }

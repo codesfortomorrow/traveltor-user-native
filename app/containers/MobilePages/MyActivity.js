@@ -64,7 +64,7 @@ const MyActivity = () => {
   // Skeleton replacement for React Native
   const Skeleton = () => (
     <View style={styles.skeletonContainer}>
-      <ActivityIndicator size="large" color="#FFFFFF" />
+      {/* <ActivityIndicator size="large" color="#FFFFFF" /> */}
     </View>
   );
 
@@ -128,7 +128,7 @@ const MyActivity = () => {
             }
           }}>
           {events &&
-            events.map((event, index) => (
+            events?.map((event, index) => (
               <View key={index}>
                 <View
                   style={[
@@ -162,8 +162,8 @@ const MyActivity = () => {
                       {
                         backgroundColor:
                           index % 2 === 0
-                            ? 'linear-gradient(to right, #someColor1, #someColor2)'
-                            : 'linear-gradient(to left, #someColor1, #someColor2)',
+                            ? 'linear-gradient(to right, #FF6F3E, #E93C00)'
+                            : 'linear-gradient(to left, #E93C00, #FF6F3E)',
                         maxWidth: matches ? 140 : 125,
                       },
                     ]}>

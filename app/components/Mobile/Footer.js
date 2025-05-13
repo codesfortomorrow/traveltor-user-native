@@ -14,7 +14,6 @@ import Signup from '../Signup';
 import Menu from '../../containers/MobilePages/Menu';
 import CheckInIcon from '../../../public/images/footer/footerCheckinIcon.svg';
 import {AuthContext} from '../../context/AuthContext';
-import useAuth from '../../hooks/useAuth';
 import {useSelector} from 'react-redux';
 
 const Footer = () => {
@@ -23,7 +22,6 @@ const Footer = () => {
   const {loginItems, logoutItems} = Constant();
   const [menuItems, setMenuItems] = useState(null);
   const route = useRoute();
-  const {logout} = useAuth();
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const {isLoggedIn} = useContext(AuthContext);
   const {navigate} = useNavigation();
@@ -44,8 +42,6 @@ const Footer = () => {
   const handleSignIn = async item => {
     if (item.title === 'Menu') {
       setIsOpen(true);
-    } else if (item.title === 'MyFeeds') {
-      // await logout();
     } else if (item?.title === 'Profile') {
       navigate('Profile', {
         userType: user?.type,
@@ -55,6 +51,8 @@ const Footer = () => {
       navigate('Home');
     } else if (item?.title === 'Login') {
       setIsLoginOpen(true);
+    } else {
+      navigate(item?.path);
     }
   };
 
