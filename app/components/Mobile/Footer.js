@@ -160,14 +160,12 @@ const Footer = () => {
         onRequestClose={() => setIsLoginOpen(false)}
         setIsLoginOpen={setIsLoginOpen}
         moveToSignup={moveToSignup}
-        onCloseMenu={() => setIsOpen(false)}
       />
       <Signup
         step1open={isSignUpOpen}
         handleCloseStep1={() => setIsSignUpOpen(false)}
         setStep1open={setIsSignUpOpen}
         moveToLogin={moveToLogin}
-        onCloseMenu={() => setIsOpen(false)}
       />
     </>
   );

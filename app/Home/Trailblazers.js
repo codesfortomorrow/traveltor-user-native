@@ -7,14 +7,15 @@ import {
   StyleSheet,
   FlatList,
 } from 'react-native';
-import Swiper from 'react-native-swiper';
 import RightIcon from 'react-native-vector-icons/AntDesign';
 import useAuth from '../hooks/useAuth';
+import {useNavigation} from '@react-navigation/native';
 
 const Trailblazers = () => {
   const [trail, setTrail] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const {getTrailblazer} = useAuth();
+  const {navigate} = useNavigation();
 
   const fetchTreckScapeFeeds = useCallback(async () => {
     try {
@@ -101,7 +102,14 @@ const Trailblazers = () => {
                           Trekscape
                         </Text>
                       </View>
-                      <TouchableOpacity style={styles.arrowButton}>
+                      <TouchableOpacity
+                        style={styles.arrowButton}
+                        onPress={() =>
+                          navigate('Profile', {
+                            userType: 'Trailblazer',
+                            id: slide?.id,
+                          })
+                        }>
                         <RightIcon name="right" size={15} color="#e93c00" />
                       </TouchableOpacity>
                     </View>

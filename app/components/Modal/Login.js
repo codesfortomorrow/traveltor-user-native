@@ -15,13 +15,7 @@ import {loginSchema} from '../../utils/validation';
 import useAuth from '../../hooks/useAuth';
 import {correctEmail} from '../../utils/autoCorrection';
 
-const Login = ({
-  visible,
-  onRequestClose,
-  setIsLoginOpen,
-  moveToSignup,
-  onCloseMenu,
-}) => {
+const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   const [readOnly, setReadOnly] = useState(true);
@@ -46,14 +40,11 @@ const Login = ({
     e.preventDefault();
     setIsDisabled(true);
     setError({});
-    const error = await login(form);
+    const error = await login(form, onRequestClose, setForm);
     if (error) {
       setError(error);
       setIsDisabled(false);
     } else {
-      onRequestClose();
-      onCloseMenu();
-      setForm({identifire: '', password: ''});
       setIsDisabled(false);
     }
   };

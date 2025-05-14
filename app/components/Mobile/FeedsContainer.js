@@ -152,7 +152,7 @@ const FeedsContainer = ({
   const navigateToProfile = () => {
     navigation.navigate('Profile', {
       id: item?.userId,
-      type: item?.user?.type,
+      userType: item?.user?.type,
     });
   };
 

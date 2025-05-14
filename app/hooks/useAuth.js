@@ -6,7 +6,6 @@ import {
   patchApiReq,
   postAuthReq,
   postReq,
-  removeAuthToken,
 } from '../utils/apiHandlers';
 import Toast from 'react-native-toast-message';
 import {
@@ -91,7 +90,7 @@ const useAuth = () => {
   };
 
   const login = useCallback(
-    async data => {
+    async (data, onRequestClose, setForm) => {
       const [valid, error] = await validateData(loginSchema, data);
       if (error) return error;
       if (valid) {
@@ -109,6 +108,8 @@ const useAuth = () => {
             type: 'success',
             text1: 'Login Successfully',
           });
+          onRequestClose();
+          setForm({identifire: '', password: ''});
           //   handleClose();
           //   dispatch(init());
           //   navigate('/my-feed');
@@ -498,6 +499,81 @@ const useAuth = () => {
     }
   }, []);
 
+  const getSingleTrekscapeData = useCallback(async (id, userId) => {
+    const params = new URLSearchParams({
+      ...(userId && {userId}),
+    });
+    const url = `/trekscapes/${id}?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const followOnTrekscape = async id => {
+    const response = await postAuthReq(
+      `/user-trekscapes/trekscapeFollowUnFollow/${id}`,
+    );
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  };
+
+  const getTrackScapeFeeds = useCallback(async (id, userId, page) => {
+    const params = new URLSearchParams({
+      skip: 5 * page,
+      take: 5,
+      ...(userId && {userId}),
+    });
+    const url = `/trekscapes/${id}/check-ins?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const handleReactionOnTrekscapeFeed = async (id, type) => {
+    const response = await postAuthReq(`/check-ins/users/${id}/reactions`, {
+      type,
+    });
+    if (response?.status) {
+      return response;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+      return response;
+    }
+  };
+
   return {
     logout,
     login,
@@ -519,6 +595,10 @@ const useAuth = () => {
     uploadProfile,
     getTrailblazer,
     getNotification,
+    getSingleTrekscapeData,
+    followOnTrekscape,
+    getTrackScapeFeeds,
+    handleReactionOnTrekscapeFeed,
   };
 };
 

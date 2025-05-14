@@ -21,6 +21,7 @@ import {useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import DoubleRight from 'react-native-vector-icons/AntDesign';
+import SadIcon from '../../../public/images/sadIcon.svg';
 
 const Trekscapes = () => {
   const {navigate} = useNavigation();
@@ -368,390 +369,360 @@ const Trekscapes = () => {
   };
 
   return (
-    <SafeAreaProvider>
-      <SafeAreaView>
-        <View style={styles.container}>
-          <View style={styles.topBarWrapper}>
-            <TrekscapeTopBar
-              categoryId={String(categoryId)}
-              setCategoryId={setCategoryId}
-              category={category}
-              setCategorySlug={setCategorySlug}
-            />
-          </View>
+    <View style={styles.container}>
+      <View style={styles.topBarWrapper}>
+        <TrekscapeTopBar
+          categoryId={String(categoryId)}
+          setCategoryId={setCategoryId}
+          category={category}
+          setCategorySlug={setCategorySlug}
+        />
+      </View>
 
-          {categorySlug !== 'live' ? (
-            <ScrollView
-              ref={scrollContainerRef}
-              style={styles.scrollContainer}
-              showsVerticalScrollIndicator={false}
-              onScroll={({nativeEvent}) => {
-                // Check if reached end for pagination
-                const {layoutMeasurement, contentOffset, contentSize} =
-                  nativeEvent;
-                const paddingToBottom = 20;
-                if (
-                  layoutMeasurement.height + contentOffset.y >=
-                  contentSize.height - paddingToBottom
-                ) {
-                  handleEndReached();
-                }
-                // Save scroll position if needed
-                // saveScrollPosition(contentOffset.y);
-              }}
-              scrollEventThrottle={400}>
-              {isLoading ? (
+      {categorySlug !== 'live' ? (
+        <ScrollView
+          ref={scrollContainerRef}
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          onScroll={({nativeEvent}) => {
+            // Check if reached end for pagination
+            const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
+            const paddingToBottom = 20;
+            if (
+              layoutMeasurement.height + contentOffset.y >=
+              contentSize.height - paddingToBottom
+            ) {
+              handleEndReached();
+            }
+            // Save scroll position if needed
+            // saveScrollPosition(contentOffset.y);
+          }}
+          scrollEventThrottle={400}>
+          {isLoading ? (
+            <View style={styles.searchContainer}>
+              <Skeleton height={40} width="100%" />
+            </View>
+          ) : (
+            <>
+              {(treckScapeList?.length > 0 || searchTerm) && (
                 <View style={styles.searchContainer}>
-                  <Skeleton height={40} width="100%" />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
+                    value={searchTerm}
+                    onChangeText={handleSearchChange}
+                  />
+                  <TouchableOpacity
+                    style={styles.searchIcon}
+                    onPress={searchTerm ? handleClearSearch : null}>
+                    <Text>{searchTerm ? '✕' : '🔍'}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </>
+          )}
+
+          <View style={styles.gridContainer}>
+            {isLoading &&
+              Array.from({length: 4}).map((_, index) => (
+                <View key={index} style={styles.trekscapeCard}>
+                  <Skeleton height={325} />
+                  <View style={styles.cardFooter}>
+                    <View>
+                      <Skeleton height={17} width={100} />
+                      <View style={styles.statsContainer}>
+                        <Skeleton height={15} width={150} />
+                        <Skeleton height={15} width={100} />
+                      </View>
+                    </View>
+                    <Skeleton width={28} height={36} />
+                  </View>
+                </View>
+              ))}
+
+            {!isLoading &&
+              (treckScapeList.length > 0 ? (
+                treckScapeList?.map((item, index) => (
+                  <View key={index} style={styles.trekscapeCard}>
+                    {renderSwiperSlider({
+                      images: item?.previewMedia,
+                      id: item?.slug,
+                    })}
+                    <View style={styles.cardFooter}>
+                      <View>
+                        <Text style={styles.cardTitle}>{item?.name}</Text>
+                        <View style={styles.statsContainer}>
+                          <View style={styles.statItem}>
+                            <Image
+                              source={require('../../../public/images/trekscapes/spot-black.png')}
+                              style={{width: 13, height: 13}}
+                            />
+                            <Text style={styles.statText}>
+                              {item?.trailPoints || '0'} Trail Points
+                            </Text>
+                          </View>
+                          <View style={styles.statItem}>
+                            <Image
+                              source={require('../../../public/images/trekscapes/treksters-black.png')}
+                              style={{width: 13, height: 13}}
+                            />
+                            <Text style={styles.statText}>
+                              {item?.treksters || '0'} Treksters
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <TouchableOpacity
+                        style={styles.navigateButton}
+                        onPress={() =>
+                          navigate('TrekscapeDetail', {slug: item?.slug})
+                        }>
+                        <DoubleRight
+                          name="doubleright"
+                          color="#fff"
+                          size={16}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              ) : searchTerm ? (
+                <View style={styles.emptyStateContainer}>
+                  <SadIcon width={60} height={60} />
+                  <Text style={styles.emptyStateText}>
+                    No results found for {searchTerm}. Please check the spelling
+                    or try searching for another trekscape.
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchTerm('');
+                      setIsLoading(true);
+                    }}>
+                    <Text style={styles.emptyStateButton}>Back To Page</Text>
+                  </TouchableOpacity>
                 </View>
               ) : (
-                <>
-                  {(treckScapeList?.length > 0 || searchTerm) && (
-                    <View style={styles.searchContainer}>
-                      <TextInput
-                        style={styles.searchInput}
-                        placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
-                        value={searchTerm}
-                        onChangeText={handleSearchChange}
-                      />
-                      <TouchableOpacity
-                        style={styles.searchIcon}
-                        onPress={searchTerm ? handleClearSearch : null}>
-                        <Text>{searchTerm ? '✕' : '🔍'}</Text>
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </>
-              )}
+                noData && (
+                  <View style={styles.emptyStateContainer}>
+                    <SadIcon width={60} height={60} />
+                    <Text style={styles.emptyStateText}>
+                      Oops! No Trekscapes available at this moment.
+                    </Text>
+                  </View>
+                )
+              ))}
+          </View>
 
-              <View style={styles.gridContainer}>
-                {isLoading &&
-                  Array.from({length: 4}).map((_, index) => (
-                    <View key={index} style={styles.trekscapeCard}>
-                      <Skeleton height={325} />
-                      <View style={styles.cardFooter}>
-                        <View>
-                          <Skeleton height={17} width={100} />
-                          <View style={styles.statsContainer}>
-                            <Skeleton height={15} width={150} />
-                            <Skeleton height={15} width={100} />
+          {contentLoading && (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#e93c00" />
+            </View>
+          )}
+
+          <View style={styles.endSpace} />
+        </ScrollView>
+      ) : (
+        <ScrollView
+          ref={scrollContainerRef}
+          style={styles.scrollContainer}
+          onScroll={({nativeEvent}) => {
+            const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
+            const paddingToBottom = 20;
+            if (
+              layoutMeasurement.height + contentOffset.y >=
+              contentSize.height - paddingToBottom
+            ) {
+              handleEndReached();
+            }
+            // saveScrollPosition(contentOffset.y);
+          }}
+          scrollEventThrottle={400}>
+          <View style={styles.liveEventsContainer}>
+            {eventLoading &&
+              Array.from({length: 4}).map((_, index) => (
+                <View key={index} style={styles.liveEventCard}>
+                  {/* Header Section */}
+                  <View style={styles.liveEventHeader}>
+                    <View style={styles.skeletonAvatar} />
+                    <View>
+                      <Skeleton width={120} height={15} />
+                      <Skeleton width={100} height={10} />
+                    </View>
+                  </View>
+
+                  {/* Image and Reviews Section */}
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {[1, 2, 3].map((_, slideIndex) => (
+                      <View key={slideIndex} style={styles.liveEventSlide}>
+                        <Skeleton height={310} width={265} />
+                        <View style={styles.liveEventOverlay}>
+                          <View style={styles.liveEventOverlayHeader}>
+                            <Skeleton width={50} height={12} />
                           </View>
-                        </View>
-                        <Skeleton width={28} height={36} />
-                      </View>
-                    </View>
-                  ))}
-
-                {!isLoading &&
-                  (treckScapeList.length > 0 ? (
-                    treckScapeList?.map((item, index) => (
-                      <View key={index} style={styles.trekscapeCard}>
-                        {renderSwiperSlider({
-                          images: item?.previewMedia,
-                          id: item?.slug,
-                        })}
-                        <View style={styles.cardFooter}>
-                          <View>
-                            <Text style={styles.cardTitle}>{item?.name}</Text>
-                            <View style={styles.statsContainer}>
-                              <View style={styles.statItem}>
-                                <Image
-                                  source={require('../../../public/images/mobtrekscape/location.svg')}
-                                  style={styles.statIcon}
-                                />
-                                <Text style={styles.statText}>
-                                  {item?.trailPoints || '0'} Trail Points
-                                </Text>
-                              </View>
-                              <View style={styles.statItem}>
-                                <Image
-                                  source={require('../../../public/images/mobtrekscape/man.svg')}
-                                  style={styles.statIcon}
-                                />
-                                <Text style={styles.statText}>
-                                  {item?.treksters || '0'} Treksters
-                                </Text>
-                              </View>
-                            </View>
-                          </View>
-                          <TouchableOpacity
-                            style={styles.navigateButton}
-                            onPress={() =>
-                              navigate('TrekscapeDetail', {slug: item?.slug})
-                            }>
-                            <DoubleRight
-                              name="doubleright"
-                              color="#fff"
-                              size={16}
-                            />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))
-                  ) : searchTerm ? (
-                    <View style={styles.emptyStateContainer}>
-                      <Image
-                        source={require('../../../public/images/sadIcon.svg')}
-                        style={styles.emptyStateIcon}
-                      />
-                      <Text style={styles.emptyStateText}>
-                        No results found for {searchTerm}. Please check the
-                        spelling or try searching for another trekscape.
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          setSearchTerm('');
-                          setIsLoading(true);
-                        }}>
-                        <Text style={styles.emptyStateButton}>
-                          Back To Page
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : (
-                    noData && (
-                      <View style={styles.emptyStateContainer}>
-                        <Image
-                          source={require('../../../public/images/sadIcon.svg')}
-                          style={styles.emptyStateIcon}
-                        />
-                        <Text style={styles.emptyStateText}>
-                          Oops! No Trekscapes available at this moment.
-                        </Text>
-                      </View>
-                    )
-                  ))}
-              </View>
-
-              {contentLoading && (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color="#e93c00" />
-                </View>
-              )}
-
-              <View style={styles.endSpace} />
-            </ScrollView>
-          ) : (
-            <ScrollView
-              ref={scrollContainerRef}
-              style={styles.scrollContainer}
-              onScroll={({nativeEvent}) => {
-                const {layoutMeasurement, contentOffset, contentSize} =
-                  nativeEvent;
-                const paddingToBottom = 20;
-                if (
-                  layoutMeasurement.height + contentOffset.y >=
-                  contentSize.height - paddingToBottom
-                ) {
-                  handleEndReached();
-                }
-                // saveScrollPosition(contentOffset.y);
-              }}
-              scrollEventThrottle={400}>
-              <View style={styles.liveEventsContainer}>
-                {eventLoading &&
-                  Array.from({length: 4}).map((_, index) => (
-                    <View key={index} style={styles.liveEventCard}>
-                      {/* Header Section */}
-                      <View style={styles.liveEventHeader}>
-                        <View style={styles.skeletonAvatar} />
-                        <View>
-                          <Skeleton width={120} height={15} />
-                          <Skeleton width={100} height={10} />
-                        </View>
-                      </View>
-
-                      {/* Image and Reviews Section */}
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}>
-                        {[1, 2, 3].map((_, slideIndex) => (
-                          <View key={slideIndex} style={styles.liveEventSlide}>
-                            <Skeleton height={310} width={265} />
-                            <View style={styles.liveEventOverlay}>
-                              <View style={styles.liveEventOverlayHeader}>
-                                <Skeleton width={50} height={12} />
-                              </View>
-                              <View style={styles.liveEventUser}>
-                                <Skeleton circle height={50} width={50} />
-                                <View>
-                                  <Skeleton width={100} height={14} />
-                                  <Skeleton width={60} height={20} />
-                                </View>
-                              </View>
-                              <Skeleton count={2} width={'90%'} height={12} />
-                              <Skeleton width={120} height={20} />
-                            </View>
-                          </View>
-                        ))}
-                      </ScrollView>
-                    </View>
-                  ))}
-
-                {liveEvents &&
-                  liveEvents?.map((event, index) => {
-                    return (
-                      <View
-                        key={index}
-                        style={[
-                          styles.liveEventCard,
-                          eventLoading && styles.hidden,
-                        ]}>
-                        <View style={styles.liveEventHeaderFull}>
-                          <TouchableOpacity
-                            style={styles.liveEventUserInfo}
-                            onPress={() =>
-                              navigate('TrekscapeDetail', {
-                                slug: event?.trekscapeSlug,
-                              })
-                            }>
-                            <View
-                              style={[
-                                styles.liveStatusIndicator,
-                                (event?.isLive ||
-                                  getTimeDifference(
-                                    event?.startTime,
-                                  ).toString() == 'LIVE') &&
-                                  styles.liveStatusActive,
-                              ]}>
-                              <Text style={styles.liveStatusText}>
-                                {event?.isLive ||
-                                getTimeDifference(
-                                  event?.startTime,
-                                ).toString() == 'LIVE'
-                                  ? 'LIVE'
-                                  : getTimeDifference(
-                                      event?.startTime,
-                                    ).toString()}
-                              </Text>
-                              {!event?.isLive &&
-                                getTimeDifference(
-                                  event?.startTime,
-                                ).toString() !== 'LIVE' && (
-                                  <Text style={styles.liveStatusSubtext}>
-                                    {
-                                      getTimeDifference(event?.startTime)
-                                        .timeframe
-                                    }
-                                  </Text>
-                                )}
-                            </View>
+                          <View style={styles.liveEventUser}>
+                            <Skeleton circle height={50} width={50} />
                             <View>
-                              <Text style={styles.liveEventTitle}>
-                                {event?.name}
-                              </Text>
-                              <View style={styles.liveEventLocation}>
-                                <Image
-                                  source={require('../../../public/images/Pin.svg')}
-                                  style={styles.pinIcon}
-                                />
-                                <Text style={styles.distanceText}>
-                                  {(event?.distance / 1000).toFixed(2)} KM far
-                                  from your place
-                                </Text>
-                              </View>
+                              <Skeleton width={100} height={14} />
+                              <Skeleton width={60} height={20} />
                             </View>
-                          </TouchableOpacity>
-                          {renderFeedMenu({feed: event})}
+                          </View>
+                          <Skeleton count={2} width={'90%'} height={12} />
+                          <Skeleton width={120} height={20} />
                         </View>
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>
+              ))}
 
-                        {reviewsMap[event?.slug]?.length > 0 ? (
-                          <Swiper
-                            style={styles.swiper}
-                            showsPagination={true}
-                            loop={false}>
-                            {reviewsMap[event?.slug]?.map(
-                              (review, reviewIndex) => {
-                                return (
-                                  <View
-                                    key={reviewIndex}
-                                    style={styles.reviewSlide}>
-                                    <Image
-                                      source={{uri: review.media[0]}}
-                                      style={styles.reviewImage}
-                                    />
-                                    <View style={styles.reviewOverlay}>
-                                      <View style={styles.reviewTimestamp}>
-                                        <Image
-                                          source={require('../../../public/images/Pin (1).svg')}
-                                          style={styles.pinIconSmall}
-                                        />
-                                        <Text style={styles.timestampText}>
-                                          {moment(
-                                            Number(review?.timestamp),
-                                          ).fromNow()}
-                                        </Text>
-                                      </View>
-                                      <View style={styles.reviewUserInfo}>
-                                        <Image
-                                          source={{
-                                            uri:
-                                              review?.user?.profileImage ||
-                                              '/images/dpPlaceholder.png',
-                                          }}
-                                          style={styles.reviewUserImage}
-                                        />
-                                        <View>
-                                          <Text style={styles.reviewUserName}>
-                                            {review?.user?.firstname}{' '}
-                                            {review?.user?.lastname}
-                                          </Text>
-                                          <View style={styles.visitTypeBadge}>
-                                            <Text style={styles.visitTypeText}>
-                                              {review?.visitType == 'MustVisit'
-                                                ? 'Must Go'
-                                                : 'Least Go'}
-                                            </Text>
-                                          </View>
-                                        </View>
-                                      </View>
-                                      <Text style={styles.reviewText}>
-                                        {review?.review}
+            {liveEvents &&
+              liveEvents?.map((event, index) => {
+                return (
+                  <View
+                    key={index}
+                    style={[
+                      styles.liveEventCard,
+                      eventLoading && styles.hidden,
+                    ]}>
+                    <View style={styles.liveEventHeaderFull}>
+                      <TouchableOpacity
+                        style={styles.liveEventUserInfo}
+                        onPress={() =>
+                          navigate('TrekscapeDetail', {
+                            slug: event?.trekscapeSlug,
+                          })
+                        }>
+                        <View
+                          style={[
+                            styles.liveStatusIndicator,
+                            (event?.isLive ||
+                              getTimeDifference(event?.startTime).toString() ==
+                                'LIVE') &&
+                              styles.liveStatusActive,
+                          ]}>
+                          <Text style={styles.liveStatusText}>
+                            {event?.isLive ||
+                            getTimeDifference(event?.startTime).toString() ==
+                              'LIVE'
+                              ? 'LIVE'
+                              : getTimeDifference(event?.startTime).toString()}
+                          </Text>
+                          {!event?.isLive &&
+                            getTimeDifference(event?.startTime).toString() !==
+                              'LIVE' && (
+                              <Text style={styles.liveStatusSubtext}>
+                                {getTimeDifference(event?.startTime).timeframe}
+                              </Text>
+                            )}
+                        </View>
+                        <View>
+                          <Text style={styles.liveEventTitle}>
+                            {event?.name}
+                          </Text>
+                          <View style={styles.liveEventLocation}>
+                            <Image
+                              source={require('../../../public/images/Pin.svg')}
+                              style={styles.pinIcon}
+                            />
+                            <Text style={styles.distanceText}>
+                              {(event?.distance / 1000).toFixed(2)} KM far from
+                              your place
+                            </Text>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                      {renderFeedMenu({feed: event})}
+                    </View>
+
+                    {reviewsMap[event?.slug]?.length > 0 ? (
+                      <Swiper
+                        style={styles.swiper}
+                        showsPagination={true}
+                        loop={false}>
+                        {reviewsMap[event?.slug]?.map((review, reviewIndex) => {
+                          return (
+                            <View key={reviewIndex} style={styles.reviewSlide}>
+                              <Image
+                                source={{uri: review.media[0]}}
+                                style={styles.reviewImage}
+                              />
+                              <View style={styles.reviewOverlay}>
+                                <View style={styles.reviewTimestamp}>
+                                  <Image
+                                    source={require('../../../public/images/Pin (1).svg')}
+                                    style={styles.pinIconSmall}
+                                  />
+                                  <Text style={styles.timestampText}>
+                                    {moment(
+                                      Number(review?.timestamp),
+                                    ).fromNow()}
+                                  </Text>
+                                </View>
+                                <View style={styles.reviewUserInfo}>
+                                  <Image
+                                    source={{
+                                      uri:
+                                        review?.user?.profileImage ||
+                                        '/images/dpPlaceholder.png',
+                                    }}
+                                    style={styles.reviewUserImage}
+                                  />
+                                  <View>
+                                    <Text style={styles.reviewUserName}>
+                                      {review?.user?.firstname}{' '}
+                                      {review?.user?.lastname}
+                                    </Text>
+                                    <View style={styles.visitTypeBadge}>
+                                      <Text style={styles.visitTypeText}>
+                                        {review?.visitType == 'MustVisit'
+                                          ? 'Must Go'
+                                          : 'Least Go'}
                                       </Text>
-                                      <TouchableOpacity
-                                        style={styles.seeFullReviewButton}
-                                        onPress={() =>
-                                          navigate('Checkins', {
-                                            slug: event?.slug,
-                                          })
-                                        }>
-                                        <Text style={styles.seeFullReviewText}>
-                                          See Full Review
-                                        </Text>
-                                      </TouchableOpacity>
                                     </View>
                                   </View>
-                                );
-                              },
-                            )}
-                          </Swiper>
-                        ) : (
-                          <Swiper
-                            style={styles.swiper}
-                            showsPagination={true}
-                            loop={false}>
-                            {event?.previewMedia?.map((image, imageIndex) => (
-                              <View
-                                key={imageIndex}
-                                style={styles.previewSlide}>
-                                <Image
-                                  source={{uri: image}}
-                                  style={styles.previewImage}
-                                />
+                                </View>
+                                <Text style={styles.reviewText}>
+                                  {review?.review}
+                                </Text>
+                                <TouchableOpacity
+                                  style={styles.seeFullReviewButton}
+                                  onPress={() =>
+                                    navigate('Checkins', {
+                                      slug: event?.slug,
+                                    })
+                                  }>
+                                  <Text style={styles.seeFullReviewText}>
+                                    See Full Review
+                                  </Text>
+                                </TouchableOpacity>
                               </View>
-                            ))}
-                          </Swiper>
-                        )}
-                      </View>
-                    );
-                  })}
-                <View style={styles.endSpace} />
-              </View>
-            </ScrollView>
-          )}
-        </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
+                            </View>
+                          );
+                        })}
+                      </Swiper>
+                    ) : (
+                      <Swiper
+                        style={styles.swiper}
+                        showsPagination={true}
+                        loop={false}>
+                        {event?.previewMedia?.map((image, imageIndex) => (
+                          <View key={imageIndex} style={styles.previewSlide}>
+                            <Image
+                              source={{uri: image}}
+                              style={styles.previewImage}
+                            />
+                          </View>
+                        ))}
+                      </Swiper>
+                    )}
+                  </View>
+                );
+              })}
+            <View style={styles.endSpace} />
+          </View>
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
@@ -903,13 +874,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  statIcon: {
-    height: 15,
-    width: 15,
-    resizeMode: 'contain',
-  },
   statText: {
-    fontSize: 12,
+    fontSize: 13,
   },
   navigateButton: {
     paddingHorizontal: 4,

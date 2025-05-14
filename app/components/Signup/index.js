@@ -5,13 +5,7 @@ import Step3 from './Step3';
 // import Step2 from './Step2';
 // import Step3 from './Step3';
 
-const Signup = ({
-  step1open,
-  handleCloseStep1,
-  setStep1open,
-  moveToLogin,
-  onCloseMenu,
-}) => {
+const Signup = ({step1open, handleCloseStep1, setStep1open, moveToLogin}) => {
   const [step2open, setStep2open] = useState(false);
   const [step3open, setStep3open] = useState(false);
   const [step, setStep] = useState('1');
@@ -44,7 +38,6 @@ const Signup = ({
 
   const handleCloseStep3 = () => {
     setStep3open(false);
-    onCloseMenu();
     setStep('1');
   };
 

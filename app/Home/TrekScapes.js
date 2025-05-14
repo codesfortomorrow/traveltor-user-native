@@ -35,7 +35,7 @@ const TrekScapes = () => {
   }, []);
 
   const handleNavigate = async id => {
-    navigate(`/trekscape/${id}`);
+    navigate('TrekscapeDetail', {slug: id});
   };
 
   return (

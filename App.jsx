@@ -23,6 +23,9 @@ import {FeedProvider} from './app/context/FeedContext';
 import MyFeeds from './app/containers/MobilePages/MyFeeds';
 import Trekscapes from './app/containers/Trekscapes/Trekscapes';
 import Notification from './app/containers/MobilePages/Notification';
+import {SafeAreaView} from 'react-native';
+import TrekscapeDetails from './app/containers/Trekscapes/TrekscapeDetails';
+import TrekscapeFeed from './app/containers/Trekscapes/TrekscapeFeed';
 
 const Stack = createNativeStackNavigator();
 
@@ -155,6 +158,24 @@ function App() {
                     children={() => (
                       <FooterLayout>
                         <Notification />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="TrekscapeDetail"
+                    children={() => (
+                      <FooterLayout>
+                        <TrekscapeDetails />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="TrekscapeFeed"
+                    children={() => (
+                      <FooterLayout>
+                        <TrekscapeFeed />
                       </FooterLayout>
                     )}
                     options={{headerShown: false}}

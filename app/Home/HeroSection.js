@@ -7,8 +7,6 @@ import {
   TextInput,
   View,
   StyleSheet,
-  Animated,
-  TouchableOpacity,
 } from 'react-native';
 import Constant from '../utils/constant';
 
