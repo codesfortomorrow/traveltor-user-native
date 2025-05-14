@@ -85,13 +85,19 @@ const MenuPage = ({open, close, setIsLoginOpen, setIsSignUpOpen}) => {
 
           <View style={styles.authButtons}>
             <TouchableOpacity
-              onPress={() => setIsSignUpOpen(true)}
+              onPress={() => {
+                handleCloseWithAnimation();
+                setIsSignUpOpen(true);
+              }}
               style={styles.signUpButton}>
               <Text style={styles.signUpText}>SIGN UP</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => setIsLoginOpen(true)}
+              onPress={() => {
+                handleCloseWithAnimation();
+                setIsLoginOpen(true);
+              }}
               style={styles.loginButton}>
               <Text style={styles.loginText}>LOGIN</Text>
             </TouchableOpacity>

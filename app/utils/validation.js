@@ -126,15 +126,18 @@ export const updateUserSchema = yup.object({
     .required('First name is required')
     .min(3, 'First name must be at least 3 characters')
     .max(25, 'First name must not exceed 25 characters')
-    .matches(/^[A-Za-z]+$/, 'First name must be letters only')
-    .matches(/^\S.*\S$/, 'First name must not start or end with a space'),
+    .matches(/^[A-Za-z ]+$/, 'First name must be letters only')
+    .matches(
+      /^(?! ).*(?<! )$/,
+      'First name must not start or end with a space',
+    ),
   lastname: yup
     .string()
     .required('Last name is required')
     .min(3, 'Last name must be at least 3 characters')
     .max(25, 'Last name must not exceed 25 characters')
-    .matches(/^[A-Za-z]+$/, 'Last name must be letters only')
-    .matches(/^\S.*\S$/, 'Last name must not start or end with a space'),
+    .matches(/^[A-Za-z ]+$/, 'Last name must be letters only')
+    .matches(/^(?! ).*(?<! )$/, 'Last name must not start or end with a space'),
   username: yup
     .string()
     .required('Username is required')
@@ -144,7 +147,7 @@ export const updateUserSchema = yup.object({
       /^[A-Za-z0-9_]+$/,
       'Username can only contain letters, numbers, and underscores',
     )
-    .matches(/^\S.*\S$/, 'Username must not start or end with a space'),
+    .matches(/^(?! ).*(?<! )$/, 'Username must not start or end with a space'),
   email: yup.string().matches(emailRegex, 'Invalid email address'),
   mobile: yup
     .string()

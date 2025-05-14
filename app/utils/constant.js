@@ -1,14 +1,14 @@
 import Icon from 'react-native-vector-icons/Ionicons';
 import User from 'react-native-vector-icons/AntDesign';
 import Feeds from 'react-native-vector-icons/FontAwesome';
-import {Linking, PermissionsAndroid, Platform} from 'react-native';
 import Profile from '../../public/images/profile/profile.svg';
 import Wallet from '../../public/images/profile/wallet.svg';
 import Credit from '../../public/images/profile/credit.svg';
 import Transfer from '../../public/images/profile/transfer.svg';
 import Settings from '../../public/images/profile/settings.svg';
 import Link from '../../public/images/profile/link.svg';
-import Toast from 'react-native-toast-message';
+import {Platform, PermissionsAndroid} from 'react-native';
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 const Constant = () => {
   const heroSlider = [
@@ -57,7 +57,7 @@ const Constant = () => {
       icon: <Icon name="search-outline" color="#000" size={25} />,
       activeIcon: <Icon name="search-outline" color="#e93c00" size={25} />,
       title: 'Explore',
-      path: '/trekscapes',
+      path: 'Trekscapes',
       children: [
         {
           path: '/trekscape',
@@ -96,7 +96,7 @@ const Constant = () => {
       icon: <Icon name="search-outline" color="#000" size={25} />,
       activeIcon: <Icon name="search-outline" color="#e93c00" size={25} />,
       title: 'Explore',
-      path: '/trekscapes',
+      path: 'Trekscapes',
       children: [
         {
           path: '/trekscape',
@@ -611,38 +611,22 @@ const Constant = () => {
     Array.from({length: 100}, (_, i) => new Date().getFullYear() - i);
 
   const requestStoragePermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        {
-          title: 'Storage Permission',
-          message:
-            'App needs access to your photo library to update your avatar.',
-          buttonNeutral: 'Ask Me Later',
-          buttonNegative: 'Cancel',
-          buttonPositive: 'OK',
-        },
-      );
+    try {
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES || // For Android 13+
+            PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+        );
 
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        return true;
-      } else if (granted === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
-        Toast.show({
-          type: 'error',
-          text1: 'Permission permanently denied',
-          text2: 'Please enable storage permission from settings.',
-        });
-        Linking.openSettings(); // Opens the app settings screen
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
       } else {
-        // Toast.show({
-        //   type: 'error',
-        //   text1: 'Permission denied',
-        // });
+        const result = await request(PERMISSIONS.IOS.PHOTO_LIBRARY);
+        return result === RESULTS.GRANTED;
       }
-
+    } catch (error) {
+      console.warn('Permission error:', error);
       return false;
     }
-    return true;
   };
 
   return {

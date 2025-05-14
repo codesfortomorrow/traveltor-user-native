@@ -1,59 +1,38 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   Text,
-  TextInput,
   View,
   Image,
   TouchableOpacity,
   StyleSheet,
+  FlatList,
 } from 'react-native';
-import Swiper from 'react-native-swiper';
+import useAuth from '../hooks/useAuth';
+import {useNavigation} from '@react-navigation/native';
 
 const TrekScapes = () => {
-  const [trekScape, setTrekScape] = useState([
-    {
-      name: 'Ram',
-      trailPoints: 20,
-      treksters: 20,
-      slug: 'ram',
-      previewMedia: ['https://example.com/image.jpg'],
-    },
-  ]);
-  const [search, setSearch] = useState('');
-  const [expanded, setExpanded] = useState({});
+  const [trekScape, setTrekScape] = useState([]);
+  const {getTrekscape} = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const {navigate} = useNavigation();
 
-  //   const fetchTreckScape = useCallback(async (s, isLoad) => {
-  //     try {
-  //       isLoad && setIsLoading(true);
-  //       const response = await getTrekscape(s);
-  //       if (response?.data) {
-  //         setTrekScape(response?.data);
-  //       }
-  //     } catch (error) {
-  //       console.error(error);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }, []);
-
-  useEffect(() => {
-    // fetchTreckScape('', true);
+  const fetchTreckScape = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getTrekscape();
+      if (response?.data) {
+        setTrekScape(response?.data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const isFirstRender = useRef(true);
-
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (search.length === 0) {
-      //   fetchTreckScape();
-    }
-  }, [search]);
+    fetchTreckScape();
+  }, []);
 
   const handleNavigate = async id => {
     navigate(`/trekscape/${id}`);
@@ -70,7 +49,7 @@ const TrekScapes = () => {
             alignItems: 'center',
             gap: 5,
           }}
-          onPress={() => console.log('Explore clicked')}>
+          onPress={() => navigate('Trekscapes')}>
           <Image
             source={require('../../public/images/ring-mobile.png')}
             resizeMode="contain"
@@ -81,60 +60,66 @@ const TrekScapes = () => {
 
       {/* Swiper Section */}
       <View style={styles.swiperContainer}>
-        <Swiper
-          autoplay
-          autoplayTimeout={3}
-          loop
-          showsPagination={false}
-          onIndexChanged={() => {}}
-          height={250}>
-          {isLoading
-            ? Array.from({length: 3}).map((_, index) => (
-                <View key={index} style={styles.slide}>
+        <View style={styles.flatListContainer}>
+          <FlatList
+            data={isLoading ? Array.from({length: 3}) : trekScape}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={250} // width of card + margin
+            decelerationRate="fast"
+            keyExtractor={(item, index) => item?.slug || index.toString()}
+            renderItem={({item, index}) => (
+              <View style={styles.flatListItem}>
+                {isLoading ? (
                   <View style={styles.imagePlaceholder} />
-                </View>
-              ))
-            : trekScape.map((slide, index) => (
-                <View key={index} style={styles.slide}>
-                  <Image
-                    // source={slide.previewMedia[0]}
-                    source={require('../../public/images/man.jpg')}
-                    style={styles.image}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.card}>
-                    <Text style={styles.name}>{slide.name}</Text>
-                    <View style={styles.infoRow}>
-                      <View style={styles.infoCol}>
-                        <View style={styles.label}>
-                          <Image
-                            source={require('../../public/images/trekscapes/spot-black.png')}
-                            style={{width: 12, height: 12}}
-                          />
-                          <Text style={{fontSize: 12}}>
-                            {slide.trailPoints} Trail Points
-                          </Text>
+                ) : (
+                  <>
+                    <Image
+                      source={
+                        item.previewMedia[0]
+                          ? {uri: item.previewMedia[0]}
+                          : require('../../public/images/man.jpg')
+                      }
+                      style={styles.image}
+                      resizeMode="cover"
+                    />
+                    <View style={styles.card}>
+                      <Text style={styles.name}>{item.name}</Text>
+                      <View style={styles.infoRow}>
+                        <View style={styles.infoCol}>
+                          <View style={styles.label}>
+                            <Image
+                              source={require('../../public/images/trekscapes/spot-black.png')}
+                              style={{width: 12, height: 12}}
+                            />
+                            <Text style={{fontSize: 12}}>
+                              {item.trailPoints} Trail Points
+                            </Text>
+                          </View>
+                          <View style={styles.label}>
+                            <Image
+                              source={require('../../public/images/trekscapes/treksters-black.png')}
+                              style={{width: 12, height: 12}}
+                            />
+                            <Text style={{fontSize: 12}}>
+                              {item.treksters} Treksters
+                            </Text>
+                          </View>
                         </View>
-                        <View style={styles.label}>
-                          <Image
-                            source={require('../../public/images/trekscapes/treksters-black.png')}
-                            style={{width: 12, height: 12}}
-                          />
-                          <Text style={{fontSize: 12}}>
-                            {slide.treksters} Treksters
-                          </Text>
-                        </View>
+                        <TouchableOpacity
+                          onPress={() => handleNavigate(item.slug)}
+                          style={styles.exploreBtn}>
+                          <Text style={styles.exploreBtnText}>Explore</Text>
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity
-                        onPress={() => handleNavigate(slide.slug)}
-                        style={styles.exploreBtn}>
-                        <Text style={styles.exploreBtnText}>Explore</Text>
-                      </TouchableOpacity>
                     </View>
-                  </View>
-                </View>
-              ))}
-        </Swiper>
+                  </>
+                )}
+              </View>
+            )}
+            contentContainerStyle={{paddingHorizontal: 16}}
+          />
+        </View>
       </View>
     </View>
   );
@@ -144,7 +129,7 @@ export default TrekScapes;
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 48,
+    paddingTop: 80,
     flex: 1,
     backgroundColor: '#fff',
   },
@@ -167,8 +152,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
+  flatListContainer: {
+    height: 280,
+  },
+  flatListItem: {
+    width: 280,
+    alignItems: 'center',
+    position: 'relative',
+  },
   swiperContainer: {
-    paddingLeft: 16,
     height: 280,
   },
   slide: {
@@ -187,7 +179,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   card: {
-    marginTop: 10,
     backgroundColor: '#fff',
     padding: 12,
     borderRadius: 12,
@@ -196,9 +187,9 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
     position: 'absolute',
-    bottom: -44,
-    left: 40,
-    right: 40,
+    bottom: 5,
+    left: 30,
+    right: 30,
   },
   name: {
     fontSize: 13,

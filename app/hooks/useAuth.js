@@ -400,6 +400,104 @@ const useAuth = () => {
     }
   };
 
+  const getTrekscape = useCallback(
+    async (search, categoryId, pageNumber, location) => {
+      const params = new URLSearchParams({
+        ...(search && {search}),
+        skip: pageNumber ? pageNumber * 10 : 0 * 10,
+        take: 10,
+        ...(categoryId && {categoryId}),
+        ...(location?.latitude && {latitude: location?.latitude}),
+        ...(location?.longitude && {longitude: location?.longitude}),
+      });
+      const response = await getReq(`/trekscapes/home?${params.toString()}`);
+      if (response?.status) {
+        return response.data;
+      } else {
+        // dispatch(
+        //   setError({
+        //     open: true,
+        //     custom_message: ` ${response.error.message}`,
+        //   }),
+        // );
+        Toast.show({type: 'error', text1: response?.error?.message});
+      }
+    },
+    [],
+  );
+
+  const uploadImage = async data => {
+    const response = await postAuthReq('/upload', data);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  };
+
+  const uploadProfile = useCallback(async data => {
+    const response = await postAuthReq('/users/me/profile-image', data);
+    if (response?.status) {
+      // dispatch(cleanSuccess());
+      // dispatch(
+      //   setSuccess({ open: true, custom_message: ' updated your profile.' }),
+      // );
+      Toast.show({
+        type: 'success',
+        text1: 'Profile Updated Successfully',
+      });
+      // dispatch(init());
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const getTrailblazer = useCallback(async search => {
+    const params = new URLSearchParams({
+      ...(search && {search}),
+    });
+    const response = await getAuthReq(`/trailblazers?${params.toString()}`);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
+  const getNotification = useCallback(async page => {
+    const url = `/notifications?skip=${page * 50}&take=${50}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
+      Toast.show({type: 'error', text1: response?.error?.message});
+    }
+  }, []);
+
   return {
     logout,
     login,
@@ -416,6 +514,11 @@ const useAuth = () => {
     getReferralData,
     getMyFeed,
     FeedReactionAction,
+    getTrekscape,
+    uploadImage,
+    uploadProfile,
+    getTrailblazer,
+    getNotification,
   };
 };
 

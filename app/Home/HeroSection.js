@@ -1,28 +1,53 @@
-import React, {useRef, useState} from 'react';
+import React, {useRef, useState, useEffect} from 'react';
 import {
   Dimensions,
+  FlatList,
   Image,
   Text,
   TextInput,
   View,
   StyleSheet,
+  Animated,
+  TouchableOpacity,
 } from 'react-native';
-import Swiper from 'react-native-swiper';
 import Constant from '../utils/constant';
+
+const screenWidth = Dimensions.get('window').width;
 
 function HeroSection() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [search, setSearch] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const inputRef = useRef(null);
+  const listRef = useRef(null);
   const {heroSlider} = Constant();
+  const itemWidth = screenWidth / 5.75;
+
+  // Auto-scroll logic
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIndex(prev => {
+        const nextIndex = (prev + 1) % heroSlider.length;
+        listRef.current?.scrollToOffset({
+          offset: nextIndex * itemWidth + 20,
+          animated: true,
+        });
+        return nextIndex;
+      });
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [heroSlider.length]);
 
   return (
     <>
       <View style={styles.container}>
         {/* Background Image */}
         <Image
-          source={heroSlider[activeIndex]?.image || '/images/hero.png'}
+          source={
+            heroSlider[activeIndex]?.image ||
+            require('../../public/images/hero.png')
+          }
           style={styles.backgroundImage}
           resizeMode="cover"
         />
@@ -37,7 +62,6 @@ function HeroSection() {
             ref={inputRef}
             value={search}
             onChangeText={setSearch}
-            // onFocus={() => setIsSearchFocused(true)}
             placeholder="Search for User"
             style={[
               styles.searchInput,
@@ -60,31 +84,28 @@ function HeroSection() {
             {heroSlider[activeIndex]?.desc}
           </Text>
         </View>
-
-        {/* Swiper */}
       </View>
 
+      {/* FlatList Slider */}
       <View style={styles.swiperWrapper}>
-        <Swiper
-          autoplay
-          autoplayTimeout={3}
-          loop
-          showsPagination={false}
-          onIndexChanged={setActiveIndex}
-          height={100}>
-          {heroSlider.map((slide, index) => {
-            return (
-              <View key={index} style={styles.slide}>
-                <Image
-                  source={slide.image}
-                  style={styles.slideImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.slideOverlay} />
-              </View>
-            );
-          })}
-        </Swiper>
+        <FlatList
+          ref={listRef}
+          data={heroSlider}
+          keyExtractor={(_, index) => index.toString()}
+          horizontal
+          pagingEnabled={false}
+          showsHorizontalScrollIndicator={false}
+          renderItem={({item}) => (
+            <View style={[styles.slide, {width: itemWidth}]}>
+              <Image
+                source={item.image}
+                style={styles.slideImage}
+                resizeMode="cover"
+              />
+              <View style={styles.slideOverlay} />
+            </View>
+          )}
+        />
       </View>
     </>
   );
@@ -101,10 +122,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   searchContainer: {
     width: '80%',
@@ -174,17 +191,18 @@ const styles = StyleSheet.create({
   },
   swiperWrapper: {
     position: 'absolute',
-    bottom: -50,
-    left: 0,
-    right: 0,
+    bottom: -40,
+    zIndex: 100,
+    left: 30,
+    right: 30,
     height: 100,
-    paddingHorizontal: 40,
+    width: '83%',
   },
   slide: {
-    width: '25%',
     height: 92,
     borderRadius: 10,
     overflow: 'hidden',
+    marginRight: 16,
     position: 'relative',
   },
   slideImage: {

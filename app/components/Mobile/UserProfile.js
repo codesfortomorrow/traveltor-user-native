@@ -19,6 +19,7 @@ import Signup from '../Signup';
 import Backheading from './Backheading';
 import FeedsContainer from './FeedsContainer';
 import Toast from 'react-native-toast-message';
+import FeedLoader from '../Common/FeedLoader';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -419,6 +420,7 @@ const UserProfile = () => {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
         onScroll={({nativeEvent}) => {
           if (isCloseToBottom(nativeEvent)) {
             handleEndReached();
@@ -431,7 +433,7 @@ const UserProfile = () => {
           }
         }}>
         {isLoading ? renderSkeleton() : renderProfile()}
-
+        {isLoading && <FeedLoader />}
         <View style={isLoading ? styles.hidden : styles.feedsContainer}>
           {feeds?.map((item, index) => (
             <FeedsContainer
@@ -650,7 +652,7 @@ const styles = StyleSheet.create({
     height: 60,
   },
   endTrigger: {
-    height: 100,
+    height: 50,
   },
 
   // Skeleton styles

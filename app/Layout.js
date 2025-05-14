@@ -25,7 +25,6 @@ export const FooterLayout = ({children}) => {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       );
-      console.log({granted}, PermissionsAndroid.RESULTS);
       return granted === PermissionsAndroid.RESULTS.GRANTED;
     } else {
       const result = await request(PERMISSIONS.IOS.LOCATION_WHEN_IN_USE);
@@ -52,7 +51,6 @@ export const FooterLayout = ({children}) => {
 
     Geolocation.getCurrentPosition(
       position => {
-        console.log('Position:', position);
         dispatch(
           setLocation({
             latitude: position.coords.latitude,

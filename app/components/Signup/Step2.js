@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {Modal, View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Back from 'react-native-vector-icons/Ionicons';
 import {isYupError, parseYupError} from '../../utils/Yup';
@@ -7,6 +7,7 @@ import {otpValidationSchema} from '../../utils/validation';
 import Constant from '../../utils/constant';
 import Toast from 'react-native-toast-message';
 import {OtpInput} from 'react-native-otp-entry';
+import {AuthContext} from '../../context/AuthContext';
 
 const Step2 = ({
   formData,
@@ -24,6 +25,7 @@ const Step2 = ({
   const [canResend, setCanResend] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const {convertHindiToEnglishNumbers} = Constant();
+  const {setIsLoggedIn} = useContext(AuthContext);
 
   useEffect(() => {
     if (otp) {
@@ -93,6 +95,7 @@ const Step2 = ({
         //       error?.message || 'Failed to send OTP. Please try again.',
         //   }),
         // );
+        Toast.show({type: 'error', text1: res?.error?.message});
       }
     } catch (error) {
       if (isYupError(error)) {

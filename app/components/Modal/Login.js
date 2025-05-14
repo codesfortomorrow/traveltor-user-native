@@ -19,7 +19,6 @@ const Login = ({
   visible,
   onRequestClose,
   setIsLoginOpen,
-  setStep1open,
   moveToSignup,
   onCloseMenu,
 }) => {

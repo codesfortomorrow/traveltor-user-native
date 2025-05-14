@@ -1,52 +1,37 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {Text, View, Image, TouchableOpacity, StyleSheet} from 'react-native';
+import React, {useCallback, useEffect, useState} from 'react';
+import {
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+} from 'react-native';
 import Swiper from 'react-native-swiper';
 import RightIcon from 'react-native-vector-icons/AntDesign';
+import useAuth from '../hooks/useAuth';
 
 const Trailblazers = () => {
-  const [trail, setTrail] = useState([
-    {
-      id: 1,
-      firstname: 'John',
-      lastname: 'Doe',
-      profileImage: null,
-      trekscapesCount: 5,
-    },
-  ]);
+  const [trail, setTrail] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const isFirstRender = useRef(true);
+  const {getTrailblazer} = useAuth();
 
-  // const fetchTreckScapeFeeds = useCallback(
-  //   async (searchTerm, isLoad) => {
-  //     try {
-  //       isLoad && setIsLoading(true);
-  //       const response = await getTrailblazer(searchTerm);
-  //       if (response) {
-  //         setTrail(response?.data);
-  //       }
-  //     } catch (error) {
-  //       return error;
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   },
-  //   [],
-  // );
+  const fetchTreckScapeFeeds = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await getTrailblazer();
+      if (response) {
+        setTrail(response?.data);
+      }
+    } catch (error) {
+      return error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    if (searchTerm.length === 0) {
-      // fetchTreckScapeFeeds();
-    }
-  }, [searchTerm]);
-
-  useEffect(() => {
-    // fetchTreckScapeFeeds('', true);
+    fetchTreckScapeFeeds();
   }, []);
 
   return (
@@ -77,69 +62,55 @@ const Trailblazers = () => {
       </View>
 
       <View style={styles.carouselWrapper}>
-        <Swiper
-          autoplay
-          autoplayTimeout={3}
-          loop
-          showsPagination={false}
-          onIndexChanged={() => {}}
-          height={250}>
-          {isLoading ? (
-            Array.from({length: 5}).map((_, index) => (
-              <View key={index} style={styles.slide}>
-                {/* Replace <Skeleton> with placeholder if needed */}
-                <View style={styles.imageSkeleton} />
-                <View style={styles.overlay}>
-                  <View style={styles.overlayContent}>
-                    <View style={styles.textSkeletonContainer}>
-                      <View style={styles.textSkeleton1} />
-                      <View style={styles.textSkeleton2} />
+        <FlatList
+          data={isLoading ? Array.from({length: 5}) : trail}
+          keyExtractor={(_, index) => index.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{paddingRight: 20}}
+          snapToInterval={132}
+          decelerationRate="fast"
+          pagingEnabled
+          renderItem={({item, index}) => {
+            const slide = isLoading ? null : item;
+            return (
+              <View key={index} style={styles.flatListItem}>
+                {isLoading ? (
+                  <View style={styles.imageSkeleton} />
+                ) : (
+                  <>
+                    <Image
+                      source={
+                        slide?.profileImage
+                          ? {uri: slide?.profileImage}
+                          : require('../../public/images/man.jpg')
+                      }
+                      style={styles.slideImage}
+                    />
+                    <View style={styles.slideDetails}>
+                      <View>
+                        <Text style={styles.nameText}>
+                          {slide.firstname} {slide.lastname}
+                        </Text>
+                        <Text style={styles.countText}>
+                          {slide.trekscapesCount > 99
+                            ? '99+'
+                            : slide.trekscapesCount < 1
+                            ? 1
+                            : slide.trekscapesCount}{' '}
+                          Trekscape
+                        </Text>
+                      </View>
+                      <TouchableOpacity style={styles.arrowButton}>
+                        <RightIcon name="right" size={15} color="#e93c00" />
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.iconSkeleton} />
-                  </View>
-                </View>
+                  </>
+                )}
               </View>
-            ))
-          ) : trail?.length === 0 ? (
-            <View style={styles.emptyMessage}>
-              <Text style={styles.emptyText}>No Trailpoint Found</Text>
-            </View>
-          ) : (
-            trail.map((slide, index) => (
-              <View key={index} style={styles.slide}>
-                <Image
-                  source={
-                    slide.profileImage === null
-                      ? require('../../public/images/man.jpg')
-                      : {uri: `${slide.profileImage}?tr=q-50`}
-                  }
-                  style={styles.slideImage}
-                />
-                {/* <View style={styles.gradientOverlay} /> */}
-                <View style={styles.slideDetails}>
-                  <View>
-                    <Text style={styles.nameText}>
-                      {slide.firstname} {slide.lastname}
-                    </Text>
-                    <Text style={styles.countText}>
-                      {slide.trekscapesCount > 99
-                        ? '99+'
-                        : slide.trekscapesCount < 1
-                        ? 1
-                        : slide.trekscapesCount}{' '}
-                      Trekscape
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    // onPress={() => navigate(`trailblazer/profile/${slide.id}`)}
-                    style={styles.arrowButton}>
-                    <RightIcon name="right" size={15} color="#e93c00" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </Swiper>
+            );
+          }}
+        />
       </View>
     </View>
   );
@@ -198,6 +169,12 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     lineHeight: 23,
     textAlign: 'center',
+  },
+  flatListItem: {
+    width: 130,
+    marginRight: 12,
+    height: 230,
+    position: 'relative',
   },
   carouselWrapper: {
     paddingLeft: 20,
@@ -294,8 +271,8 @@ const styles = StyleSheet.create({
   },
   nameText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '400',
     marginBottom: 8,
     lineHeight: 16,
   },

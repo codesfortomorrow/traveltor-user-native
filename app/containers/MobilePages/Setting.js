@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -6,14 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   Image,
-  Linking,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
-import {getUser} from '../../redux/Slices/userSlice';
 import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
 import Constant from '../../utils/constant';
 
@@ -68,9 +66,7 @@ const Setting = () => {
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity
-        //  onPress={() => navigate('/notification')}
-        >
+        <TouchableOpacity onPress={() => navigate('/notification')}>
           {/* <Badge visible={badgeCount > 0} size={20} style={styles.badge}>
             {badgeCount > 99 ? '99+' : badgeCount}
           </Badge> */}

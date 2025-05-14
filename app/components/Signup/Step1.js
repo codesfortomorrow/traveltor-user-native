@@ -17,6 +17,7 @@ import {registerSchema} from '../../utils/validation';
 import {useRoute} from '@react-navigation/native';
 import {postReq} from '../../utils/apiHandlers';
 import {isYupError, parseYupError} from '../../utils/Yup';
+import Toast from 'react-native-toast-message';
 
 const Step1 = ({
   handleStep1,
@@ -97,6 +98,7 @@ const Step1 = ({
         //       error?.message || 'Failed to send OTP. Please try again.',
         //   }),
         // );
+        Toast.show({type: 'error', text1: res?.error?.message});
       }
     } catch (error) {
       if (isYupError(error)) {

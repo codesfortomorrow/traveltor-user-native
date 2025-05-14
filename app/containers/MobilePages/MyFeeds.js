@@ -25,6 +25,7 @@ import PTRView from 'react-native-pull-to-refresh';
 import {IoCheckmarkSharp} from 'react-native-vector-icons/Ionicons';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import SadIcon from '../../../public/images/sadIcon.svg';
+import FeedLoader from '../../components/Common/FeedLoader';
 
 const MyFeeds = () => {
   //   const dispatch = useDispatch();
@@ -49,6 +50,8 @@ const MyFeeds = () => {
   const pullToRefreshRef = useRef(null);
   const [disablePull, setDisablePull] = useState(false);
   const isCalled = useRef(false);
+  const [isScrollAtTop, setIsScrollAtTop] = useState(true);
+
   //   const {isPending, status, progress, imgUrl, publishedAt} = useSelector(
   //     state => state.publish,
   //   );
@@ -196,6 +199,8 @@ const MyFeeds = () => {
   // Handle infinite scrolling
   const handleScroll = ({nativeEvent}) => {
     const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
+    setIsScrollAtTop(contentOffset.y <= 0);
+
     const isCloseToBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
 
@@ -279,9 +284,11 @@ const MyFeeds = () => {
   }).current;
 
   const handleRefresh = async () => {
-    setIsPageRefresh(false);
-    setPageNumber(0);
-    await fetchTreckScapeFeeds(0, true, true);
+    if (isScrollAtTop) {
+      setIsPageRefresh(false);
+      setPageNumber(0);
+      await fetchTreckScapeFeeds(0, true, true);
+    }
   };
 
   useEffect(() => {
@@ -382,17 +389,18 @@ const MyFeeds = () => {
   return (
     <View style={styles.container}>
       <Backheading heading={'My Feeds'} notifyIcon={true} nextTrip={false} />
-      <PTRView
-        onRefresh={disablePull ? null : handleRefresh}
+      {/* <PTRView
+        onRefresh={isScrollAtTop && !disablePull ? handleRefresh : null}
         ref={pullToRefreshRef}
-        style={styles.ptrView}>
-        <ScrollView
-          ref={feedContainerRef}
-          style={styles.scrollView}
-          onScroll={handleScroll}
-          onScrollEndDrag={handleScrollEnd}
-          scrollEventThrottle={16}>
-          {/* {isPending && (
+        style={styles.ptrView}> */}
+      <ScrollView
+        ref={feedContainerRef}
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollEndDrag={handleScrollEnd}
+        scrollEventThrottle={16}>
+        {/* {isPending && (
             <PublishStatus
               publishStatus={{
                 isPending,
@@ -403,52 +411,52 @@ const MyFeeds = () => {
               }}
             />
           )} */}
-          <View style={styles.feedContainer}>
-            {/* {isLoading && <FeedLoader />} */}
-            {!isLoading && feeds?.length > 0
-              ? feeds?.map((item, index) => (
-                  <View key={index} style={styles.feedItem}>
-                    <FeedsContainer
-                      item={item}
-                      indexed={index}
-                      handleLike={() =>
-                        handleLikeDislike(item?.id, index, 'Like')
-                      }
-                      handleDislike={() =>
-                        handleLikeDislike(item?.id, index, 'Dislike')
-                      }
-                      commentModal={commentModal}
-                      setIsLoading={setIsLoading}
-                      setCommentModal={setCommentModal}
-                      setPostId={setPostId}
-                      setFeedUsername={setFeedUsername}
-                      setIsShoutOut={setIsShoutOut}
-                      setShoutOutFeed={setShoutOutFeed}
-                      reactionDisabled={reactionDisabled}
-                      handleTouchStart={handleTouchStart}
-                      handleTouchEnd={handleTouchEnd}
-                    />
+        <View style={styles.feedContainer}>
+          {isLoading && <FeedLoader />}
+          {!isLoading && feeds?.length > 0
+            ? feeds?.map((item, index) => (
+                <View key={index} style={styles.feedItem}>
+                  <FeedsContainer
+                    item={item}
+                    indexed={index}
+                    handleLike={() =>
+                      handleLikeDislike(item?.id, index, 'Like')
+                    }
+                    handleDislike={() =>
+                      handleLikeDislike(item?.id, index, 'Dislike')
+                    }
+                    commentModal={commentModal}
+                    setIsLoading={setIsLoading}
+                    setCommentModal={setCommentModal}
+                    setPostId={setPostId}
+                    setFeedUsername={setFeedUsername}
+                    setIsShoutOut={setIsShoutOut}
+                    setShoutOutFeed={setShoutOutFeed}
+                    reactionDisabled={reactionDisabled}
+                    handleTouchStart={handleTouchStart}
+                    handleTouchEnd={handleTouchEnd}
+                  />
+                </View>
+              ))
+            : noData && (
+                <View style={styles.noDataContainer}>
+                  <View style={styles.noDataImage}>
+                    <SadIcon width={30} height={30} />
                   </View>
-                ))
-              : noData && (
-                  <View style={styles.noDataContainer}>
-                    <View style={styles.noDataImage}>
-                      <SadIcon width={30} height={30} />
-                    </View>
-                    <Text style={styles.noDataText}>
-                      Oops! No feeds available at this moment
-                    </Text>
-                  </View>
-                )}
-            {contentLoader && (
-              <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#e93c00" />
-              </View>
-            )}
-            <View style={styles.endLoader} ref={loader} />
-          </View>
-        </ScrollView>
-      </PTRView>
+                  <Text style={styles.noDataText}>
+                    Oops! No feeds available at this moment
+                  </Text>
+                </View>
+              )}
+          {contentLoader && (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color="#e93c00" />
+            </View>
+          )}
+          <View style={styles.endLoader} ref={loader} />
+        </View>
+      </ScrollView>
+      {/* </PTRView> */}
       {/* <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}

@@ -21,6 +21,8 @@ import HowItWorks from './app/containers/Links/HowItWorks';
 import AlpinistProgram from './app/containers/Links/AlphinistProgram';
 import {FeedProvider} from './app/context/FeedContext';
 import MyFeeds from './app/containers/MobilePages/MyFeeds';
+import Trekscapes from './app/containers/Trekscapes/Trekscapes';
+import Notification from './app/containers/MobilePages/Notification';
 
 const Stack = createNativeStackNavigator();
 
@@ -135,6 +137,24 @@ function App() {
                     children={() => (
                       <FooterLayout>
                         <MyFeeds />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Trekscapes"
+                    children={() => (
+                      <FooterLayout>
+                        <Trekscapes />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="Notification"
+                    children={() => (
+                      <FooterLayout>
+                        <Notification />
                       </FooterLayout>
                     )}
                     options={{headerShown: false}}

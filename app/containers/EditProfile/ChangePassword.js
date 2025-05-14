@@ -80,7 +80,7 @@ const ChangePassword = () => {
               />
             </TouchableOpacity>
           </View>
-          {error.oldPassword && renderError(error.oldPassword)}
+          {error?.oldPassword && renderError(error.oldPassword)}
         </View>
 
         {/* New Password Input */}
@@ -106,10 +106,10 @@ const ChangePassword = () => {
                 name={showNew ? 'eye' : 'eye-slash'}
                 size={18}
                 color="#e93c00"
-              />{' '}
+              />
             </TouchableOpacity>
           </View>
-          {error.newPassword && renderError(error.newPassword)}
+          {error?.newPassword && renderError(error.newPassword)}
         </View>
 
         {/* Confirm Password Input */}
@@ -138,7 +138,7 @@ const ChangePassword = () => {
               />
             </TouchableOpacity>
           </View>
-          {error.confirmPassword && renderError(error.confirmPassword)}
+          {error?.confirmPassword && renderError(error.confirmPassword)}
         </View>
 
         {/* Submit Button */}

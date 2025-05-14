@@ -12,7 +12,9 @@ const HomePage = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <FooterLayout>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}>
               <Layout>
                 <HeroSection />
               </Layout>

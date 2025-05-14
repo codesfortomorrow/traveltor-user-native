@@ -13,22 +13,20 @@ const UploadProfile = () => {
   const {requestStoragePermission} = Constant();
 
   const handlePickImage = async () => {
-    const hasPermission = await requestStoragePermission();
-    if (!hasPermission) {
-      // Toast.show({
-      //   type: 'error',
-      //   text1: 'Permission denied',
-      // });
-      return;
-    }
+    // const hasPermission = await requestStoragePermission();
+    // if (!hasPermission) {
+    //   return;
+    // }
 
-    const result = await launchImageLibrary(
+    await launchImageLibrary(
       {
         mediaType: 'photo',
         quality: 0.8,
+        selectionLimit: 1,
         includeBase64: false,
       },
       async response => {
+        console.log(response, 'response');
         if (response.didCancel) {
           return;
         }

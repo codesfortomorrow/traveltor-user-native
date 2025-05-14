@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,15 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import {Picker} from '@react-native-picker/picker';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {renderError} from '../../utils/validation';
 import UploadProfile from './UploadProfile';
 import moment from 'moment';
 import useAuth from '../../hooks/useAuth';
 import Constant from '../../utils/constant';
 import Toast from 'react-native-toast-message';
+import {getUser} from '../../redux/Slices/userSlice';
+import {AuthContext} from '../../context/AuthContext';
 
 const initialDate = {
   day: '',
@@ -38,6 +40,7 @@ const initialState = {
 
 const UpdateProfile = () => {
   const user = useSelector(state => state.user);
+  const dispatch = useDispatch();
   const textareaRef = useRef(null);
   const {updateUser} = useAuth();
   const [error, setError] = useState({});
@@ -45,6 +48,7 @@ const UpdateProfile = () => {
   const [form, setForm] = useState(initialState);
   const [loading, setIsloading] = useState(false);
   const {countryList, generateDays, generateMonths, generateYears} = Constant();
+  const {isLoggedIn} = useContext(AuthContext);
 
   const handleChange = (name, value) => {
     setForm(prevData => ({
@@ -118,6 +122,7 @@ const UpdateProfile = () => {
     if (response?.status) {
       Toast.show({type: 'success', text1: 'Profile Updated Successfully'});
       setError({});
+      dispatch(getUser(isLoggedIn));
     } else {
       console.log(error, 'error');
       setError(error);

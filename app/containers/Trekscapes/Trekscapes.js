@@ -1,20 +1,32 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  Image,
+  SafeAreaView,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuth from '../../hooks/useAuth';
 import debounce from 'lodash/debounce';
 import {getAuthReq, getReq} from '../../utils/apiHandlers';
-import {Swiper, SwiperSlide} from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/pagination';
+import Swiper from 'react-native-swiper';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
+import {SafeAreaProvider} from 'react-native-safe-area-context';
+import DoubleRight from 'react-native-vector-icons/AntDesign';
 
 const Trekscapes = () => {
   const {navigate} = useNavigation();
-  const {search: paramSearch} = useRoute().params;
-  const [categoryId, setCategoryId] = useState(
-    sessionStorage.getItem('categoryId') || '1',
-  );
+  const route = useRoute();
+  const paramSearch = route.params?.search || '';
+  const [categoryId, setCategoryId] = useState('1');
   const [isLoading, setIsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState(paramSearch || '');
@@ -35,7 +47,30 @@ const Trekscapes = () => {
   const [haslive, setHasLive] = useState(false);
 
   useEffect(() => {
-    sessionStorage.setItem('categoryId', categoryId);
+    const loadCategoryId = async () => {
+      try {
+        const storedCategoryId = await AsyncStorage.getItem('categoryId');
+        if (storedCategoryId) {
+          setCategoryId(storedCategoryId);
+        }
+      } catch (error) {
+        console.log('Error loading categoryId from AsyncStorage', error);
+      }
+    };
+
+    loadCategoryId();
+  }, []);
+
+  useEffect(() => {
+    const saveCategoryId = async () => {
+      try {
+        await AsyncStorage.setItem('categoryId', categoryId);
+      } catch (error) {
+        console.log('Error saving categoryId to AsyncStorage', error);
+      }
+    };
+
+    saveCategoryId();
   }, [categoryId]);
 
   const fetchCategory = async () => {
@@ -50,7 +85,6 @@ const Trekscapes = () => {
   };
 
   const fetchLiveEvents = async ({latitude, longitude}) => {
-    // setHasLive(false);
     setEventLoading(true);
     if (latitude && longitude) {
       const resLive = await getReq(
@@ -84,7 +118,7 @@ const Trekscapes = () => {
         createdAt: new Date().toISOString(),
         name: 'Live',
         slug: 'live',
-        icon: '/images/server-server-gif.gif',
+        icon: require('../../../public/images/live.gif'),
         id: 0,
       };
 
@@ -138,8 +172,8 @@ const Trekscapes = () => {
     }
   };
 
-  const handleSearchChange = e => {
-    setSearchTerm(e.target.value);
+  const handleSearchChange = text => {
+    setSearchTerm(text);
     setPageNumber(0);
   };
 
@@ -163,20 +197,12 @@ const Trekscapes = () => {
     return () => debouncedFetchTrekscape.cancel();
   }, [searchTerm, categoryId, pageNumber, location]);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      entries => {
-        if (entries[0].isIntersecting && hasMore && !contentLoading) {
-          setPageNumber(prev => prev + 1);
-        }
-      },
-      {threshold: 1.0},
-    );
-
-    if (loader.current) observer.observe(loader.current);
-
-    return () => observer.disconnect();
-  }, [hasMore, contentLoading]);
+  // Replace IntersectionObserver with React Native's onEndReached
+  const handleEndReached = () => {
+    if (hasMore && !contentLoading) {
+      setPageNumber(prev => prev + 1);
+    }
+  };
 
   useEffect(() => {
     setSearchTerm('');
@@ -187,7 +213,7 @@ const Trekscapes = () => {
     setIsLoading(true);
 
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = 0;
+      scrollContainerRef.current.scrollTo({x: 0, y: 0, animated: true});
     }
   }, [categoryId]);
 
@@ -264,422 +290,881 @@ const Trekscapes = () => {
     };
   }
 
-  // useEffect(() => {
-  //   const savedScrollPos = sessionStorage.getItem('trekscapeScrollPos');
-  //   if (savedScrollPos) {
-  //     if (scrollContainerRef.current) {
-  //       scrollContainerRef.current.scrollTo({
-  //         top: parseInt(savedScrollPos),
-  //         behavior: 'instant',
-  //       });
-  //     } else {
-  //       window.scrollTo({ top: parseInt(savedScrollPos), behavior: 'instant' });
-  //     }
-  //   }
+  const renderSwiperSlider = ({images, id}) => {
+    return (
+      <View style={styles.swiperContainer}>
+        <Swiper
+          style={styles.swiper}
+          showsPagination={true}
+          loop={false}
+          dotStyle={styles.swiperDot}
+          activeDotStyle={styles.swiperActiveDot}>
+          {images?.map((image, index) => (
+            <View key={index} style={styles.swiperSlide}>
+              <Image source={{uri: image}} style={styles.swiperImage} />
+            </View>
+          ))}
+        </Swiper>
+      </View>
+    );
+  };
 
-  //   const handleScroll = () => {
-  //     const scrollPos = scrollContainerRef.current
-  //       ? scrollContainerRef.current.scrollTop
-  //       : window.scrollY;
-  //     sessionStorage.setItem('trekscapeScrollPos', scrollPos);
-  //   };
+  const Skeleton = ({height, width, circle}) => {
+    return (
+      <View
+        style={[
+          styles.skeleton,
+          {
+            height,
+            width: width || '100%',
+            borderRadius: circle ? height / 2 : 8,
+          },
+        ]}
+      />
+    );
+  };
 
-  //   const scrollElement = scrollContainerRef.current || window;
-  //   scrollElement.addEventListener('scroll', handleScroll);
+  const TrekscapeTopBar = ({
+    categoryId,
+    setCategoryId,
+    category,
+    setCategorySlug,
+  }) => {
+    return (
+      <View style={styles.topBarContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {category.map(item => (
+            <TouchableOpacity
+              key={item.id}
+              style={[
+                styles.categoryItem,
+                categoryId === String(item.id) && styles.activeCategoryItem,
+              ]}
+              onPress={() => {
+                setCategoryId(String(item.id));
+                setCategorySlug(item.slug);
+              }}>
+              <Text
+                style={[
+                  styles.categoryText,
+                  categoryId === String(item.id) && styles.activeCategoryText,
+                ]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
 
-  //   return () => {
-  //     scrollElement.removeEventListener('scroll', handleScroll);
-  //   };
-  // }, []);
+  const renderFeedMenu = ({feed}) => {
+    // Placeholder for FeedMenu component
+    return (
+      <TouchableOpacity style={styles.feedMenuButton}>
+        <Text>⋯</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <div className="h-auto min-h-[95vh] shadow-topHeader">
-      <div className="flex-center w-full">
-        <TrekscapeTopBar
-          categoryId={String(categoryId)}
-          setCategoryId={setCategoryId}
-          category={category}
-          setCategorySlug={setCategorySlug}
-        />
-      </div>
-      {categorySlug != 'live' && (
-        <div
-          ref={scrollContainerRef}
-          className="py-4 h-[calc(100vh-100px)] overflow-auto no-scrollbar">
-          {isLoading ? (
-            <div className="w-[70%] mx-auto">
-              <Skeleton
-                height={40}
-                width="100%"
-                className="rounded-[25px] border border-[#EFEFEF] px-5 py-2"
-              />
-            </div>
-          ) : (
-            <>
-              {(treckScapeList?.length > 0 || searchTerm) && (
-                <div className="relative w-[70%] mx-auto">
-                  <input
-                    type="text"
-                    placeholder={`Search for ${currentCategory?.name.trim()} Trekscapes`}
-                    className="border border-[#EFEFEF] w-full pl-5 pr-9 py-2 shadow-searchInput rounded-[25px] font-inter text-12 outline-none"
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                  />
-                  {searchTerm ? (
-                    <RxCross1
-                      className="ay-center bg-white rounded-full right-5 h-4 w-4 hover:text-primary-1200"
-                      onClick={handleClearSearch}
-                    />
-                  ) : (
-                    <CustomImage
-                      className="ay-center right-5 h-5 w-5"
-                      src="/images/mobtrekscape/search.svg"
-                      alt="search"
-                    />
-                  )}
-                </div>
-              )}
-            </>
-          )}
-          <div className="grid grid-cols-1 gap-5 m-4">
-            {isLoading &&
-              Array.from({length: 4}).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center max-w-[340px] w-full overflow-hidden mx-auto mb-3">
-                  <div className="w-full h-[325px] rounded-[24px]">
-                    <Skeleton height={325} className="rounded-[24px] w-full" />
-                  </div>
-                  <div className="flex justify-between items-center w-full h-[56px] mt-2">
-                    <div>
-                      <Skeleton height={17} width={100} className="mb-2" />
-                      <div className="flex items-center gap-4">
-                        <Skeleton height={15} width={150} />
-                        <Skeleton height={15} width={100} />
-                      </div>
-                    </div>
-                    <Skeleton width={28} height={36} />
-                  </div>
-                </div>
-              ))}{' '}
-            {!isLoading &&
-              (treckScapeList.length > 0 ? (
-                treckScapeList?.map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex flex-col items-center max-w-[340px] w-full overflow-hidden mx-auto mb-3">
-                    <SwiperSlider images={item?.previewMedia} id={item?.slug} />
-                    <div className="flex items-center justify-between w-full">
-                      <div>
-                        <h1 className="my-1 text-14 font-medium font-jakarta">
-                          {item?.name}
-                        </h1>
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <CustomImage
-                              src="/images/mobtrekscape/location.svg"
-                              className="h-[15px] w-[15px] object-cover"
-                              alt="location"
-                            />
-                            <p className="font-inter text-12">
-                              {item?.trailPoints || '0'} Trail Points
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <CustomImage
-                              src="/images/mobtrekscape/man.svg"
-                              className="h-[15px] w-[15px] object-cover"
-                              alt="man"
-                            />
-                            <p className="font-inter text-12">
-                              {item?.treksters || '0'} Treksters
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className="px-1 py-2 flex-center bg-primary-1200 rounded cursor-pointer"
-                        onClick={() => navigate(`/trekscape/${item?.slug}`)}>
-                        <span className="text-white text-xl">
-                          {reactIcons.doubleRight}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : searchTerm ? (
-                <div className="flex flex-col items-center justify-center gap-5 h-[calc(100vh-165px)]">
-                  <CustomImage
-                    src="/images/sadIcon.svg"
-                    className="h-[60px]"
-                    alt="sad"
-                  />
-                  <p className="text-center text-[#000000b3]">
-                    No results found for {searchTerm}. Please check the spelling
-                    or try searching for another trekscape.
-                  </p>
-                  <p
-                    className="text-center hover:text-primary-1200 cursor-pointer"
-                    onClick={() => (setSearchTerm(''), setIsLoading(true))}>
-                    Back To Page
-                  </p>
-                </div>
+    <SafeAreaProvider>
+      <SafeAreaView>
+        <View style={styles.container}>
+          <View style={styles.topBarWrapper}>
+            <TrekscapeTopBar
+              categoryId={String(categoryId)}
+              setCategoryId={setCategoryId}
+              category={category}
+              setCategorySlug={setCategorySlug}
+            />
+          </View>
+
+          {categorySlug !== 'live' ? (
+            <ScrollView
+              ref={scrollContainerRef}
+              style={styles.scrollContainer}
+              showsVerticalScrollIndicator={false}
+              onScroll={({nativeEvent}) => {
+                // Check if reached end for pagination
+                const {layoutMeasurement, contentOffset, contentSize} =
+                  nativeEvent;
+                const paddingToBottom = 20;
+                if (
+                  layoutMeasurement.height + contentOffset.y >=
+                  contentSize.height - paddingToBottom
+                ) {
+                  handleEndReached();
+                }
+                // Save scroll position if needed
+                // saveScrollPosition(contentOffset.y);
+              }}
+              scrollEventThrottle={400}>
+              {isLoading ? (
+                <View style={styles.searchContainer}>
+                  <Skeleton height={40} width="100%" />
+                </View>
               ) : (
-                noData && (
-                  <div className="flex flex-col items-center justify-center gap-5 h-[calc(100vh-165px)]">
-                    <CustomImage
-                      src="/images/sadIcon.svg"
-                      className="h-[60px]"
-                      alt="sad"
-                    />
-                    <p className="text-center text-[#000000b3]">
-                      Oops! No Trekscapes available at this moment.
-                    </p>
-                  </div>
-                )
-              ))}
-          </div>
-          {contentLoading && (
-            <div className="flex justify-center items-center py-4">
-              <div className="loader"></div>
-            </div>
-          )}
-          <div ref={loader} className="h-[50px]"></div>
-        </div>
-      )}
-
-      {categorySlug == 'live' && (
-        <div
-          ref={scrollContainerRef}
-          className="py-4 h-[calc(100vh-100px)] overflow-auto no-scrollbar">
-          <div className="grid grid-cols-1 gap-5 mt-3">
-            {eventLoading &&
-              Array.from({length: 4}).map((_, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col gap-2 items-start max-w-[393px] ps-[25px] w-full overflow-hidden mx-auto mb-3">
-                  {/* Header Section */}
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="flex flex-col items-center justify-center w-[41px] h-[41px] rounded-full overflow-hidden bg-gray-300 animate-pulse"></div>
-                    <div className="font-inter">
-                      <p className="text-sm font-medium">
-                        <Skeleton width={120} />
-                      </p>
-                      <p className="flex items-center font-normal text-[8px]">
-                        <Skeleton width={100} />
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Image and Reviews Section */}
-                  <Swiper
-                    slidesPerView={1.3}
-                    spaceBetween={10}
-                    pagination={{clickable: true}}
-                    className="mySwiper">
-                    {[1, 2, 3].map((_, index) => (
-                      <SwiperSlide key={index}>
-                        <div className="relative h-[400px] w-[265px] flex gap-5 items-center rounded-[15px] overflow-hidden bg-gray-200 animate-pulse">
-                          <div className="h-full w-[265px]">
-                            <Skeleton height={310} width={265} />
-                          </div>
-
-                          <div className="absolute w-full h-[141px] bottom-0 bg-event px-2 py-1 rounded-14">
-                            <div className="flex items-center justify-end">
-                              <div className="flex items-center">
-                                <Skeleton width={50} />
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <div>
-                                <Skeleton circle height={50} width={50} />
-                              </div>
-                              <div>
-                                <Skeleton width={100} />
-                                <Skeleton width={60} height={20} />
-                              </div>
-                            </div>
-
-                            <Skeleton count={2} width={'90%'} />
-                            <Skeleton width={120} height={20} />
-                          </div>
-                        </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
-                </div>
-              ))}
-            {liveEvents &&
-              liveEvents?.map((event, index) => {
-                return (
-                  <div
-                    key={index}
-                    className={`${
-                      eventLoading ? 'hidden' : 'flex'
-                    } flex-col gap-2 items-start max-w-[393px] ps-[25px] w-full overflow-hidden mx-auto mb-3`}>
-                    <div className="flex items-center justify-between w-full">
-                      <div
-                        className="flex items-center gap-2 w-fit cursor-pointer"
-                        onClick={() =>
-                          navigate(`/trekscape/${event?.trekscapeSlug}`)
-                        }>
-                        <div
-                          className={`flex flex-col items-center justify-center w-[41px] h-[41px] rounded-full overflow-hidden ${
-                            event?.isLive ||
-                            getTimeDifference(event?.startTime).toString() ==
-                              'LIVE'
-                              ? 'event-live'
-                              : 'event-pending'
-                          }`}>
-                          <p className="font-medium font-inter text-sm text-white">
-                            {event?.isLive ||
-                            getTimeDifference(event?.startTime).toString() ==
-                              'LIVE'
-                              ? 'LIVE'
-                              : getTimeDifference(event?.startTime).toString()}
-                          </p>
-                          {!event?.isLive &&
-                            getTimeDifference(event?.startTime).toString() !==
-                              'LIVE' && (
-                              <span className="font-medium font-inter text-[7px] text-white mt-[-9px]">
-                                {getTimeDifference(event?.startTime).timeframe}
-                              </span>
-                            )}
-                        </div>
-                        <div className="font-inter">
-                          <p className="text-sm font-medium">{event?.name}</p>
-                          <p className="flex items-center font-normal text-[8px]">
-                            <CustomImage src="/images/Pin.svg" alt="pin" />{' '}
-                            {(event?.distance / 1000).toFixed(2)} KM far from
-                            your place
-                          </p>
-                        </div>
-                      </div>
-                      <FeedMenu
-                        feed={event}
-                        // setIsShoutOut={setIsShoutOut}
-                        // setShoutOutFeed={setShoutOutFeed}
+                <>
+                  {(treckScapeList?.length > 0 || searchTerm) && (
+                    <View style={styles.searchContainer}>
+                      <TextInput
+                        style={styles.searchInput}
+                        placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
+                        value={searchTerm}
+                        onChangeText={handleSearchChange}
                       />
-                    </div>
+                      <TouchableOpacity
+                        style={styles.searchIcon}
+                        onPress={searchTerm ? handleClearSearch : null}>
+                        <Text>{searchTerm ? '✕' : '🔍'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
 
-                    {reviewsMap[event?.slug]?.length > 0 ? (
-                      <Swiper
-                        slidesPerView={1.3}
-                        spaceBetween={10}
-                        pagination={{
-                          clickable: true,
-                        }}
-                        // modules={[Pagination]}
-                        className="mySwiper">
-                        {reviewsMap[event?.slug]?.map((review, index) => {
-                          return (
-                            <SwiperSlide key={index}>
-                              <div className="relative h-[400px] w-[265px] flex gap-5 items-center rounded-[15px] overflow-hidden">
-                                <div className="h-full w-[265px]">
-                                  <CustomImage
-                                    src={review.media[0]}
-                                    className="object-cover w-full h-full"
-                                    alt={`slide ${index + 1}`}
-                                  />
-                                </div>
+              <View style={styles.gridContainer}>
+                {isLoading &&
+                  Array.from({length: 4}).map((_, index) => (
+                    <View key={index} style={styles.trekscapeCard}>
+                      <Skeleton height={325} />
+                      <View style={styles.cardFooter}>
+                        <View>
+                          <Skeleton height={17} width={100} />
+                          <View style={styles.statsContainer}>
+                            <Skeleton height={15} width={150} />
+                            <Skeleton height={15} width={100} />
+                          </View>
+                        </View>
+                        <Skeleton width={28} height={36} />
+                      </View>
+                    </View>
+                  ))}
 
-                                <div className="absolute w-full h-[141px] bottom-0 bg-event px-2 py-1 rounded-14">
-                                  <div className="flex items-center justify-end">
-                                    <div className="flex items-center">
-                                      <CustomImage
-                                        src="/images/Pin (1).svg"
-                                        alt="pin"
-                                        className="w-[14px]"
-                                      />
-                                      <p className="text-white font-inter font-medium text-8 capitalize">
-                                        {/* {moment(item?.createdAt).fromNow()} */}{' '}
-                                        {moment(
-                                          Number(review?.timestamp),
-                                        ).fromNow()}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <div>
-                                      <CustomImage
-                                        src={
-                                          review?.user?.profileImage ||
-                                          '/images/dpPlaceholder.png'
-                                        }
-                                        className="border border-[#F2E3DD] h-[50px] rounded-full w-[50px] object-cover"
-                                        alt="profile"
-                                      />
-                                    </div>
-                                    <div>
-                                      <h1 className="font-inter font-semibold text-14 text-white">
-                                        {review?.user?.firstname}{' '}
-                                        {review?.user?.lastname}
-                                      </h1>
-                                      <p className="bg-gradient-orange1  px-1 rounded-10 font-inter text-center text-8 text-white w-[57px] h-[20px] flex items-center justify-center">
-                                        {' '}
-                                        {review?.visitType == 'MustVisit'
-                                          ? 'Must Go'
-                                          : 'Least Go'}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <p className="font-inter font-300 text-10 text-white leading-4 px-1 pt-2 line-clamp-2">
-                                    {review?.review}
-                                  </p>
-
-                                  <p
-                                    className="text-white font-medium underline text-sm font-inter cursor-pointer"
-                                    onClick={() =>
-                                      navigate(`/checkins/${event?.slug}`)
-                                    }>
-                                    See Full Review
-                                  </p>
-                                </div>
-                              </div>
-                            </SwiperSlide>
-                          );
+                {!isLoading &&
+                  (treckScapeList.length > 0 ? (
+                    treckScapeList?.map((item, index) => (
+                      <View key={index} style={styles.trekscapeCard}>
+                        {renderSwiperSlider({
+                          images: item?.previewMedia,
+                          id: item?.slug,
                         })}
-                      </Swiper>
-                    ) : (
-                      <Swiper
-                        slidesPerView={1.3}
-                        spaceBetween={10}
-                        pagination={{
-                          clickable: true,
-                        }}
-                        className="mySwiper">
-                        {event?.previewMedia?.map((image, index) => (
-                          <SwiperSlide key={index} className="">
-                            <div
-                              className="h-[400px] relative w-[265px] overflow-hidden"
-                              // onClick={() => navigate(`/checkins/${slug}`)}
-                            >
-                              <CustomImage
-                                src={image}
-                                alt="image"
-                                className="w-full object-cover rounded-14 h-full"
-                              />
-                            </div>
-                          </SwiperSlide>
+                        <View style={styles.cardFooter}>
+                          <View>
+                            <Text style={styles.cardTitle}>{item?.name}</Text>
+                            <View style={styles.statsContainer}>
+                              <View style={styles.statItem}>
+                                <Image
+                                  source={require('../../../public/images/mobtrekscape/location.svg')}
+                                  style={styles.statIcon}
+                                />
+                                <Text style={styles.statText}>
+                                  {item?.trailPoints || '0'} Trail Points
+                                </Text>
+                              </View>
+                              <View style={styles.statItem}>
+                                <Image
+                                  source={require('../../../public/images/mobtrekscape/man.svg')}
+                                  style={styles.statIcon}
+                                />
+                                <Text style={styles.statText}>
+                                  {item?.treksters || '0'} Treksters
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            style={styles.navigateButton}
+                            onPress={() =>
+                              navigate('TrekscapeDetail', {slug: item?.slug})
+                            }>
+                            <DoubleRight
+                              name="doubleright"
+                              color="#fff"
+                              size={16}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))
+                  ) : searchTerm ? (
+                    <View style={styles.emptyStateContainer}>
+                      <Image
+                        source={require('../../../public/images/sadIcon.svg')}
+                        style={styles.emptyStateIcon}
+                      />
+                      <Text style={styles.emptyStateText}>
+                        No results found for {searchTerm}. Please check the
+                        spelling or try searching for another trekscape.
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSearchTerm('');
+                          setIsLoading(true);
+                        }}>
+                        <Text style={styles.emptyStateButton}>
+                          Back To Page
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    noData && (
+                      <View style={styles.emptyStateContainer}>
+                        <Image
+                          source={require('../../../public/images/sadIcon.svg')}
+                          style={styles.emptyStateIcon}
+                        />
+                        <Text style={styles.emptyStateText}>
+                          Oops! No Trekscapes available at this moment.
+                        </Text>
+                      </View>
+                    )
+                  ))}
+              </View>
+
+              {contentLoading && (
+                <View style={styles.loaderContainer}>
+                  <ActivityIndicator size="large" color="#e93c00" />
+                </View>
+              )}
+
+              <View style={styles.endSpace} />
+            </ScrollView>
+          ) : (
+            <ScrollView
+              ref={scrollContainerRef}
+              style={styles.scrollContainer}
+              onScroll={({nativeEvent}) => {
+                const {layoutMeasurement, contentOffset, contentSize} =
+                  nativeEvent;
+                const paddingToBottom = 20;
+                if (
+                  layoutMeasurement.height + contentOffset.y >=
+                  contentSize.height - paddingToBottom
+                ) {
+                  handleEndReached();
+                }
+                // saveScrollPosition(contentOffset.y);
+              }}
+              scrollEventThrottle={400}>
+              <View style={styles.liveEventsContainer}>
+                {eventLoading &&
+                  Array.from({length: 4}).map((_, index) => (
+                    <View key={index} style={styles.liveEventCard}>
+                      {/* Header Section */}
+                      <View style={styles.liveEventHeader}>
+                        <View style={styles.skeletonAvatar} />
+                        <View>
+                          <Skeleton width={120} height={15} />
+                          <Skeleton width={100} height={10} />
+                        </View>
+                      </View>
+
+                      {/* Image and Reviews Section */}
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}>
+                        {[1, 2, 3].map((_, slideIndex) => (
+                          <View key={slideIndex} style={styles.liveEventSlide}>
+                            <Skeleton height={310} width={265} />
+                            <View style={styles.liveEventOverlay}>
+                              <View style={styles.liveEventOverlayHeader}>
+                                <Skeleton width={50} height={12} />
+                              </View>
+                              <View style={styles.liveEventUser}>
+                                <Skeleton circle height={50} width={50} />
+                                <View>
+                                  <Skeleton width={100} height={14} />
+                                  <Skeleton width={60} height={20} />
+                                </View>
+                              </View>
+                              <Skeleton count={2} width={'90%'} height={12} />
+                              <Skeleton width={120} height={20} />
+                            </View>
+                          </View>
                         ))}
-                      </Swiper>
-                    )}
-                  </div>
-                );
-              })}
-            {/* {contentLoading && (
-              <div className="flex justify-center items-center py-4">
-                <div className="loader"></div>
-              </div>
-            )} */}
-            <div className="h-[50px]"></div>
-          </div>
-        </div>
-      )}
-    </div>
+                      </ScrollView>
+                    </View>
+                  ))}
+
+                {liveEvents &&
+                  liveEvents?.map((event, index) => {
+                    return (
+                      <View
+                        key={index}
+                        style={[
+                          styles.liveEventCard,
+                          eventLoading && styles.hidden,
+                        ]}>
+                        <View style={styles.liveEventHeaderFull}>
+                          <TouchableOpacity
+                            style={styles.liveEventUserInfo}
+                            onPress={() =>
+                              navigate('TrekscapeDetail', {
+                                slug: event?.trekscapeSlug,
+                              })
+                            }>
+                            <View
+                              style={[
+                                styles.liveStatusIndicator,
+                                (event?.isLive ||
+                                  getTimeDifference(
+                                    event?.startTime,
+                                  ).toString() == 'LIVE') &&
+                                  styles.liveStatusActive,
+                              ]}>
+                              <Text style={styles.liveStatusText}>
+                                {event?.isLive ||
+                                getTimeDifference(
+                                  event?.startTime,
+                                ).toString() == 'LIVE'
+                                  ? 'LIVE'
+                                  : getTimeDifference(
+                                      event?.startTime,
+                                    ).toString()}
+                              </Text>
+                              {!event?.isLive &&
+                                getTimeDifference(
+                                  event?.startTime,
+                                ).toString() !== 'LIVE' && (
+                                  <Text style={styles.liveStatusSubtext}>
+                                    {
+                                      getTimeDifference(event?.startTime)
+                                        .timeframe
+                                    }
+                                  </Text>
+                                )}
+                            </View>
+                            <View>
+                              <Text style={styles.liveEventTitle}>
+                                {event?.name}
+                              </Text>
+                              <View style={styles.liveEventLocation}>
+                                <Image
+                                  source={require('../../../public/images/Pin.svg')}
+                                  style={styles.pinIcon}
+                                />
+                                <Text style={styles.distanceText}>
+                                  {(event?.distance / 1000).toFixed(2)} KM far
+                                  from your place
+                                </Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                          {renderFeedMenu({feed: event})}
+                        </View>
+
+                        {reviewsMap[event?.slug]?.length > 0 ? (
+                          <Swiper
+                            style={styles.swiper}
+                            showsPagination={true}
+                            loop={false}>
+                            {reviewsMap[event?.slug]?.map(
+                              (review, reviewIndex) => {
+                                return (
+                                  <View
+                                    key={reviewIndex}
+                                    style={styles.reviewSlide}>
+                                    <Image
+                                      source={{uri: review.media[0]}}
+                                      style={styles.reviewImage}
+                                    />
+                                    <View style={styles.reviewOverlay}>
+                                      <View style={styles.reviewTimestamp}>
+                                        <Image
+                                          source={require('../../../public/images/Pin (1).svg')}
+                                          style={styles.pinIconSmall}
+                                        />
+                                        <Text style={styles.timestampText}>
+                                          {moment(
+                                            Number(review?.timestamp),
+                                          ).fromNow()}
+                                        </Text>
+                                      </View>
+                                      <View style={styles.reviewUserInfo}>
+                                        <Image
+                                          source={{
+                                            uri:
+                                              review?.user?.profileImage ||
+                                              '/images/dpPlaceholder.png',
+                                          }}
+                                          style={styles.reviewUserImage}
+                                        />
+                                        <View>
+                                          <Text style={styles.reviewUserName}>
+                                            {review?.user?.firstname}{' '}
+                                            {review?.user?.lastname}
+                                          </Text>
+                                          <View style={styles.visitTypeBadge}>
+                                            <Text style={styles.visitTypeText}>
+                                              {review?.visitType == 'MustVisit'
+                                                ? 'Must Go'
+                                                : 'Least Go'}
+                                            </Text>
+                                          </View>
+                                        </View>
+                                      </View>
+                                      <Text style={styles.reviewText}>
+                                        {review?.review}
+                                      </Text>
+                                      <TouchableOpacity
+                                        style={styles.seeFullReviewButton}
+                                        onPress={() =>
+                                          navigate('Checkins', {
+                                            slug: event?.slug,
+                                          })
+                                        }>
+                                        <Text style={styles.seeFullReviewText}>
+                                          See Full Review
+                                        </Text>
+                                      </TouchableOpacity>
+                                    </View>
+                                  </View>
+                                );
+                              },
+                            )}
+                          </Swiper>
+                        ) : (
+                          <Swiper
+                            style={styles.swiper}
+                            showsPagination={true}
+                            loop={false}>
+                            {event?.previewMedia?.map((image, imageIndex) => (
+                              <View
+                                key={imageIndex}
+                                style={styles.previewSlide}>
+                                <Image
+                                  source={{uri: image}}
+                                  style={styles.previewImage}
+                                />
+                              </View>
+                            ))}
+                          </Swiper>
+                        )}
+                      </View>
+                    );
+                  })}
+                <View style={styles.endSpace} />
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 
 export default Trekscapes;
+
+const {width, height} = Dimensions.get('window');
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    minHeight: height * 0.95,
+  },
+  topBarWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topBarContainer: {
+    width: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: 'white',
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+
+    // Android shadow
+    elevation: 8,
+
+    zIndex: 10,
+  },
+  categoryItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginHorizontal: 5,
+    backgroundColor: '#f0f0f0',
+  },
+  activeCategoryItem: {
+    backgroundColor: '#e93c00',
+  },
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+  },
+  activeCategoryText: {
+    color: '#fff',
+  },
+  scrollContainer: {
+    flex: 1,
+    height: height - 100,
+  },
+  searchContainer: {
+    width: '70%',
+    alignSelf: 'center',
+    marginVertical: 10,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    width: '100%',
+    paddingLeft: 15,
+    paddingRight: 40,
+    paddingVertical: 8,
+    borderRadius: 25,
+    fontSize: 12,
+  },
+  searchIcon: {
+    position: 'absolute',
+    right: 15,
+    top: '50%',
+    transform: [{translateY: -10}],
+  },
+  gridContainer: {
+    padding: 15,
+  },
+  trekscapeCard: {
+    alignItems: 'center',
+    maxWidth: 340,
+    width: '100%',
+    overflow: 'hidden',
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  swiperContainer: {
+    height: 325,
+    width: '100%',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  swiper: {
+    height: 325,
+  },
+  swiperSlide: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 24,
+    overflow: 'hidden',
+  },
+  swiperImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  swiperDot: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 3,
+    marginRight: 3,
+    marginTop: 3,
+    marginBottom: 3,
+  },
+  swiperActiveDot: {
+    backgroundColor: '#fff',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 3,
+    marginRight: 3,
+    marginTop: 3,
+    marginBottom: 3,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 10,
+  },
+  cardTitle: {
+    marginVertical: 4,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statIcon: {
+    height: 15,
+    width: 15,
+    resizeMode: 'contain',
+  },
+  statText: {
+    fontSize: 12,
+  },
+  navigateButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e93c00',
+    borderRadius: 4,
+  },
+  navigateButtonText: {
+    color: 'white',
+    fontSize: 20,
+  },
+  emptyStateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    height: height - 165,
+  },
+  emptyStateIcon: {
+    height: 60,
+    width: 60,
+    resizeMode: 'contain',
+  },
+  emptyStateText: {
+    textAlign: 'center',
+    color: 'rgba(0, 0, 0, 0.7)',
+  },
+  emptyStateButton: {
+    textAlign: 'center',
+    color: '#3498db',
+  },
+  loaderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  skeleton: {
+    backgroundColor: '#E1E9EE',
+    borderRadius: 8,
+    marginBottom: 6,
+  },
+  skeletonAvatar: {
+    width: 41,
+    height: 41,
+    borderRadius: 20.5,
+    backgroundColor: '#E1E9EE',
+  },
+  liveEventsContainer: {
+    paddingTop: 12,
+  },
+  liveEventCard: {
+    flexDirection: 'column',
+    gap: 8,
+    alignItems: 'flex-start',
+    maxWidth: 393,
+    width: '100%',
+    overflow: 'hidden',
+    paddingLeft: 25,
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  hidden: {
+    display: 'none',
+  },
+  liveEventHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    width: '100%',
+  },
+  liveEventHeaderFull: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  liveEventUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  liveStatusIndicator: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 41,
+    height: 41,
+    borderRadius: 20.5,
+    overflow: 'hidden',
+    backgroundColor: '#F1C40F', // event-pending color (yellow)
+  },
+  liveStatusActive: {
+    backgroundColor: '#E74C3C', // event-live color (red)
+  },
+  liveStatusText: {
+    fontWeight: '500',
+    fontSize: 14,
+    color: 'white',
+  },
+  liveStatusSubtext: {
+    fontWeight: '500',
+    fontSize: 7,
+    color: 'white',
+    marginTop: -9,
+  },
+  liveEventTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  liveEventLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    fontSize: 8,
+  },
+  pinIcon: {
+    width: 10,
+    height: 10,
+    resizeMode: 'contain',
+  },
+  distanceText: {
+    fontSize: 8,
+  },
+  feedMenuButton: {
+    padding: 8,
+  },
+  liveEventSlide: {
+    position: 'relative',
+    height: 400,
+    width: 265,
+    overflow: 'hidden',
+    borderRadius: 15,
+    marginRight: 10,
+  },
+  liveEventOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: 141,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // bg-event equivalent
+    padding: 8,
+    borderRadius: 14,
+  },
+  liveEventOverlayHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  liveEventUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewSlide: {
+    position: 'relative',
+    height: 400,
+    width: 265,
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
+  reviewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  reviewOverlay: {
+    position: 'absolute',
+    width: '100%',
+    height: 141,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // bg-event equivalent
+    padding: 8,
+    borderRadius: 14,
+  },
+  reviewTimestamp: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  pinIconSmall: {
+    width: 14,
+    height: 14,
+    resizeMode: 'contain',
+  },
+  timestampText: {
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 8,
+    textTransform: 'capitalize',
+  },
+  reviewUserInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reviewUserImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: '#F2E3DD',
+  },
+  reviewUserName: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: 'white',
+  },
+  visitTypeBadge: {
+    backgroundColor: '#e93c00', // gradient-orange1 approximation
+    paddingHorizontal: 4,
+    borderRadius: 10,
+    width: 57,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  visitTypeText: {
+    textAlign: 'center',
+    fontSize: 8,
+    color: 'white',
+  },
+  reviewText: {
+    fontWeight: '300',
+    fontSize: 10,
+    color: 'white',
+    lineHeight: 16,
+    paddingHorizontal: 4,
+    paddingTop: 8,
+    height: 32, // For line-clamp-2 equivalent
+  },
+  seeFullReviewButton: {
+    alignSelf: 'flex-start',
+  },
+  seeFullReviewText: {
+    color: 'white',
+    fontWeight: '500',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  previewSlide: {
+    height: 400,
+    width: 265,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderRadius: 14,
+  },
+  endSpace: {
+    height: 50,
+  },
+});
