@@ -11,13 +11,9 @@ import {
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitemarker.svg';
 
-const TrialPointSlider = ({
-  check_ins,
-  isLoading,
-  setIsLoading,
-  trailpointImage,
-}) => {
+const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
   const navigation = useNavigation();
   const route = useRoute();
   const {slug} = route.params;
@@ -66,10 +62,7 @@ const TrialPointSlider = ({
           style={styles.bottomInfoContainer}>
           <View style={styles.topRightInfo}>
             <View style={styles.timestampContainer}>
-              <Image
-                source={require('../../../public/images/mobtrekscape/trialpoints/whitemarker.svg')}
-                style={styles.markerIcon}
-              />
+              <WhiteMarker width={14} height={14} />
               <Text style={styles.timestampText}>
                 {moment(Number(item?.timestamp)).fromNow()}
               </Text>
@@ -87,7 +80,6 @@ const TrialPointSlider = ({
                     : require('../../../public/images/dpPlaceholder.png')
                 }
                 style={styles.profileImage}
-                onLoad={() => setIsLoading(false)}
               />
             </View>
             <View>

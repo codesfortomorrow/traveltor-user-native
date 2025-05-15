@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Linking,
   Dimensions,
+  FlatList,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {setError} from '../../redux/Slices/errorPopup';
@@ -38,7 +39,6 @@ const TrailpointDetails = () => {
 
   const fetchTrailpointDetail = useCallback(
     async userId => {
-      setIsLoading(true);
       try {
         const response = await getTrailPointDetails(slug, userId);
         if (response) {
@@ -46,8 +46,6 @@ const TrailpointDetails = () => {
         }
       } catch (error) {
         console.log('Error:', error);
-      } finally {
-        setIsLoading(false);
       }
     },
     [slug],
@@ -55,6 +53,7 @@ const TrailpointDetails = () => {
 
   const fetchTreckScapeFeeds = useCallback(
     async (slug, userId) => {
+      setIsLoading(true);
       try {
         const response = await getTrailPointFeeds(slug, userId);
         if (response) {
@@ -134,6 +133,7 @@ const TrailpointDetails = () => {
         heading={trailPoints?.name}
         CheckInPoint={true}
         trailPoints={trailPoints}
+        loading={isLoading}
       />
 
       <ScrollView
@@ -224,15 +224,16 @@ const TrailpointDetails = () => {
           </View>
         </View>
 
-        {isLoading ? (
+        {isLoading && (
           <View style={styles.skeletonContainer}>
-            <Swiper
-              showsButtons={false}
-              loop={false}
-              showsPagination={false}
-              style={styles.swiper}>
-              {Array.from({length: 5}).map((_, index) => (
-                <View key={index} style={styles.swiperSlide}>
+            <FlatList
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              data={Array.from({length: 5})}
+              keyExtractor={(_, index) => index.toString()}
+              renderItem={({index}) => (
+                <View style={styles.swiperSlide}>
                   <SkeletonView height={350} style={styles.skeletonFull} />
                   <View style={styles.skeletonBottomSection}>
                     <View style={styles.skeletonTopRight}>
@@ -245,7 +246,7 @@ const TrailpointDetails = () => {
                         <SkeletonView width={80} height={14} />
                         <SkeletonView
                           width={57}
-                          height={20}
+                          height={14}
                           style={styles.skeletonRounded}
                         />
                       </View>
@@ -262,15 +263,14 @@ const TrailpointDetails = () => {
                     />
                   </View>
                 </View>
-              ))}
-            </Swiper>
+              )}
+            />
           </View>
-        ) : null}
+        )}
 
         <TrialPointSlider
           check_ins={trekScapeReview}
           isLoading={isLoading}
-          setIsLoading={setIsLoading}
           trailpointImage={trailPoints?.previewMedia}
         />
 
@@ -391,7 +391,8 @@ const styles = StyleSheet.create({
   swiperSlide: {
     position: 'relative',
     height: '100%',
-    width: '100%',
+    width: Dimensions.get('window').width * 0.65,
+    paddingRight: 20,
   },
   skeletonFull: {
     width: '100%',
@@ -419,6 +420,7 @@ const styles = StyleSheet.create({
   },
   skeletonRounded: {
     borderRadius: 10,
+    marginTop: 6,
   },
   skeletonMarginTop: {
     marginTop: 8,

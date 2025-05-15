@@ -8,7 +8,7 @@ import Transfer from '../../public/images/profile/transfer.svg';
 import Settings from '../../public/images/profile/settings.svg';
 import Link from '../../public/images/profile/link.svg';
 import {Platform, PermissionsAndroid} from 'react-native';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
 
 const Constant = () => {
   const heroSlider = [
@@ -60,10 +60,10 @@ const Constant = () => {
       path: 'Trekscapes',
       children: [
         {
-          path: '/trekscape',
+          path: 'Trekscapes',
         },
         {
-          path: '/trekscape',
+          path: 'Trekscapes',
         },
       ],
     },
@@ -87,7 +87,7 @@ const Constant = () => {
       icon: <User name="user" color="#000" size={25} />,
       activeIcon: <User name="user" color="#e93c00" size={25} />,
       title: 'Profile',
-      path: '/profile',
+      path: 'Profile',
     },
   ];
 
@@ -99,7 +99,7 @@ const Constant = () => {
       path: 'Trekscapes',
       children: [
         {
-          path: '/trekscape',
+          path: 'Trekscapes',
         },
       ],
     },
@@ -113,13 +113,13 @@ const Constant = () => {
       icon: <User name="user" color="#000" size={25} />,
       activeIcon: <User name="user" color="#e93c00" size={25} />,
       title: 'Login',
-      // path: '/',
+      path: 'Login',
     },
     {
       icon: <Icon name="menu-outline" color="#000" size={25} />,
       activeIcon: <Icon name="menu-outline" color="#e93c00" size={25} />,
       title: 'Menu',
-      path: '/menu',
+      path: 'Menu',
     },
   ];
 

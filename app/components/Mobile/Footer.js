@@ -130,7 +130,7 @@ const Footer = () => {
                       <CheckInIcon width={50} height={50} />
                     </Animated.View>
                   </View>
-                ) : route?.name === item?.title ? (
+                ) : route?.name === item?.path ? (
                   item.activeIcon
                 ) : (
                   item.icon
@@ -139,7 +139,7 @@ const Footer = () => {
               <Text
                 style={[
                   styles.itemTitle,
-                  {color: route?.name === item?.title ? '#e93c00' : '#000'},
+                  {color: route?.name === item?.path ? '#e93c00' : '#000'},
                 ]}>
                 {item?.title}
               </Text>
