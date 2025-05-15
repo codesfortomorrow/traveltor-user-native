@@ -144,9 +144,11 @@ const Header = ({handleSignUp, handleSignIn}) => {
         style={{width: 220, height: 50, resizeMode: 'contain'}}
         source={require('../../../public/images/logo-1.png')}
       />
-      <TouchableOpacity onPress={() => navigate('Notification')}>
-        <Icon name="bell-ring-outline" size={30} color="black" />
-      </TouchableOpacity>
+      {isLoggedIn && (
+        <TouchableOpacity onPress={() => navigate('Notification')}>
+          <Icon name="bell-ring-outline" size={30} color="black" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

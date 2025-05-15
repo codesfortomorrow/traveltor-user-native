@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import TrekscapeHeader from './TrekscapeHeader';
 import SadIcon from '../../../public/images/sadIcon.svg';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const TrekscapeFeed = () => {
   const dispatch = useDispatch();
@@ -142,30 +143,30 @@ const TrekscapeFeed = () => {
 
           setTrackScapeFeeds(newTrackScapeFeeds);
         } else {
-          //   dispatch(
-          //     setError({
-          //       open: true,
-          //       custom_message: response?.data?.message,
-          //     }),
-          //   );
+          dispatch(
+            setError({
+              open: true,
+              custom_message: response?.data?.message,
+            }),
+          );
         }
       } catch (err) {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: err || 'Something went wrong',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: err || 'Something went wrong',
+          }),
+        );
       } finally {
         setReactionDisabled(false);
       }
     } else {
-      //   dispatch(
-      //     setError({
-      //       open: true,
-      //       custom_message: 'Please login to cast your vote on the post.',
-      //     }),
-      //   );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login to cast your vote on the post.',
+        }),
+      );
     }
   };
 

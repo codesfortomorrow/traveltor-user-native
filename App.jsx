@@ -26,6 +26,8 @@ import Notification from './app/containers/MobilePages/Notification';
 import {SafeAreaView} from 'react-native';
 import TrekscapeDetails from './app/containers/Trekscapes/TrekscapeDetails';
 import TrekscapeFeed from './app/containers/Trekscapes/TrekscapeFeed';
+import SuccessMessage from './app/components/Modal/SuccessMessage';
+import ErrorMessage from './app/components/Modal/ErrorMessage';
 
 const Stack = createNativeStackNavigator();
 
@@ -183,6 +185,8 @@ function App() {
                 </Stack.Navigator>
               </NavigationContainer>
               <Toast />
+              <SuccessMessage />
+              <ErrorMessage />
             </SafeAreaProvider>
           </AuthProvider>
         </FeedProvider>

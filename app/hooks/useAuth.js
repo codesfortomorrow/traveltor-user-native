@@ -7,7 +7,6 @@ import {
   postAuthReq,
   postReq,
 } from '../utils/apiHandlers';
-import Toast from 'react-native-toast-message';
 import {
   addWalletSchema,
   emailValidation,
@@ -17,9 +16,15 @@ import {
   validateData,
 } from '../utils/validation';
 import {AuthContext} from '../context/AuthContext';
+import {useDispatch} from 'react-redux';
+import {setSuccess} from '../redux/Slices/successPopup';
+import {setError} from '../redux/Slices/errorPopup';
+import {useNavigation} from '@react-navigation/native';
 
 const useAuth = () => {
   const {setIsLoggedIn} = useContext(AuthContext);
+  const dispatch = useDispatch();
+  const {navigate} = useNavigation();
 
   const requestNotificationPermission = useCallback(() => {
     if (
@@ -40,18 +45,12 @@ const useAuth = () => {
 
   const logout = useCallback(async () => {
     try {
+      // const auth = getAuth();
       const response = await postAuthReq('/auth/logout');
       if (response?.status) {
-        //   removeAuthToken();
         setIsLoggedIn(false);
         AsyncStorage.clear();
-        Toast.show({
-          type: 'success',
-          text1: 'Logout Successfully',
-        });
-        //   AsyncStorage.removeItem('__users__isLoggedIn');
         //   dispatch(cleanup());
-        //   AsyncStorage.removeItem('fcmToken');
         //   dispatch(setToken(''));
         //   deleteToken(messaging).then(() => {
         //     console.log('Old FCM Token deleted');
@@ -70,7 +69,6 @@ const useAuth = () => {
     } catch (error) {
       console.log(error, 'error');
     }
-    // const auth = getAuth();
   }, []);
 
   const setAuthToken = async token => {
@@ -96,32 +94,26 @@ const useAuth = () => {
       if (valid) {
         const response = await postReq('/auth/login', data);
         if (response?.status) {
-          //   dispatch(
-          //     setSuccess({
-          //       open: true,
-          //       custom_message: ' logged in to the Traveltor',
-          //     }),
-          //   );
+          dispatch(
+            setSuccess({
+              open: true,
+              custom_message: ' logged in to the Traveltor',
+            }),
+          );
           await setAuthToken(response?.data?.accessToken);
           setIsLoggedIn(true);
-          Toast.show({
-            type: 'success',
-            text1: 'Login Successfully',
-          });
           onRequestClose();
           setForm({identifire: '', password: ''});
-          //   handleClose();
           //   dispatch(init());
-          //   navigate('/my-feed');
+          navigate('MyFeeds');
           requestNotificationPermission();
         } else {
-          //   dispatch(
-          //     setError({
-          //       open: true,
-          //       custom_message: ` ${response.error.message}`,
-          //     }),
-          //   );
-          Toast.show({type: 'error', text1: response?.error?.message});
+          dispatch(
+            setError({
+              open: true,
+              custom_message: ` ${response?.error?.message}`,
+            }),
+          );
         }
       }
     },
@@ -141,27 +133,26 @@ const useAuth = () => {
             email,
           });
           if (response?.status) {
-            // dispatch(
-            //   setSuccess({
-            //     open: true,
-            //     custom_message: 'OTP has been sent to your email. 📩',
-            //     defaultMsg: false,
-            //   }),
-            // );
+            dispatch(
+              setSuccess({
+                open: true,
+                custom_message: 'OTP has been sent to your email. 📩',
+                defaultMsg: false,
+              }),
+            );
             onRequestClose();
             setOtpPopup(true);
             setOtpTimerData(response?.data?.email);
           } else {
-            Toast.show({type: 'error', text1: response?.error?.message});
             throw new Error(response?.error?.message || 'Something went wrong');
           }
         } catch (err) {
-          // dispatch(
-          //   setError({
-          //     open: true,
-          //     custom_message: err.message,
-          //   }),
-          // );
+          dispatch(
+            setError({
+              open: true,
+              custom_message: err.message,
+            }),
+          );
         }
       }
     },
@@ -178,12 +169,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -198,33 +189,28 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
   const reactionOnFeed = useCallback(async (id, type) => {
-    const payload = {
-      type: type,
-    };
-    const response = await postAuthReq(
-      `/check-ins/users/${id}/reactions`,
-      payload,
-    );
+    const response = await postAuthReq(`/check-ins/users/${id}/reactions`, {
+      type,
+    });
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      console.log(response?.error);
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -233,12 +219,12 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   };
 
@@ -249,21 +235,21 @@ const useAuth = () => {
       const response = await patchApiReq('/users/me', data);
       if (response?.status) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message: ' updated your details.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message: ' updated your details.',
+          }),
+        );
         // dispatch(init());
         return {response};
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: ` ${response.error.message}`,
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${response.error.message}`,
+          }),
+        );
         return {response};
       }
     }
@@ -276,22 +262,20 @@ const useAuth = () => {
       const response = await postAuthReq('/users/me/change-password', data);
       if (response?.status) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message: ' updated your password.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message: ' updated your password.',
+          }),
+        );
         // dispatch(init());
-        Toast.show({type: 'success', text1: 'Update Password Successfully'});
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: ` ${response.error.message}`,
-        //   }),
-        // );
-        Toast.show({type: 'error', text1: response?.error?.message});
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${response.error.message}`,
+          }),
+        );
       }
     }
   }, []);
@@ -303,13 +287,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -320,25 +303,20 @@ const useAuth = () => {
       const response = await postAuthReq('/users/wallet', data);
       if (response?.status) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message: ' updated your wallet address.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message: ' updated your wallet address.',
+          }),
+        );
         // dispatch(init());
-        Toast.show({
-          type: 'success',
-          text1: 'Wallet Address Updated Successfully',
-        });
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: ` ${response.error.message}`,
-        //   }),
-        // );
-        Toast.show({type: 'error', text1: response?.error?.message});
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${response.error.message}`,
+          }),
+        );
       }
     }
   }, []);
@@ -353,12 +331,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -368,34 +346,28 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
   const FeedReactionAction = async (id, type) => {
-    const payload = {
-      type: type,
-    };
-    const response = await postAuthReq(
-      `/check-ins/users/${id}/reactions`,
-      payload,
-    );
+    const response = await postAuthReq(`/check-ins/users/${id}/reactions`, {
+      type,
+    });
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
 
       return response;
     }
@@ -415,13 +387,12 @@ const useAuth = () => {
       if (response?.status) {
         return response.data;
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: ` ${response.error.message}`,
-        //   }),
-        // );
-        Toast.show({type: 'error', text1: response?.error?.message});
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${response.error.message}`,
+          }),
+        );
       }
     },
     [],
@@ -432,13 +403,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   };
 
@@ -446,22 +416,17 @@ const useAuth = () => {
     const response = await postAuthReq('/users/me/profile-image', data);
     if (response?.status) {
       // dispatch(cleanSuccess());
-      // dispatch(
-      //   setSuccess({ open: true, custom_message: ' updated your profile.' }),
-      // );
-      Toast.show({
-        type: 'success',
-        text1: 'Profile Updated Successfully',
-      });
+      dispatch(
+        setSuccess({open: true, custom_message: ' updated your profile.'}),
+      );
       // dispatch(init());
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -473,13 +438,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -489,13 +453,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -508,13 +471,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -525,13 +487,12 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   };
 
@@ -546,13 +507,12 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
     }
   }, []);
 
@@ -563,13 +523,12 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: ` ${response.error.message}`,
-      //   }),
-      // );
-      Toast.show({type: 'error', text1: response?.error?.message});
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
       return response;
     }
   };

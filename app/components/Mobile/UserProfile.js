@@ -18,8 +18,8 @@ import Login from '../Modal/Login';
 import Signup from '../Signup';
 import Backheading from './Backheading';
 import FeedsContainer from './FeedsContainer';
-import Toast from 'react-native-toast-message';
 import FeedLoader from '../Common/FeedLoader';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -147,12 +147,12 @@ const UserProfile = () => {
         }));
       }
     } catch (err) {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: err || 'Something went wrong',
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: err || 'Something went wrong',
+        }),
+      );
     } finally {
       setIsFollowDisable(false);
     }
@@ -181,29 +181,29 @@ const UserProfile = () => {
           setFeeds(newFeeds);
           setReactionDisabled(false);
         } else {
-          // dispatch(
-          //   setError({open: true, custom_message: response?.error?.message}),
-          // );
+          dispatch(
+            setError({open: true, custom_message: response?.error?.message}),
+          );
           setReactionDisabled(false);
         }
       } catch (err) {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message:
-        //       err ||
-        //       ' Something went wrong, please clear your cookies and try again.',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message:
+              err ||
+              ' Something went wrong, please clear your cookies and try again.',
+          }),
+        );
         setReactionDisabled(false);
       }
     } else {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: 'Please login to cast your vote on the post.',
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login to cast your vote on the post.',
+        }),
+      );
     }
   };
 

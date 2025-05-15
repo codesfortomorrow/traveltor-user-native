@@ -16,7 +16,6 @@ import UploadProfile from './UploadProfile';
 import moment from 'moment';
 import useAuth from '../../hooks/useAuth';
 import Constant from '../../utils/constant';
-import Toast from 'react-native-toast-message';
 import {getUser} from '../../redux/Slices/userSlice';
 import {AuthContext} from '../../context/AuthContext';
 
@@ -120,7 +119,6 @@ const UpdateProfile = () => {
     }
     const {response, error} = form?.mobile && (await updateUser(payload));
     if (response?.status) {
-      Toast.show({type: 'success', text1: 'Profile Updated Successfully'});
       setError({});
       dispatch(getUser(isLoggedIn));
     } else {

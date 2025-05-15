@@ -7,13 +7,14 @@ import {
   ScrollView,
   Image,
 } from 'react-native';
-import Toast from 'react-native-toast-message';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
 import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
 import Constant from '../../utils/constant';
+import {setSuccess} from '../../redux/Slices/successPopup';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const Setting = () => {
   const user = useSelector(state => state.user);
@@ -28,23 +29,22 @@ const Setting = () => {
       const response = await logout();
       if (response) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message:
-        //       ' logged out but we are waiting for you to start sharing your journey again.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message:
+              ' logged out but we are waiting for you to start sharing your journey again.',
+          }),
+        );
         navigation.navigate('Home');
-        Toast.show({type: 'success', text1: 'Logout Successfully'});
       }
     } catch (error) {
-      //   dispatch(
-      //     setError({
-      //       open: true,
-      //       custom_message: error,
-      //     }),
-      //   );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: error,
+        }),
+      );
     }
   };
 

@@ -17,7 +17,9 @@ import {
 } from '../../utils/validation';
 import {postReq} from '../../utils/apiHandlers';
 import {isYupError, parseYupError} from '../../utils/Yup';
-import Toast from 'react-native-toast-message';
+import {useDispatch} from 'react-redux';
+import {setSuccess} from '../../redux/Slices/successPopup';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const OtpVerify = ({
   visible,
@@ -39,6 +41,7 @@ const OtpVerify = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [readOnly, setReadOnly] = useState(true);
   const {isIOSDevice, convertHindiToEnglishNumbers} = Constant();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (otp) {
@@ -83,12 +86,12 @@ const OtpVerify = ({
 
       if (status) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message: 'OTP has been sent to your email. 📩',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message: 'OTP has been sent to your email. 📩',
+          }),
+        );
         setOtpTimerData(data?.email);
       } else {
         throw new Error(
@@ -96,12 +99,12 @@ const OtpVerify = ({
         );
       }
     } catch (error) {
-      // dispatch(
-      //   setError({
-      //     open: true,
-      //     custom_message: error.message || 'An unexpected error occurred.',
-      //   }),
-      // );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: error.message || 'An unexpected error occurred.',
+        }),
+      );
     }
   };
   const handleSubmit = async e => {
@@ -141,21 +144,20 @@ const OtpVerify = ({
       });
 
       if (res?.status) {
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message:
-        //       'Your password has been successfully reset! 🔐 You can now log in with your new credentials. Stay secure!.',
-        //     defaultMsg: false,
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message:
+              'Your password has been successfully reset! 🔐 You can now log in with your new credentials. Stay secure!.',
+            defaultMsg: false,
+          }),
+        );
         onRequestClose();
         // navigate('/');
         setEmail('');
         setOtp(new Array(6).fill(''));
         setPassword('');
         setConfirmPassword('');
-        Toast.show({type: 'success', text1: 'Password reset successfully'});
         // openBGScroll();
       } else {
         throw new Error(res?.error?.message || 'Something went wrong.');
@@ -166,14 +168,14 @@ const OtpVerify = ({
       if (isYupError(error)) {
         setFormError(parseYupError(error));
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message:
-        //       error.message ||
-        //       'An unexpected error occurred. Please try again.',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message:
+              error.message ||
+              'An unexpected error occurred. Please try again.',
+          }),
+        );
       }
     }
   };

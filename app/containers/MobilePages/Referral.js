@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import Backheading from '../../components/Mobile/Backheading';
-import Toast from 'react-native-toast-message';
+import {setSuccess} from '../../redux/Slices/successPopup';
 
 const Referral = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,21 +25,17 @@ const Referral = () => {
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
   const [referral, setReferral] = useState([]);
+  const dispatch = useDispatch();
 
   const handleCopy = () => {
     // dispatch(cleanSuccess());
-    // dispatch(
-    //   setSuccess({
-    //     open: true,
-    //     custom_message:
-    //       ' Copied your Referral Code, better if you share the invite link directly.',
-    //   }),
-    // );
-    Toast.show({
-      type: 'success',
-      text1:
-        'Copied your Referral Code, better if you share the invite link directly.',
-    });
+    dispatch(
+      setSuccess({
+        open: true,
+        custom_message:
+          ' Copied your Referral Code, better if you share the invite link directly.',
+      }),
+    );
   };
 
   const fetchEarning = useCallback(async page => {

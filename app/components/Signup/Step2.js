@@ -5,10 +5,12 @@ import {isYupError, parseYupError} from '../../utils/Yup';
 import {postReq} from '../../utils/apiHandlers';
 import {otpValidationSchema} from '../../utils/validation';
 import Constant from '../../utils/constant';
-import Toast from 'react-native-toast-message';
 import {OtpInput} from 'react-native-otp-entry';
 import {AuthContext} from '../../context/AuthContext';
 import useAuth from '../../hooks/useAuth';
+import {setSuccess} from '../../redux/Slices/successPopup';
+import {useDispatch} from 'react-redux';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const Step2 = ({
   formData,
@@ -28,6 +30,7 @@ const Step2 = ({
   const {convertHindiToEnglishNumbers} = Constant();
   const {setIsLoggedIn} = useContext(AuthContext);
   const {setAuthToken} = useAuth();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (otp) {
@@ -81,35 +84,34 @@ const Step2 = ({
       const {status, data, error} = res;
       if (status) {
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message:
-        //       ' submitted your request, We have sent you OTP on entered e-mail.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message:
+              ' submitted your request, We have sent you OTP on entered e-mail.',
+          }),
+        );
         setOtpTimerData(data?.email);
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message:
-        //       error?.message || 'Failed to send OTP. Please try again.',
-        //   }),
-        // );
-        Toast.show({type: 'error', text1: res?.error?.message});
+        dispatch(
+          setError({
+            open: true,
+            custom_message:
+              error?.message || 'Failed to send OTP. Please try again.',
+          }),
+        );
       }
     } catch (error) {
       if (isYupError(error)) {
         setFormError(parseYupError(error));
       } else {
         console.error('Unexpected error:', error);
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: 'An unexpected error occurred. Please try again.',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: 'An unexpected error occurred. Please try again.',
+          }),
+        );
       }
     }
   };
@@ -129,37 +131,35 @@ const Step2 = ({
         // dispatch(init());
         handleContinueStep3();
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message:
-        //       "created your profile, Let's go for your first check-in.",
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message:
+              "created your profile, Let's go for your first check-in.",
+          }),
+        );
         setStep2open(false);
-        Toast.show({type: 'success', text1: 'Signup successsfully'});
         // navigate('/');
         // openBGScroll();
       } else {
-        Toast.show({type: 'error', text1: error?.message});
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: ` ${error.message}`,
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${error.message}`,
+          }),
+        );
       }
     } catch (error) {
       if (isYupError(error)) {
         setFormError(parseYupError(error));
       } else {
         console.error('Unexpected error:', error);
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: 'An unexpected error occurred. Please try again.',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: 'An unexpected error occurred. Please try again.',
+          }),
+        );
       }
     }
   };

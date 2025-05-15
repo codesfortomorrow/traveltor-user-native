@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import TrekscapeHeader from './TrekscapeHeader';
@@ -28,6 +28,7 @@ import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
 import Login from '../../components/Modal/Login';
 import Signup from '../../components/Signup';
 import Social from '../../components/Modal/SocialShare';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const TrekscapeDetails = () => {
   const user = useSelector(state => state?.user);
@@ -43,6 +44,7 @@ const TrekscapeDetails = () => {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isEvent, setIsEvent] = useState(false);
   const [isFollowDisable, setIsFollowDisable] = useState(false);
+  const dispatch = useDispatch();
 
   const fetchTreckScapeDetail = useCallback(async () => {
     try {
@@ -81,22 +83,22 @@ const TrekscapeDetails = () => {
           }));
         }
       } catch (err) {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: err || 'Something went wrong',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: err || 'Something went wrong',
+          }),
+        );
       } finally {
         setIsFollowDisable(false);
       }
     } else {
-      //   dispatch(
-      //     setError({
-      //       open: true,
-      //       custom_message: 'Please login to cast your vote on the post.',
-      //     }),
-      //   );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login to cast your vote on the post.',
+        }),
+      );
     }
   };
 

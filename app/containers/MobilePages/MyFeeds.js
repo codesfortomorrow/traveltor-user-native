@@ -26,6 +26,7 @@ import {IoCheckmarkSharp} from 'react-native-vector-icons/Ionicons';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import FeedLoader from '../../components/Common/FeedLoader';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const MyFeeds = () => {
   //   const dispatch = useDispatch();
@@ -51,6 +52,7 @@ const MyFeeds = () => {
   const [disablePull, setDisablePull] = useState(false);
   const isCalled = useRef(false);
   const [isScrollAtTop, setIsScrollAtTop] = useState(true);
+  const dispatch = useDispatch();
 
   //   const {isPending, status, progress, imgUrl, publishedAt} = useSelector(
   //     state => state.publish,
@@ -239,30 +241,30 @@ const MyFeeds = () => {
           setFeeds(newTrackScapeFeeds);
           setReactionDisabled(false);
         } else {
-          //   dispatch(
-          //     setError({
-          //       open: true,
-          //       custom_message: response?.error?.message,
-          //     }),
-          //   );
+          dispatch(
+            setError({
+              open: true,
+              custom_message: response?.error?.message,
+            }),
+          );
           setReactionDisabled(false);
         }
       } catch (err) {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: err || 'Something went wrong',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: err || 'Something went wrong',
+          }),
+        );
         setReactionDisabled(false);
       }
     } else {
-      //   dispatch(
-      //     setError({
-      //       open: true,
-      //       custom_message: 'Please login to cast your vote on the post.',
-      //     }),
-      //   );
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login to cast your vote on the post.',
+        }),
+      );
     }
   };
 

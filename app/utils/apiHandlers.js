@@ -6,24 +6,6 @@ import {getToken} from './tokenStorage';
 const isProductionApp = process.env.APP_ENV === 'production';
 const apiUrl = process.env.API_URL;
 
-// export const getToken = async () => {
-//   try {
-//     const value = await AsyncStorage.getItem('__users__isLoggedIn');
-//     if (!value) return null;
-
-//     const {token, expiresAt} = JSON.parse(value);
-//     if (new Date().getTime() > expiresAt) {
-//       await AsyncStorage.removeItem('__users__isLoggedIn');
-//       return null;
-//     }
-
-//     return token;
-//   } catch (error) {
-//     console.error('Error reading token', error);
-//     return null;
-//   }
-// };
-
 export const setAuthToken = async () => {
   const key = !isProductionApp
     ? 'test__users__isLoggedIn'

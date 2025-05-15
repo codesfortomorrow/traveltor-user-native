@@ -17,7 +17,9 @@ import {registerSchema} from '../../utils/validation';
 import {useRoute} from '@react-navigation/native';
 import {postReq} from '../../utils/apiHandlers';
 import {isYupError, parseYupError} from '../../utils/Yup';
-import Toast from 'react-native-toast-message';
+import {setSuccess} from '../../redux/Slices/successPopup';
+import {useDispatch} from 'react-redux';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const Step1 = ({
   handleStep1,
@@ -37,6 +39,7 @@ const Step1 = ({
   const [readOnly, setReadOnly] = useState(true);
   const [formError, setFormError] = useState({});
   const {isIOSDevice, convertHindiToEnglishNumbers, countryList} = Constant();
+  const dispatch = useDispatch();
   // const {refeeralCode} = useRoute().params;
 
   const handleChange = (name, value) => {
@@ -81,36 +84,35 @@ const Step1 = ({
       if (status) {
         handleStep1(form);
         // dispatch(cleanSuccess());
-        // dispatch(
-        //   setSuccess({
-        //     open: true,
-        //     custom_message:
-        //       ' cleared first step, We have sent you OTP on entered e-mail.',
-        //   }),
-        // );
+        dispatch(
+          setSuccess({
+            open: true,
+            custom_message:
+              ' cleared first step, We have sent you OTP on entered e-mail.',
+          }),
+        );
         setOtpTimerData(data?.email);
         handleContinueStep2();
       } else {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message:
-        //       error?.message || 'Failed to send OTP. Please try again.',
-        //   }),
-        // );
-        Toast.show({type: 'error', text1: res?.error?.message});
+        dispatch(
+          setError({
+            open: true,
+            custom_message:
+              error?.message || 'Failed to send OTP. Please try again.',
+          }),
+        );
       }
     } catch (error) {
       if (isYupError(error)) {
         setFormError(parseYupError(error));
       } else {
         console.error('Unexpected error:', error);
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: 'An unexpected error occurred. Please try again.',
-        //   }),
-        // );
+        dispatch(
+          setError({
+            open: true,
+            custom_message: 'An unexpected error occurred. Please try again.',
+          }),
+        );
       }
     }
   };
