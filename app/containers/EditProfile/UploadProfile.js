@@ -61,8 +61,6 @@ const UploadProfile = () => {
             await uploadProfile({
               profileImage: res[0]?.meta?.filename,
             });
-          } else {
-            Toast.show({type: 'error', text1: res?.error?.message});
           }
         } catch (err) {
           console.log(err);

@@ -533,6 +533,83 @@ const useAuth = () => {
     }
   };
 
+  const getTrailPointDetails = useCallback(async (id, userId) => {
+    const params = new URLSearchParams({
+      ...(userId && {userId}),
+    });
+    const url = `/trail-points/${id && id}?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: response?.error?.message,
+        }),
+      );
+    }
+  }, []);
+
+  const getTrailPointFeeds = useCallback(async (id, userId) => {
+    const params = new URLSearchParams({
+      ...(userId && {userId}),
+    });
+    const url = `/trail-points/${id}/check-ins?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
+    }
+  }, []);
+
+  const getSingleTrailpointforReview = useCallback(async (id, data, userId) => {
+    const params = new URLSearchParams({
+      ...(userId && {userId}),
+      orderBy: data?.sortOrder || 0,
+      ...(data?.userType && {userType: data?.userType}),
+      ...(data?.startDate && {startDate: data?.startDate}),
+      ...(data?.endDate && {endDate: data?.endDate}),
+    });
+
+    const url = `/trail-points/${id}/check-ins?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
+    }
+  }, []);
+
+  const getSingleTrailpoint = useCallback(async (id, userId) => {
+    const params = new URLSearchParams({
+      ...(userId && {userId}),
+    });
+    const url = `/trail-points/${id && id}?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: ` ${response.error.message}`,
+        }),
+      );
+    }
+  }, []);
+
   return {
     logout,
     login,
@@ -558,6 +635,10 @@ const useAuth = () => {
     followOnTrekscape,
     getTrackScapeFeeds,
     handleReactionOnTrekscapeFeed,
+    getTrailPointDetails,
+    getTrailPointFeeds,
+    getSingleTrailpointforReview,
+    getSingleTrailpoint,
   };
 };
 

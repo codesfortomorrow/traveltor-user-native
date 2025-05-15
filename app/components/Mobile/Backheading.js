@@ -1,13 +1,13 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import {useSelector} from 'react-redux';
-// import {Compass} from 'lucide-react-native';
+import {useDispatch} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
-// import NotificationsActiveIcon from './NotificationsActiveIcon';
-// import IoSettingsOutline from './IoSettingsOutline';
-// import Badge from './Badge';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
+import {setError} from '../../redux/Slices/errorPopup';
+import {isLoggedIn} from '../../utils/tokenStorage';
+import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
+import Filter from 'react-native-vector-icons/AntDesign';
 
 const Backheading = ({
   heading,
@@ -18,10 +18,12 @@ const Backheading = ({
   notifyIcon = false,
   setting = false,
   nextTrip = false,
+  CheckInPoint = false,
+  trailPoints,
 }) => {
   const navigation = useNavigation();
   const route = useRoute();
-  const user = useSelector(state => state?.user);
+  const dispatch = useDispatch();
   //   const { badgeCount } = useSelector((state) => state.badgeSlice);
 
   const renderSkeleton = (width, height) => {
@@ -48,8 +50,7 @@ const Backheading = ({
 
       {addFilter && (
         <TouchableOpacity onPress={handleFilter} style={styles.filterButton}>
-          {/* Replace with appropriate icon for React Native */}
-          <Text style={styles.filterIcon}>Filter</Text>
+          <Filter name="filter" size={24} color="#000" />
         </TouchableOpacity>
       )}
 
@@ -100,6 +101,31 @@ const Backheading = ({
 
           <TouchableOpacity onPress={() => navigation.navigate('Setting')}>
             <Icon name="settings-outline" size={26} color="#000" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {CheckInPoint && (
+        <View style={styles.topBarRight}>
+          <Text style={styles.checkInCount}>
+            {trailPoints?._count?.checkIn || 0} Check In
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              if (isLoggedIn()) {
+                navigation.navigate('CreateCheckIn', {
+                  slug: trailPoints?.slug,
+                });
+              } else {
+                dispatch(
+                  setError({
+                    open: true,
+                    custom_message: 'Please login first to check in this place',
+                  }),
+                );
+              }
+            }}>
+            <CheckIn width={24} height={24} />
           </TouchableOpacity>
         </View>
       )}
@@ -195,6 +221,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#E1E1E1',
     borderRadius: 4,
     marginVertical: 12,
+  },
+  topBarRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  checkInCount: {
+    fontFamily: 'Jakarta',
+    fontWeight: '500',
+    fontSize: 10,
   },
 });
 

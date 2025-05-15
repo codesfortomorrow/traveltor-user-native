@@ -11,7 +11,7 @@ import Constant from '../../utils/constant';
 import EyeIcon from 'react-native-vector-icons/FontAwesome5';
 import Close from 'react-native-vector-icons/AntDesign';
 import ForgotPassword from './ForgotPassword';
-import {loginSchema} from '../../utils/validation';
+import {loginSchema, renderError} from '../../utils/validation';
 import useAuth from '../../hooks/useAuth';
 import {correctEmail} from '../../utils/autoCorrection';
 
@@ -39,7 +39,6 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
   const handleSubmit = async e => {
     e.preventDefault();
     setIsDisabled(true);
-    setError({});
     const error = await login(form, onRequestClose, setForm);
     if (error) {
       setError(error);
@@ -122,7 +121,7 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                     // editable={!readOnly}
                   />
                 )}
-                {/* {error.identifire && renderError(error.identifire)} */}
+                {error?.identifire && renderError(error.identifire)}
               </View>
 
               <View style={styles.inputGroup}>
@@ -167,7 +166,7 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                     />
                   </TouchableOpacity>
                 </View>
-                {/* {error.password && renderError(error.password)} */}
+                {error?.password && renderError(error.password)}
               </View>
 
               <View style={styles.forgotBlock}>
@@ -187,7 +186,7 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
 
               <TouchableOpacity
                 style={styles.submitButton}
-                // disabled={isDisabled}
+                disabled={isDisabled}
                 onPress={handleSubmit}>
                 <Text style={styles.submitButtonText}>Continue</Text>
               </TouchableOpacity>

@@ -28,6 +28,8 @@ import TrekscapeDetails from './app/containers/Trekscapes/TrekscapeDetails';
 import TrekscapeFeed from './app/containers/Trekscapes/TrekscapeFeed';
 import SuccessMessage from './app/components/Modal/SuccessMessage';
 import ErrorMessage from './app/components/Modal/ErrorMessage';
+import TrailpointDetails from './app/containers/Trailpoint/TrailpointDetails';
+import TrailpointReview from './app/containers/Trailpoint/TrailpointReview';
 
 const Stack = createNativeStackNavigator();
 
@@ -178,6 +180,24 @@ function App() {
                     children={() => (
                       <FooterLayout>
                         <TrekscapeFeed />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="TrailpointDetails"
+                    children={() => (
+                      <FooterLayout>
+                        <TrailpointDetails />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="TrailpointReview"
+                    children={() => (
+                      <FooterLayout>
+                        <TrailpointReview />
                       </FooterLayout>
                     )}
                     options={{headerShown: false}}

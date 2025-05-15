@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   ScrollView,
   TouchableWithoutFeedback,
-  Dimensions,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
@@ -108,9 +107,8 @@ const TrekscapeDetails = () => {
   };
 
   const handleTrailPoint = item => {
-    navigation.navigate('TrailPoint', {
+    navigation.navigate('TrailpointDetails', {
       slug: item?.slug,
-      previewMedia: item?.previewMedia,
     });
   };
 
@@ -418,7 +416,7 @@ const TrekscapeDetails = () => {
                           <TouchableOpacity
                             style={[styles.statItem, styles.mb12]}
                             onPress={() =>
-                              navigation.navigate('Checkins', {
+                              navigation.navigate('TrailpointReview', {
                                 slug: item?.slug,
                               })
                             }>

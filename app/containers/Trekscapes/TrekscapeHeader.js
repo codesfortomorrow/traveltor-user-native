@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Location from 'react-native-vector-icons/Ionicons';
+import FormatLine from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const TrekscapeHeader = () => {
   const navigation = useNavigation();
@@ -19,9 +20,9 @@ const TrekscapeHeader = () => {
       routeName: 'TrekscapeDetail',
     },
     {
-      icon: <Location name="location-outline" size={24} color="#000" />,
+      icon: <FormatLine name="format-line-style" size={24} color="#000" />,
       activeIcon: (
-        <Location name="location-outline" size={24} color="#e93c00" />
+        <FormatLine name="format-line-style" size={24} color="#e93c00" />
       ),
       title: 'Feeds',
       routeName: 'TrekscapeFeed',

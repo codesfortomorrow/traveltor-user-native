@@ -191,13 +191,7 @@ const FeedsContainer = ({
                   ? {uri: `${item?.user?.profileImage}`}
                   : require('../../../public/images/dpPlaceholder.png')
               }
-              style={[
-                styles.profileImage,
-                item?.user?.profileImage && {
-                  borderWidth: 1,
-                  borderColor: '#000',
-                },
-              ]}
+              style={styles.profileImage}
             />
           </View>
           <View style={styles.userDetailsContainer}>

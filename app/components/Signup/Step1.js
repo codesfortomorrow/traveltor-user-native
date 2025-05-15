@@ -20,6 +20,7 @@ import {isYupError, parseYupError} from '../../utils/Yup';
 import {setSuccess} from '../../redux/Slices/successPopup';
 import {useDispatch} from 'react-redux';
 import {setError} from '../../redux/Slices/errorPopup';
+import {Picker} from '@react-native-picker/picker';
 
 const Step1 = ({
   handleStep1,
@@ -173,7 +174,8 @@ const Step1 = ({
 
               <ScrollView
                 style={styles.scroll}
-                contentContainerStyle={styles.scrollContent}>
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}>
                 <Text style={styles.title}>Welcome to Traveltor</Text>
                 <Text style={styles.subtitle}>
                   Own your moments. Prove your presence.
@@ -187,28 +189,31 @@ const Step1 = ({
                   onBlur={() => trimmer('firstname')}
                   style={[
                     styles.input,
-                    formError.firstname && styles.inputError,
+                    formError?.firstname && styles.inputError,
                   ]}
                 />
-                {formError.firstname && renderError(formError.firstname)}
+                {formError?.firstname && renderError(formError.firstname)}
 
                 <Text style={styles.label}>Last Name</Text>
                 <TextInput
                   placeholder="Last name"
-                  value={form.lastname}
+                  value={form?.lastname}
                   onChangeText={value => handleChange('lastname', value)}
                   onBlur={() => trimmer('lastname')}
                   style={[
                     styles.input,
-                    formError.lastname && styles.inputError,
+                    formError?.lastname && styles.inputError,
                   ]}
                 />
-                {formError.lastname && renderError(formError.lastname)}
+                {formError?.lastname && renderError(formError.lastname)}
 
                 <Text style={styles.label}>Email</Text>
                 {isIOSDevice() ? (
                   <TextInput
-                    style={[styles.input, formError.email && styles.inputError]}
+                    style={[
+                      styles.input,
+                      formError?.email && styles.inputError,
+                    ]}
                     placeholder="Email"
                     value={form.email}
                     onChangeText={value => handleChange('email', value)}
@@ -231,11 +236,35 @@ const Step1 = ({
                     style={[styles.input, formError.email && styles.inputError]}
                   />
                 )}
-                {formError.email && renderError(formError.email)}
+                {formError?.email && renderError(formError.email)}
 
                 <Text style={styles.label}>Mobile</Text>
                 <View style={styles.phoneContainer}>
                   <Text style={styles.phoneCode}>{form.dialCode}</Text>
+                  {/* <View style={styles.dialCodeContainer}>
+                    <Picker
+                      selectedValue={form.dialCode}
+                      style={styles.dialCodePicker}
+                      onValueChange={itemValue => {
+                        const selectedOption = JSON.parse(itemValue);
+                        setForm(prev => ({
+                          ...prev,
+                          dialCode: selectedOption.dial_code,
+                          country: selectedOption.name,
+                        }));
+                      }}>
+                      {countryList.map((item, index) => (
+                        <Picker.Item
+                          key={index}
+                          label={`${item.dial_code}`}
+                          value={JSON.stringify({
+                            dial_code: item.dial_code,
+                            name: item.name,
+                          })}
+                        />
+                      ))}
+                    </Picker>
+                  </View> */}
                   <TextInput
                     placeholder="Enter your phone number"
                     value={form.mobile}
@@ -249,7 +278,7 @@ const Step1 = ({
                     style={styles.phoneInput}
                   />
                 </View>
-                {formError.mobile && renderError(formError.mobile)}
+                {formError?.mobile && renderError(formError.mobile)}
 
                 <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordContainer}>
@@ -261,14 +290,14 @@ const Step1 = ({
                       secureTextEntry={!showPassword}
                       style={[
                         styles.input,
-                        formError.password && styles.inputError,
+                        formError?.password && styles.inputError,
                       ]}
                     />
                   ) : (
                     <TextInput
                       style={[
                         styles.input,
-                        formError.password && styles.inputError,
+                        formError?.password && styles.inputError,
                       ]}
                       placeholder="Password"
                       secureTextEntry={!showPassword}
@@ -292,7 +321,7 @@ const Step1 = ({
                     />
                   </TouchableOpacity>
                 </View>
-                {formError.password && renderError(formError.password)}
+                {formError?.password && renderError(formError.password)}
 
                 <Text style={styles.label}>Referral Code</Text>
                 <TextInput
@@ -303,10 +332,10 @@ const Step1 = ({
                   editable={!form.refeeralCode}
                   style={[
                     styles.input,
-                    formError.referralCode && styles.inputError,
+                    formError?.referralCode && styles.inputError,
                   ]}
                 />
-                {formError.referralCode && renderError(formError.referralCode)}
+                {formError?.referralCode && renderError(formError.referralCode)}
 
                 <TouchableOpacity
                   style={styles.termsContainer}
@@ -330,7 +359,7 @@ const Step1 = ({
                     <Text style={styles.termsTextLink}>Privacy Policy</Text>.
                   </Text>
                 </TouchableOpacity>
-                {formError.termsAndConditions &&
+                {formError?.termsAndConditions &&
                   renderError(formError.termsAndConditions)}
 
                 <TouchableOpacity
@@ -451,6 +480,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     marginTop: 4,
   },
+  dialCodeContainer: {
+    width: 100,
+    height: 20,
+    borderRightWidth: 1,
+    borderRightColor: 'gray',
+    justifyContent: 'center',
+  },
+  dialCodePicker: {
+    width: '100%',
+  },
   phoneCode: {
     marginRight: 8,
     fontSize: 14,
@@ -458,6 +497,7 @@ const styles = StyleSheet.create({
   phoneInput: {
     flex: 1,
     fontSize: 14,
+    paddingLeft: 10,
   },
   passwordContainer: {
     position: 'relative',
@@ -483,6 +523,7 @@ const styles = StyleSheet.create({
   },
   checkboxChecked: {
     backgroundColor: '#e93c00',
+    borderWidth: 0,
   },
   termsText: {
     fontSize: 12,
