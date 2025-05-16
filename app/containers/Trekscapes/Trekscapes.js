@@ -9,7 +9,6 @@ import {
   Dimensions,
   ActivityIndicator,
   Image,
-  SafeAreaView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuth from '../../hooks/useAuth';
@@ -19,7 +18,6 @@ import Swiper from 'react-native-swiper';
 import moment from 'moment';
 import {useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
 import DoubleRight from 'react-native-vector-icons/AntDesign';
 import SadIcon from '../../../public/images/sadIcon.svg';
 

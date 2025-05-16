@@ -3,7 +3,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomePage from './app/containers/HomePage';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
-import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import {AuthProvider} from './app/context/AuthContext';
 import {Provider} from 'react-redux';
@@ -23,13 +23,13 @@ import {FeedProvider} from './app/context/FeedContext';
 import MyFeeds from './app/containers/MobilePages/MyFeeds';
 import Trekscapes from './app/containers/Trekscapes/Trekscapes';
 import Notification from './app/containers/MobilePages/Notification';
-import {SafeAreaView} from 'react-native';
 import TrekscapeDetails from './app/containers/Trekscapes/TrekscapeDetails';
 import TrekscapeFeed from './app/containers/Trekscapes/TrekscapeFeed';
 import SuccessMessage from './app/components/Modal/SuccessMessage';
 import ErrorMessage from './app/components/Modal/ErrorMessage';
 import TrailpointDetails from './app/containers/Trailpoint/TrailpointDetails';
 import TrailpointReview from './app/containers/Trailpoint/TrailpointReview';
+import SingleCheckIn from './app/containers/MobilePages/SingleCheckIn';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,173 +40,184 @@ function App() {
         <FeedProvider>
           <AuthProvider>
             <SafeAreaProvider>
-              <NavigationContainer>
-                <Stack.Navigator initialRouteName="Home">
-                  <Stack.Screen
-                    name="Home"
-                    component={HomePage}
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen
-                    name="Profile"
-                    children={() => (
-                      <FooterLayout>
-                        <UserProfile />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Setting"
-                    children={() => (
-                      <FooterLayout>
-                        <Setting />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="EditProfile"
-                    children={() => (
-                      <FooterLayout>
-                        <EditProfile />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Wallet"
-                    children={() => (
-                      <FooterLayout>
-                        <Wallet />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="ComingSoon"
-                    children={() => (
-                      <FooterLayout>
-                        <ComingSoon />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="MyActivity"
-                    children={() => (
-                      <FooterLayout>
-                        <MyActivity />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Referral"
-                    children={() => (
-                      <FooterLayout>
-                        <Referral />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Community"
-                    children={() => (
-                      <FooterLayout>
-                        <Community />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="HowItWorks"
-                    children={() => (
-                      <FooterLayout>
-                        <HowItWorks />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="AlpinistProgram"
-                    children={() => (
-                      <FooterLayout>
-                        <AlpinistProgram />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="MyFeeds"
-                    children={() => (
-                      <FooterLayout>
-                        <MyFeeds />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Trekscapes"
-                    children={() => (
-                      <FooterLayout>
-                        <Trekscapes />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="Notification"
-                    children={() => (
-                      <FooterLayout>
-                        <Notification />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="TrekscapeDetail"
-                    children={() => (
-                      <FooterLayout>
-                        <TrekscapeDetails />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="TrekscapeFeed"
-                    children={() => (
-                      <FooterLayout>
-                        <TrekscapeFeed />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="TrailpointDetails"
-                    children={() => (
-                      <FooterLayout>
-                        <TrailpointDetails />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                  <Stack.Screen
-                    name="TrailpointReview"
-                    children={() => (
-                      <FooterLayout>
-                        <TrailpointReview />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
-                  />
-                </Stack.Navigator>
-              </NavigationContainer>
-              <Toast />
-              <SuccessMessage />
-              <ErrorMessage />
+              <SafeAreaView style={{flex: 1, backgroundColor: '#e5e7eb'}}>
+                <NavigationContainer>
+                  <Stack.Navigator initialRouteName="Home">
+                    <Stack.Screen
+                      name="Home"
+                      component={HomePage}
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
+                    <Stack.Screen
+                      name="Profile"
+                      children={() => (
+                        <FooterLayout>
+                          <UserProfile />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Setting"
+                      children={() => (
+                        <FooterLayout>
+                          <Setting />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="EditProfile"
+                      children={() => (
+                        <FooterLayout>
+                          <EditProfile />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Wallet"
+                      children={() => (
+                        <FooterLayout>
+                          <Wallet />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="ComingSoon"
+                      children={() => (
+                        <FooterLayout>
+                          <ComingSoon />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="MyActivity"
+                      children={() => (
+                        <FooterLayout>
+                          <MyActivity />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Referral"
+                      children={() => (
+                        <FooterLayout>
+                          <Referral />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Community"
+                      children={() => (
+                        <FooterLayout>
+                          <Community />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="HowItWorks"
+                      children={() => (
+                        <FooterLayout>
+                          <HowItWorks />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="AlpinistProgram"
+                      children={() => (
+                        <FooterLayout>
+                          <AlpinistProgram />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="MyFeeds"
+                      children={() => (
+                        <FooterLayout>
+                          <MyFeeds />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Trekscapes"
+                      children={() => (
+                        <FooterLayout>
+                          <Trekscapes />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="Notification"
+                      children={() => (
+                        <FooterLayout>
+                          <Notification />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="TrekscapeDetail"
+                      children={() => (
+                        <FooterLayout>
+                          <TrekscapeDetails />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="TrekscapeFeed"
+                      children={() => (
+                        <FooterLayout>
+                          <TrekscapeFeed />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="TrailpointDetails"
+                      children={() => (
+                        <FooterLayout>
+                          <TrailpointDetails />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="TrailpointReview"
+                      children={() => (
+                        <FooterLayout>
+                          <TrailpointReview />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                    <Stack.Screen
+                      name="SingleCheckIn"
+                      children={() => (
+                        <FooterLayout>
+                          <SingleCheckIn />
+                        </FooterLayout>
+                      )}
+                      options={{headerShown: false}}
+                    />
+                  </Stack.Navigator>
+                </NavigationContainer>
+                <Toast />
+                <SuccessMessage />
+                <ErrorMessage />
+              </SafeAreaView>
             </SafeAreaProvider>
           </AuthProvider>
         </FeedProvider>

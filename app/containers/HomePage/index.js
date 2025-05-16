@@ -8,30 +8,23 @@ import Layout, {FooterLayout} from '../../Layout';
 
 const HomePage = () => {
   return (
-    <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.container}>
-          <FooterLayout>
-            <ScrollView
-              contentContainerStyle={styles.scrollContent}
-              showsVerticalScrollIndicator={false}>
-              <Layout>
-                <HeroSection />
-              </Layout>
-              <TrekScapes />
-              <Trailblazers />
-            </ScrollView>
-          </FooterLayout>
-        </View>
-      </SafeAreaView>
-    </SafeAreaProvider>
+    <View style={styles.container}>
+      <FooterLayout>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          <Layout>
+            <HeroSection />
+          </Layout>
+          <TrekScapes />
+          <Trailblazers />
+        </ScrollView>
+      </FooterLayout>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
     position: 'relative',

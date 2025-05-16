@@ -57,17 +57,19 @@ const Notification = () => {
   const notifyRedirection = item => {
     switch (item?.data?.type || item?.title) {
       case 'trail-point':
-        return `/trailpoint/${item?.data?.slug}`;
+        return ['TrailpointDetails', {slug: item?.data?.slug}];
       case 'check-in':
-        return `/checkin/${item?.data?.id}`;
+        return ['SingleCheckIn', {feedId: item?.data?.id}];
       case 'trekscape':
-        return `/trekscape/${item?.data?.slug}`;
+        return ['TrekscapeDetail', {slug: item?.data?.slug}];
       case 'User':
-        return `/user/profile/${item?.data?.id}`;
+        return ['Profile', {userType: 'User', id: item?.data?.id}];
       case 'Trailblazer':
-        return `/trailblazer/profile/${item?.data?.id}`;
+        return ['Profile', {userType: 'Trailblazer', id: item?.data?.id}];
       case 'Location enabled':
-        return `/checkin/${item?.data?.id}`;
+        return ['SingleCheckIn', {feedId: item?.data?.id}];
+      default:
+        return ['Home'];
     }
   };
 
@@ -117,7 +119,7 @@ const Notification = () => {
       }
     } else {
       const redirection = notifyRedirection(item);
-      navigate(redirection);
+      navigate(...redirection);
     }
   };
 

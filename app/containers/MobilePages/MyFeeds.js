@@ -27,6 +27,7 @@ import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import FeedLoader from '../../components/Common/FeedLoader';
 import {setError} from '../../redux/Slices/errorPopup';
+import FeedComment from '../../components/Modal/FeedComment';
 
 const MyFeeds = () => {
   //   const dispatch = useDispatch();
@@ -459,13 +460,13 @@ const MyFeeds = () => {
         </View>
       </ScrollView>
       {/* </PTRView> */}
-      {/* <FeedComment
+      <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
         postId={postId}
         feedUsername={feedUsername}
         setTrackScapeFeeds={setFeeds}
-      /> */}
+      />
       {/* {isShoutOut && (
         <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
       )} */}
