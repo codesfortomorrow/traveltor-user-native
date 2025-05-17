@@ -224,11 +224,10 @@ const CommentList = ({
     // React Native navigation
     onClose();
 
-    const path = `/${
-      userDetails?.type
-        ? userDetails?.type?.toLowerCase()
-        : user?.type?.toLowerCase()
-    }/profile/${userDetails?.id ? userDetails?.id : user?.id}`;
+    const path = {
+      userType: userDetails?.type || user?.type,
+      id: userDetails?.id || user?.id,
+    };
 
     navigation.navigate('Profile', {path});
   };

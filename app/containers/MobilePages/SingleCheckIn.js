@@ -21,8 +21,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactionIcon from 'react-native-vector-icons/AntDesign';
 import CheckIcon from '../../../public/images/icons/check.svg';
 import Marker from '../../../public/images/icons/marker.svg';
-import FeedDot from 'react-native-vector-icons/Entypo';
 import FaRegComment from 'react-native-vector-icons/FontAwesome';
+import FeedReactionList from '../../components/Modal/FeedReactionList';
+import FeedMenuBar from '../../components/Modal/FeedMenuBar';
+import ShoutOut from '../../components/Modal/ShoutOut';
 
 const SingleCheckIn = () => {
   const [feed, setFeed] = useState([]);
@@ -36,8 +38,7 @@ const SingleCheckIn = () => {
   const [commentModal, setCommentModal] = useState(false);
   const [postId, setPostId] = useState('');
   const [feedUsername, setFeedUsername] = useState('');
-  const {handleReactionOnTrekscapeFeed, trailBlazerFollowUnFollowed} =
-    useAuth();
+  const {handleReactionOnTrekscapeFeed} = useAuth();
   const dispatch = useDispatch();
   const user = useSelector(state => state?.user);
   const [isShoutOut, setIsShoutOut] = useState(false);
@@ -47,7 +48,6 @@ const SingleCheckIn = () => {
   const [reactionData, setReactionData] = useState([]);
   const [type, setType] = useState('');
   const [reactionLoader, setReactionLoader] = useState(false);
-  const [followUnfollow, setFollowUnfollow] = useState({});
   const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
 
@@ -188,35 +188,6 @@ const SingleCheckIn = () => {
       console.log(res?.error);
     }
   };
-
-  //   const handleFollowUnFollow = async (userId, id) => {
-  //     setFollowUnfollow(prev => ({
-  //       ...prev,
-  //       [id]: true,
-  //     }));
-  //     const response = await trailBlazerFollowUnFollowed(userId);
-  //     if (response?.status) {
-  //       if (response?.status && response?.data?.hasOwnProperty('follow')) {
-  //         const isNowFollowed = response.data.follow;
-
-  //         setReactionData(prev =>
-  //           prev?.map(item =>
-  //             item?.id === id ? {...item, isFollowed: isNowFollowed} : item,
-  //           ),
-  //         );
-  //         setFollowUnfollow(prev => ({
-  //           ...prev,
-  //           [id]: false,
-  //         }));
-  //       } else {
-  //         setFollowUnfollow(prev => ({
-  //           ...prev,
-  //           [id]: false,
-  //         }));
-  //         console.log('Failed to follow or unfollow');
-  //       }
-  //     }
-  //   };
 
   const onDoubleTap = (
     e,
@@ -376,17 +347,10 @@ const SingleCheckIn = () => {
                   </TouchableOpacity>
                   <View style={styles.menuContainer}>
                     {/* Menu button would go here */}
-                    {/* <FeedMenu
-                        feed={item}
-                        setIsShoutOut={setIsShoutOut}
-                        setShoutOutFeed={setShoutOutFeed}
-                        setIsDeleteModal={setIsDeleteModal}
-                        setFeedId={setFeedId}
-                    /> */}
-                    <FeedDot
-                      name="dots-three-vertical"
-                      color="#000"
-                      size={14}
+                    <FeedMenuBar
+                      feed={feed}
+                      setIsShoutOut={setIsShoutOut}
+                      setShoutOutFeed={setShoutOutFeed}
                     />
                   </View>
                 </View>
@@ -545,20 +509,23 @@ const SingleCheckIn = () => {
         />
       )}
       {/* Additional modals like ShoutOut and LikesModal would go here */}
-      {/* {isShoutOut && (
-        <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
+      {isShoutOut && (
+        <ShoutOut
+          open={isShoutOut}
+          onClose={() => setIsShoutOut(false)}
+          feed={shoutOutFeed}
+        />
       )}
       {open && (
-        <LikesModal
+        <FeedReactionList
           open={open}
           onClose={() => setOpen(false)}
-          likes={reactionData}
+          list={reactionData}
           type={type}
           isLoading={reactionLoader}
-          handleFollowUnFollow={handleFollowUnFollow}
-          followUnfollow={followUnfollow}
+          setReactionData={setReactionData}
         />
-      )} */}
+      )}
     </>
   );
 };

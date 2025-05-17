@@ -41,8 +41,6 @@ const MyFeeds = () => {
   const [commentModal, setCommentModal] = useState(false);
   const [postId, setPostId] = useState('');
   const [feedUsername, setFeedUsername] = useState('');
-  const [isShoutOut, setIsShoutOut] = useState(false);
-  const [shoutOutFeed, setShoutOutFeed] = useState([]);
   const [reactionDisabled, setReactionDisabled] = useState(false);
   const [isPageRefresh, setIsPageRefresh] = useState(false);
   const [noData, setNoData] = useState(false);
@@ -399,6 +397,7 @@ const MyFeeds = () => {
       <ScrollView
         ref={feedContainerRef}
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         onScrollEndDrag={handleScrollEnd}
@@ -467,9 +466,6 @@ const MyFeeds = () => {
         feedUsername={feedUsername}
         setTrackScapeFeeds={setFeeds}
       />
-      {/* {isShoutOut && (
-        <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
-      )} */}
     </View>
   );
 };
@@ -531,6 +527,9 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
     height: Dimensions.get('window').height - 100,
+  },
+  scrollViewContent: {
+    paddingBottom: 50,
   },
   feedContainer: {
     paddingBottom: 20,

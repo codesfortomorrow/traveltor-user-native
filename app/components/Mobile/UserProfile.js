@@ -20,6 +20,8 @@ import Backheading from './Backheading';
 import FeedsContainer from './FeedsContainer';
 import FeedLoader from '../Common/FeedLoader';
 import {setError} from '../../redux/Slices/errorPopup';
+import FeedComment from '../../components/Modal/FeedComment';
+import DeleteConfirmation from '../Modal/DeleteConfirmation';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -484,26 +486,23 @@ const UserProfile = () => {
         />
       )}
 
-      {/* <FeedComment
+      <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
         postId={postId}
         feedUsername={feedUsername}
         setTrackScapeFeeds={setFeeds}
-      /> */}
+      />
 
-      {/* {isShoutOut && (
-        <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
-      )} */}
-
-      {/* {isDeleteModal && (
-        <Confirmation
+      {isDeleteModal && (
+        <DeleteConfirmation
+          open={isDeleteModal}
+          onClose={() => setIsDeleteModal(false)}
           feedId={feedId}
           setFeeds={setFeeds}
-          setIsDeleteModal={setIsDeleteModal}
           setTrailblazer={setTrailblazer}
         />
-      )} */}
+      )}
     </View>
   );
 };
@@ -522,7 +521,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 50,
+    paddingBottom: 70,
   },
   hidden: {
     display: 'none',

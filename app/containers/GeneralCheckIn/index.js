@@ -1,38 +1,44 @@
-import {CheckInBar} from '@/components';
-import useAuth from '@/hooks/useAuth';
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {useDispatch, useSelector} from 'react-redux';
-import {toast} from 'react-hot-toast';
-import {setError} from '@/redux/actions';
-import CustomImage from '@/components/CustomImage';
 import {
-  generateDraftId,
-  getDraftById,
-  publishDraft,
-  saveDraft,
-} from '@/helpers/db';
-import ImageCropper from '@/components/Crop/ImageCropper';
-import {TiDelete} from 'react-icons/ti';
-import {Pagination, Autoplay} from 'swiper/modules';
-import {Swiper, SwiperSlide} from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/pagination';
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Dimensions,
+  Alert,
+} from 'react-native';
+import useAuth from '../../hooks/useAuth';
+import {useDispatch, useSelector} from 'react-redux';
+import {setError} from '../../redux/Slices/errorPopup';
 import {
   convertToThreeFourRatio,
   getLocation,
-  handleFileChange,
-} from '@/helpers/fileUploadHelper';
-import {CheckInStep2} from '@/containers/pageListAsync';
+} from '../../components/Helpers/fileUploadHelper';
+import {useNavigation} from '@react-navigation/native';
+import CheckInStep2 from './CheckInStep2';
+import CheckInTopBar from '../../components/Common/CheckInTopBar';
+import {launchImageLibrary} from 'react-native-image-picker';
+import ImageResizer from 'react-native-image-resizer';
+import RNFS from 'react-native-fs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import 'react-native-get-random-values';
+import {v4 as uuidv4} from 'uuid';
+import SadIcon from '../../../public/images/sadIcon.svg';
+import UploadImageMic from '../../../public/images/uploadImageMic.svg';
+import CameraIcon from '../../../public/images/camera.svg';
+
+const {width, height} = Dimensions.get('window');
 
 const GeneralCheckIn = () => {
   const dispatch = useDispatch();
   const [successCheckin, setSuccessCheckin] = useState(null);
   const [loading, setLoading] = useState(false);
-  const {getCurrentTrekscapes} = useAuth();
-  const location = useSelector(state => state.location);
-  const navigate = useNavigate();
-  const [showSelectedDateTime, setShowSelectedDateTime] = useState(null);
+  const {getValidatedCheckInPoint} = useAuth();
+  const location = useSelector(state => state?.location);
+  const navigation = useNavigation();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [reviewText, setReviewText] = useState('');
   const [step, setStep] = useState(1);
@@ -41,8 +47,6 @@ const GeneralCheckIn = () => {
   const [locationloader, setLocationloader] = useState(true);
   const [hasLocation, setHasLocation] = useState(true);
   const [handleName, setHandleName] = useState('');
-  const date = new Date(showSelectedDateTime);
-  const delaySeconds = Math.floor(date.getTime() / 1000);
   const [getLocationLoader, setGetLocationLoader] = useState(false);
   const [showSingleFile, setShowSingleFile] = useState({});
   const [croppedImages, setCroppedImages] = useState({});
@@ -54,7 +58,7 @@ const GeneralCheckIn = () => {
   const handleCheckInTreckScape = async () => {
     try {
       setLoading(true);
-      localStorage.removeItem('generalDraft');
+      await AsyncStorage.removeItem('generalDraft');
 
       const trailPoint = trailPointDetail[0];
       const payload = {
@@ -62,7 +66,6 @@ const GeneralCheckIn = () => {
         lat: location?.latitude || 0,
         long: location?.longitude || 0,
         review: reviewText,
-        delay: delaySeconds,
       };
 
       if (trailPoint?.trekscape_id) {
@@ -88,32 +91,32 @@ const GeneralCheckIn = () => {
         }),
       );
 
-      const draftId = await generateDraftId(payload, updatedFiles);
+      // const draftId = await generateDraftId(payload, updatedFiles);
 
-      const existingDraft = await getDraftById(draftId);
+      // const existingDraft = await getDraftById(draftId);
 
-      if (!existingDraft) {
-        await saveDraft({
-          id: draftId,
-          files: updatedFiles,
-          payload: payload,
-          status: 'readyforPublish',
-          type: 'general',
-        });
-      }
+      // if (!existingDraft) {
+      //   await saveDraft({
+      //     id: draftId,
+      //     files: updatedFiles,
+      //     payload: payload,
+      //     status: 'readyforPublish',
+      //     type: 'general',
+      //   });
+      // }
 
-      const response = await publishDraft();
-      if (response?.status) {
-        setSuccessCheckin({
-          status: true,
-          data: {
-            name: handleName,
-            point: payload.type === 'TrailPoint' ? 1000 : 5,
-          },
-        });
-      } else {
-        toast.error('Failed to publish check-in.');
-      }
+      // const response = await publishDraft();
+      // if (response?.status) {
+      //   setSuccessCheckin({
+      //     status: true,
+      //     data: {
+      //       name: handleName,
+      //       point: payload.type === 'TrailPoint' ? 1000 : 5,
+      //     },
+      //   });
+      // } else {
+      //   toast.error('Failed to publish check-in.');
+      // }
     } catch (error) {
       dispatch(
         setError({
@@ -130,10 +133,11 @@ const GeneralCheckIn = () => {
   const fetchCurrentTrekscapes = useCallback(async ({latitude, longitude}) => {
     setLocationloader(true);
     try {
-      const response = await getCurrentTrekscapes({
-        latitude,
-        longitude,
+      const response = await getValidatedCheckInPoint({
+        latitude: '22.7611853',
+        longitude: '75.8831569',
       });
+      console.log(response, 'response');
       if (response) {
         setCurrentTrekscapes(response);
         setTrailPointDetail(response);
@@ -166,271 +170,726 @@ const GeneralCheckIn = () => {
     locationloader;
 
   useEffect(() => {
-    const savedCrops =
-      JSON.parse(sessionStorage.getItem('croppedImages')) || {};
-    setCroppedImages(savedCrops);
-  }, []);
-
-  const handleCropDone = (originalImage, croppedImage) => {
-    setCroppedImages(prev => {
-      const updatedCrops = {...prev, [originalImage]: croppedImage};
-      sessionStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
-      return updatedCrops;
-    });
-  };
-
-  useEffect(() => {
-    const triggerFileInput = () => {
-      if (inputRef.current && !isTriggered.current) {
-        isTriggered.current = true;
-        setTimeout(() => {
-          inputRef.current?.click();
-        }, 0);
+    const loadSavedCrops = async () => {
+      try {
+        const savedCrops = await AsyncStorage.getItem('croppedImages');
+        if (savedCrops) {
+          setCroppedImages(JSON.parse(savedCrops));
+        }
+      } catch (error) {
+        console.error('Error loading cropped images:', error);
       }
     };
 
-    triggerFileInput();
+    loadSavedCrops();
   }, []);
+
+  const handleCropDone = async (originalImage, croppedImage) => {
+    try {
+      const updatedCrops = {...croppedImages, [originalImage]: croppedImage};
+      setCroppedImages(updatedCrops);
+      await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
+    } catch (error) {
+      console.error('Error saving cropped images:', error);
+    }
+  };
+
+  useEffect(() => {
+    const triggerImagePicker = () => {
+      if (!isTriggered.current) {
+        isTriggered.current = true;
+        setTimeout(() => {
+          pickImage();
+        }, 500);
+      }
+    };
+
+    // triggerImagePicker();
+  }, []);
+
+  const pickImage = async () => {
+    try {
+      const options = {
+        mediaType: 'photo',
+        selectionLimit: 0, // 0 means unlimited
+        includeBase64: false,
+        includeExtra: true,
+      };
+
+      const result = await launchImageLibrary(options);
+
+      if (result.didCancel) return;
+
+      if (result.errorCode) {
+        Alert.alert('Error', result.errorMessage || 'Unknown error occurred');
+        return;
+      }
+
+      // Define allowed image types
+      const allowedTypes = [
+        'image/png',
+        'image/jpeg',
+        'image/jpg',
+        'image/webp',
+        'image/svg+xml',
+        'image/heic',
+        'image/heif',
+      ].map(type => type.toLowerCase());
+
+      // Process each selected image
+      const tempFiles = result.assets.map(asset => ({
+        id: uuidv4(),
+        file: {
+          uri: asset.uri,
+          name: asset.fileName || `image_${Date.now()}.jpg`,
+          type: asset.type || 'image/jpeg',
+        },
+        url: asset.uri,
+        status: 'ready',
+      }));
+
+      setSelectedFiles(prevFiles => [...prevFiles, ...tempFiles]);
+
+      // Process each file
+      const failedIndexes = new Set();
+
+      await Promise.all(
+        tempFiles.map(async tempFile => {
+          setIsLoaded(prev => ({
+            ...prev,
+            [tempFile.id]: false,
+          }));
+
+          try {
+            let processedFile = tempFile.file;
+            const fileTypeMatch = processedFile.uri.match(/\.([^.]+)$/);
+            const fileExtension = fileTypeMatch
+              ? fileTypeMatch[1].toLowerCase()
+              : '';
+            const mimeType = processedFile.type
+              ? processedFile.type.toLowerCase()
+              : '';
+
+            // Check if file type is allowed
+            const isAllowedType = allowedTypes.some(
+              type =>
+                mimeType.includes(type.replace('image/', '')) ||
+                type.includes(fileExtension),
+            );
+
+            if (!isAllowedType) {
+              dispatch(
+                setError({
+                  open: true,
+                  custom_message: `Unsupported file type: ${
+                    processedFile.type || fileExtension
+                  }`,
+                }),
+              );
+              failedIndexes.add(tempFile.id);
+              return;
+            }
+
+            // Handle HEIC/HEIF conversion to JPEG
+            if (
+              mimeType.includes('heic') ||
+              fileExtension === 'heic' ||
+              fileExtension === 'heif'
+            ) {
+              try {
+                // For HEIC files, convert to JPEG using ImageResizer
+                const fileName = `converted_${Date.now()}.jpg`;
+                const outputPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+
+                // Use ImageResizer to convert HEIC to JPEG
+                const resizeResult = await ImageResizer.createResizedImage(
+                  processedFile.uri,
+                  2048, // max width
+                  2048, // max height
+                  'JPEG',
+                  80, // quality
+                  0, // rotation
+                  outputPath,
+                );
+
+                // Create a new file object with converted image
+                const newFileName = processedFile.name.replace(
+                  /\.(heic|heif)$/i,
+                  '.jpg',
+                );
+                processedFile = {
+                  uri: resizeResult.uri,
+                  name: newFileName,
+                  type: 'image/jpeg',
+                };
+
+                // Update the file in selectedFiles
+                setSelectedFiles(prevFiles =>
+                  prevFiles.map(fileObj =>
+                    fileObj.id === tempFile.id
+                      ? {
+                          ...fileObj,
+                          file: processedFile,
+                          status: 'ready',
+                          url: resizeResult.uri,
+                        }
+                      : fileObj,
+                  ),
+                );
+              } catch (error) {
+                console.error('HEIC/HEIF conversion failed:', error);
+                dispatch(
+                  setError({
+                    open: true,
+                    custom_message: `Failed to convert HEIC/HEIF file: ${processedFile.name}`,
+                  }),
+                );
+                failedIndexes.add(tempFile.id);
+                return;
+              }
+            }
+
+            // Compress images
+            if (
+              ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
+                mimeType,
+              ) ||
+              ['jpeg', 'jpg', 'png', 'webp'].includes(fileExtension)
+            ) {
+              try {
+                // Get file stats to check size
+                const fileStats = await RNFS.stat(processedFile.uri);
+                const fileSizeInMB = fileStats.size / (1024 * 1024);
+
+                // If file is larger than 2MB or we want to ensure consistent quality
+                if (fileSizeInMB > 2 || true) {
+                  const fileName = `compressed_${Date.now()}.jpg`;
+                  const outputPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+
+                  // Use ImageResizer to resize and compress the image
+                  const resizeResult = await ImageResizer.createResizedImage(
+                    processedFile.uri,
+                    1920, // max width
+                    1920, // max height
+                    'JPEG',
+                    80, // quality
+                    0, // rotation
+                    outputPath,
+                  );
+
+                  // Get stats of resized file
+                  const resizedStats = await RNFS.stat(resizeResult.uri);
+                  const resizedSizeInMB = resizedStats.size / (1024 * 1024);
+
+                  // If still too large, compress further
+                  if (resizedSizeInMB > 2) {
+                    const furtherCompressedPath = `${RNFS.CachesDirectoryPath}/further_${fileName}`;
+                    const furtherCompressed =
+                      await ImageResizer.createResizedImage(
+                        resizeResult.uri,
+                        1280, // smaller max width
+                        1280, // smaller max height
+                        'JPEG',
+                        60, // lower quality
+                        0,
+                        furtherCompressedPath,
+                      );
+
+                    processedFile = {
+                      uri: furtherCompressed.uri,
+                      name: processedFile.name,
+                      type: 'image/jpeg',
+                    };
+
+                    // Clean up the intermediate file
+                    RNFS.unlink(resizeResult.uri).catch(err =>
+                      console.warn('Error removing temporary file:', err),
+                    );
+                  } else {
+                    processedFile = {
+                      uri: resizeResult.uri,
+                      name: processedFile.name,
+                      type: 'image/jpeg',
+                    };
+                  }
+                }
+              } catch (error) {
+                console.error('Image compression failed:', error);
+                // Continue with original file if compression fails
+              }
+            }
+
+            // Update the file status to ready
+            setSelectedFiles(prevFiles =>
+              prevFiles.map(fileObj =>
+                fileObj.id === tempFile.id
+                  ? {...fileObj, status: 'ready', file: processedFile}
+                  : fileObj,
+              ),
+            );
+
+            // Mark image as loaded
+            setIsLoaded(prev => ({
+              ...prev,
+              [tempFile.id]: true,
+            }));
+          } catch (error) {
+            console.error('Error processing image:', error);
+            failedIndexes.add(tempFile.id);
+          }
+        }),
+      );
+
+      // Remove failed files
+      if (failedIndexes.size > 0) {
+        setSelectedFiles(prevFiles =>
+          prevFiles.filter(fileObj => !failedIndexes.has(fileObj.id)),
+        );
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Error selecting images. Please try again.',
+        }),
+      );
+    }
+  };
+
+  if (step === 2) {
+    return (
+      <CheckInStep2
+        currentTrekscapes={currentTrekscapes}
+        setReviewText={setReviewText}
+        disable={disable}
+        handleCheckInTreckScape={handleCheckInTreckScape}
+        setStep={setStep}
+        locationloader={locationloader}
+        handleName={handleName}
+        setHandleName={setHandleName}
+        setTrailPointDetail={setTrailPointDetail}
+        croppedImages={croppedImages}
+        successCheckin={successCheckin}
+        setSuccessCheckin={setSuccessCheckin}
+        selectedFiles={selectedFiles}
+      />
+    );
+  }
+
+  const renderNoLocationContent = () => (
+    <View style={styles.noLocationContainer}>
+      <View style={{marginBottom: 20}}>
+        <SadIcon width={60} height={60} />
+      </View>
+
+      <Text style={styles.notHereTitle}>
+        We're Not Here Yet, But We're Trying.
+      </Text>
+      <Text style={styles.notHereDescription}>
+        Not here yet! Locals, help us expand—join our Telegram to connect this
+        location!
+      </Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate('Trekscapes')}
+        style={styles.exploreButton}>
+        <Text style={styles.exploreButtonText}>Explore</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderLocationDeniedContent = () => (
+    <View style={styles.noLocationContainer}>
+      <SadIcon width={30} height={30} />
+
+      <Text style={styles.notHereTitle}>
+        {location?.response?.code === 1
+          ? 'Permission denied. Please enable geolocation access.'
+          : location?.response?.message}
+      </Text>
+      <TouchableOpacity
+        disabled={getLocationLoader}
+        onPress={() => getLocation(setGetLocationLoader, dispatch)}
+        style={styles.retryButton}>
+        {getLocationLoader ? (
+          <ActivityIndicator size="small" color="#FFFFFF" />
+        ) : (
+          <Text style={styles.retryButtonText}>Retry</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderImageUploadContent = () => (
+    <View
+      style={[
+        styles.imageUploadContainer,
+        selectedFiles?.length !== 0 && !isCropOpen && styles.justifyCenter,
+      ]}>
+      {selectedFiles.length === 0 && (
+        <View style={styles.uploadInstructionsContainer}>
+          <View style={styles.selfCenter}>
+            <Image
+              // source={require('../../../public/images/CheckInTvtor.jpg')}
+              source={{
+                uri: 'https://ik.imagekit.io/8u2famo7gp/prod/90e0c362d1ee4bd482fd9eda023862db.jpg',
+              }}
+              style={styles.earnTvtorImage}
+            />
+          </View>
+          <View style={styles.uploadInstructions}>
+            <UploadImageMic width={70} height={70} />
+
+            <Text style={styles.uploadInstructionsText}>
+              Crop or Adjust your photo before publishing, tap on to photo
+              preview.
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {selectedFiles?.length !== 0 && !isCropOpen && (
+        <Text
+          style={[
+            styles.tapToAdjustText,
+            selectedFiles?.length !== 0 &&
+              !isCropOpen &&
+              styles.negativeMarginTop,
+          ]}>
+          *{selectedFiles?.length > 1 && 'Scroll to see more and'} Tap to adjust
+          display
+        </Text>
+      )}
+
+      {selectedFiles?.length !== 0 && (
+        <View>
+          {!isCropOpen && (
+            <ScrollView
+              horizontal
+              contentContainerStyle={styles.imageSwiper}
+              showsHorizontalScrollIndicator={false}
+              pagingEnabled>
+              {selectedFiles.map(file => {
+                const imageUrl = croppedImages[file.id] || file.url;
+                return (
+                  <View
+                    key={file?.id}
+                    style={[
+                      styles.imageSwiperSlide,
+                      selectedFiles?.length === 1 && styles.singleImage,
+                    ]}>
+                    {!isLoaded[file?.id] && (
+                      <View style={styles.imageLoader}>
+                        <Text style={styles.imageLoaderText}>
+                          Loading image...
+                        </Text>
+                      </View>
+                    )}
+                    <TouchableOpacity
+                      onPress={() => {
+                        setShowSingleFile(file);
+                        setIsCropOpen(true);
+                      }}
+                      activeOpacity={0.8}>
+                      <Image
+                        source={{uri: imageUrl}}
+                        style={[
+                          styles.selectedImage,
+                          isLoaded[file?.id] ? {opacity: 1} : {opacity: 0},
+                        ]}
+                        onLoad={() =>
+                          setIsLoaded(prev => ({
+                            ...prev,
+                            [file.id]: true,
+                          }))
+                        }
+                      />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.deleteIcon}
+                      onPress={() =>
+                        setSelectedFiles(prevFiles =>
+                          prevFiles.filter(fileObj => fileObj.id !== file.id),
+                        )
+                      }>
+                      <Text style={styles.deleteIconText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
+      {selectedFiles?.length !== 0 && isCropOpen && (
+        <View style={styles.cropperContainer}>
+          {/* <ImageCropper
+            fileId={showSingleFile?.id || selectedFiles[0]?.id}
+            originalFile={
+              showSingleFile?.file || selectedFiles[0]?.file
+            }
+            imageSrc={showSingleFile?.url || selectedFiles[0].url}
+            onCropDone={handleCropDone}
+            setIsCropOpen={setIsCropOpen}
+          /> */}
+        </View>
+      )}
+
+      {!isCropOpen && (
+        <View style={styles.addPhotosButtonContainer}>
+          <TouchableOpacity style={styles.addPhotosButton} onPress={pickImage}>
+            <CameraIcon width={24} height={24} />
+
+            <Text style={styles.addPhotosButtonText}>Add your photos</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <>
-      {step == 2 ? (
-        <CheckInStep2
-          currentTrekscapes={currentTrekscapes}
-          setReviewText={setReviewText}
-          disable={disable}
-          handleCheckInTreckScape={handleCheckInTreckScape}
-          setStep={setStep}
-          locationloader={locationloader}
-          handleName={handleName}
-          setHandleName={setHandleName}
-          setTrailPointDetail={setTrailPointDetail}
-          croppedImages={croppedImages}
-          successCheckin={successCheckin}
-          setSuccessCheckin={setSuccessCheckin}
-          selectedFiles={selectedFiles}
-        />
+      <CheckInTopBar
+        disable={selectedFiles?.length === 0}
+        trigger={'Next'}
+        setStep={setStep}
+        isCropOpen={isCropOpen}
+        setIsCropOpen={setIsCropOpen}
+        selectedFiles={selectedFiles}
+        nextTrip={true}
+      />
+
+      {!location?.response &&
+      !loading &&
+      location &&
+      currentTrekscapes &&
+      !hasLocation &&
+      currentTrekscapes.length == 0 ? (
+        renderNoLocationContent()
       ) : (
-        <div>
-          <CheckInBar
-            disable={selectedFiles?.length === 0}
-            setShowSelectedDateTime={setShowSelectedDateTime}
-            trigger={'Next'}
-            setStep={setStep}
-            isCropOpen={isCropOpen}
-            setIsCropOpen={setIsCropOpen}
-            selectedFiles={selectedFiles}
-            nextTrip={true}
-          />
-          {!location?.response &&
-          !loading &&
-          location &&
-          currentTrekscapes &&
-          !hasLocation &&
-          currentTrekscapes.length == 0 ? (
-            <div className="flex flex-col justify-center items-center h-[calc(100vh-100px)] shadow-topHeader w-full bg-white p-3">
-              <CustomImage
-                src="/images/sadIcon.svg"
-                className="h-60 my-2 mb-4"
-                alt="sad"
-              />
-              <h1 className="font-inter font-300 text-18 text-center leading-5">
-                We’re Not Here Yet, But We’re Trying.
-              </h1>
-              <p className="font-inter font-300 text-14 text-center leading-5 my-3 mb-5">
-                Not here yet! Locals, help us expand—join our Telegram to
-                connect this location!
-              </p>
-              <button
-                onClick={() => navigate('/trekscapes')}
-                className="text-white bg-primary-100 font-medium text-12 px-5 py-2 my-2  rounded-15 leading-none">
-                Explore
-              </button>
-            </div>
-          ) : (
-            <>
-              {location?.response && (
-                <>
-                  <div className="flex flex-col justify-center items-center h-[calc(100vh-100px)] w-full bg-white p-3 shadow-topHeader">
-                    <CustomImage
-                      src="/images/sadIcon.svg"
-                      className="h-60 my-2 mb-4"
-                      alt="sad"
-                    />
-                    <h1 className="font-inter font-300 text-16 text-center leading-5">
-                      {location?.response?.code === 1
-                        ? 'Permission denied. Please enable geolocation access.'
-                        : location?.response?.message}
-                    </h1>
-
-                    <button
-                      disabled={getLocationLoader}
-                      onClick={() =>
-                        getLocation(setGetLocationLoader, dispatch)
-                      }
-                      className="text-white bg-primary-100 font-medium text-14 px-5 py-2 my-5 w-[75px] h-[30px] rounded-15 leading-none flex items-center justify-center">
-                      {getLocationLoader ? (
-                        <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                      ) : (
-                        'Retry'
-                      )}
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {!location?.response && (
-                <div
-                  className={`shadow-topHeader h-auto min-h-[90vh] flex flex-col gap-[20px] pt-5 ${
-                    selectedFiles?.length !== 0 &&
-                    !isCropOpen &&
-                    'justify-center'
-                  }`}>
-                  {selectedFiles.length == 0 && (
-                    <div className="px-5 flex flex-col gap-[50px]">
-                      <div className="self-center">
-                        <CustomImage
-                          src="https://ik.imagekit.io/8u2famo7gp/prod/5ab9e2e49445d4bdf1454b78585f9125.svg?tr=w-97,q-10"
-                          alt="Earn Tvtor"
-                          className="min-h-[95px]"
-                        />
-                      </div>
-                      <div className="w-full h-[125px] border-2 border-[#31313180] flex items-center justify-start gap-8 px-3">
-                        <CustomImage
-                          src="/images/uploadImageMic.svg"
-                          alt="Mic"
-                        />
-                        <p className="w-[65%]">
-                          Crop or Adjust your photo before publishing, tap on to
-                          photo preview.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  {selectedFiles?.length !== 0 && !isCropOpen && (
-                    <p
-                      className={`text-center font-inter font-normal text-base text-[#0000009A] ${
-                        selectedFiles?.length !== 0 &&
-                        !isCropOpen &&
-                        '-mt-[90px]'
-                      }`}>
-                      *{selectedFiles?.length > 1 && 'Scroll to see more and'}{' '}
-                      Tap to adjust display
-                    </p>
-                  )}
-
-                  {selectedFiles?.length !== 0 && (
-                    <div>
-                      <Swiper
-                        className="mySwiper mobile"
-                        style={{position: 'relative'}}
-                        modules={[Pagination, Autoplay]}
-                        slidesPerView="auto"
-                        centeredSlides={true}
-                        spaceBetween={20}
-                        pagination={false}>
-                        {selectedFiles &&
-                          !isCropOpen &&
-                          selectedFiles?.map(file => {
-                            const imageUrl = croppedImages[file.id] || file.url;
-                            return (
-                              <SwiperSlide
-                                key={file?.id}
-                                className={`w-[300px] max-w-[300px] flex justify-center items-center mx-auto h-[400px] relative rounded-lg overflow-hidden ${
-                                  selectedFiles?.length === 1
-                                    ? 'mx-auto !ml-auto !mr-auto'
-                                    : ''
-                                }`}>
-                                {!isLoaded[file?.id] && (
-                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500 text-sm z-10">
-                                    Loading image...
-                                  </div>
-                                )}
-                                <CustomImage
-                                  src={imageUrl}
-                                  alt="checkin"
-                                  className={`fade-in w-full h-full object-cover transition-opacity duration-300 ${
-                                    isLoaded[file?.id]
-                                      ? 'opacity-100'
-                                      : 'opacity-0'
-                                  }`}
-                                  onLoad={() =>
-                                    setIsLoaded(prev => ({
-                                      ...prev,
-                                      [file.id]: true,
-                                    }))
-                                  }
-                                  loading="lazy"
-                                  onClick={() => (
-                                    setShowSingleFile(file), setIsCropOpen(true)
-                                  )}
-                                />
-                                <TiDelete
-                                  className="absolute top-2 right-2 text-red-600 text-[32px] z-[100] cursor-pointer"
-                                  onClick={() =>
-                                    setSelectedFiles(prevFiles =>
-                                      prevFiles.filter(
-                                        fileObj => fileObj.id !== file.id,
-                                      ),
-                                    )
-                                  }
-                                />
-                              </SwiperSlide>
-                            );
-                          })}
-                      </Swiper>
-                    </div>
-                  )}
-
-                  {selectedFiles?.length !== 0 && isCropOpen && (
-                    <div className="relative top-0 left-0 right-0 h-[70vh] flex items-center">
-                      <ImageCropper
-                        fileId={showSingleFile?.id || selectedFiles[0]?.id}
-                        originalFile={
-                          showSingleFile?.file || selectedFiles[0]?.file
-                        }
-                        imageSrc={showSingleFile?.url || selectedFiles[0].url}
-                        onCropDone={handleCropDone}
-                        setIsCropOpen={setIsCropOpen}
-                      />
-                    </div>
-                  )}
-
-                  {!isCropOpen && (
-                    <div className="px-14 mx-auto w-full pt-[20px]">
-                      <input
-                        ref={inputRef}
-                        type="file"
-                        id="file-upload"
-                        className="hidden"
-                        onChange={event =>
-                          handleFileChange(event, setSelectedFiles, setIsLoaded)
-                        }
-                        multiple
-                      />
-
-                      <label
-                        htmlFor="file-upload"
-                        className="bg-[#E93C00] text-white flex items-center justify-center mx-auto cursor-pointer px-4 py-2 border border-[#D9D9D9] rounded-lg">
-                        <CustomImage
-                          src="/images/camera.svg"
-                          alt="Add Icon"
-                          className="mr-2"
-                        />
-                        <span className="font-inter text-14">
-                          Add your photos
-                        </span>
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+        <>
+          {location?.response
+            ? renderLocationDeniedContent()
+            : renderImageUploadContent()}
+        </>
       )}
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  noLocationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: height - 100,
+    backgroundColor: 'white',
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  sadIcon: {
+    height: 240,
+    marginVertical: 8,
+    marginBottom: 16,
+  },
+  notHereTitle: {
+    fontFamily: 'Inter-Light',
+    fontSize: 18,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  notHereDescription: {
+    fontFamily: 'Inter-Light',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginVertical: 12,
+    marginBottom: 20,
+  },
+  exploreButton: {
+    backgroundColor: '#E93C00',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginVertical: 8,
+    borderRadius: 15,
+  },
+  exploreButtonText: {
+    color: 'white',
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+  },
+  retryButton: {
+    backgroundColor: '#E93C00',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    marginVertical: 20,
+    width: 75,
+    height: 30,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  retryButtonText: {
+    color: 'white',
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+  },
+  imageUploadContainer: {
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: -2},
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3,
+    height: 'auto',
+    minHeight: height * 0.9,
+    flexDirection: 'column',
+    gap: 20,
+    paddingTop: 20,
+    backgroundColor: 'white',
+  },
+  justifyCenter: {
+    justifyContent: 'center',
+  },
+  uploadInstructionsContainer: {
+    paddingHorizontal: 20,
+    flexDirection: 'column',
+    gap: 50,
+  },
+  selfCenter: {
+    alignSelf: 'center',
+    width: '100%',
+  },
+  earnTvtorImage: {
+    minHeight: 95,
+    width: '100%',
+    resizeMode: 'contain',
+  },
+  uploadInstructions: {
+    width: '100%',
+    height: 125,
+    borderWidth: 2,
+    borderColor: 'rgba(49, 49, 49, 0.5)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 32,
+    paddingHorizontal: 12,
+  },
+  uploadMicIcon: {
+    width: 24,
+    height: 24,
+  },
+  uploadInstructionsText: {
+    width: '65%',
+    lineHeight: 18,
+  },
+  tapToAdjustText: {
+    textAlign: 'center',
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: 'rgba(0, 0, 0, 0.6)',
+  },
+  negativeMarginTop: {
+    marginTop: -90,
+  },
+  imageSwiper: {
+    paddingHorizontal: 10,
+  },
+  imageSwiperSlide: {
+    width: 300,
+    maxWidth: 300,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 400,
+    position: 'relative',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginHorizontal: 10,
+  },
+  singleImage: {
+    marginHorizontal: 'auto',
+  },
+  imageLoader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f1f1f1',
+    zIndex: 10,
+  },
+  imageLoaderText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  selectedImage: {
+    width: 300,
+    height: 400,
+    resizeMode: 'cover',
+  },
+  deleteIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'red',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
+  deleteIconText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  cropperContainer: {
+    position: 'relative',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: height * 0.7,
+    alignItems: 'center',
+  },
+  addPhotosButtonContainer: {
+    paddingHorizontal: 56,
+    marginHorizontal: 'auto',
+    width: '100%',
+    paddingTop: 20,
+  },
+  addPhotosButton: {
+    backgroundColor: '#E93C00',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    justifyContent: 'center',
+    marginHorizontal: 'auto',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: '#D9D9D9',
+    borderRadius: 8,
+  },
+  cameraIcon: {
+    marginRight: 8,
+    width: 24,
+    height: 24,
+  },
+  addPhotosButtonText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: 'white',
+  },
+});
 
 export default GeneralCheckIn;

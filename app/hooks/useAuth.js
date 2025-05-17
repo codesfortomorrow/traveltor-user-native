@@ -569,28 +569,33 @@ const useAuth = () => {
     }
   }, []);
 
-  const getSingleTrailpointforReview = useCallback(async (id, data, userId) => {
-    const params = new URLSearchParams({
-      ...(userId && {userId}),
-      orderBy: data?.sortOrder || 0,
-      ...(data?.userType && {userType: data?.userType}),
-      ...(data?.startDate && {startDate: data?.startDate}),
-      ...(data?.endDate && {endDate: data?.endDate}),
-    });
+  const getSingleTrailpointforReview = useCallback(
+    async (id, data, userId, page) => {
+      const params = new URLSearchParams({
+        ...(userId && {userId}),
+        orderBy: data?.sortOrder || 0,
+        ...(data?.userType && {userType: data?.userType}),
+        ...(data?.startDate && {startDate: data?.startDate}),
+        ...(data?.endDate && {endDate: data?.endDate}),
+        skip: 5 * page,
+        take: 5,
+      });
 
-    const url = `/trail-points/${id}/check-ins?${params.toString()}`;
-    const response = await getAuthReq(url);
-    if (response?.status) {
-      return response.data;
-    } else {
-      dispatch(
-        setError({
-          open: true,
-          custom_message: ` ${response.error.message}`,
-        }),
-      );
-    }
-  }, []);
+      const url = `/trail-points/${id}/check-ins?${params.toString()}`;
+      const response = await getAuthReq(url);
+      if (response?.status) {
+        return response.data;
+      } else {
+        dispatch(
+          setError({
+            open: true,
+            custom_message: ` ${response.error.message}`,
+          }),
+        );
+      }
+    },
+    [],
+  );
 
   const getSingleTrailpoint = useCallback(async (id, userId) => {
     const params = new URLSearchParams({
@@ -605,6 +610,25 @@ const useAuth = () => {
         setError({
           open: true,
           custom_message: ` ${response.error.message}`,
+        }),
+      );
+    }
+  }, []);
+
+  const getValidatedCheckInPoint = useCallback(async data => {
+    const params = new URLSearchParams({
+      latitude: data?.latitude || 'asc',
+      longitude: data?.longitude,
+    });
+    const url = `/trekscapes/by-location?${params.toString()}`;
+    const response = await getAuthReq(url);
+    if (response?.status) {
+      return response.data;
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: response?.error?.message,
         }),
       );
     }
@@ -639,6 +663,7 @@ const useAuth = () => {
     getTrailPointFeeds,
     getSingleTrailpointforReview,
     getSingleTrailpoint,
+    getValidatedCheckInPoint,
   };
 };
 

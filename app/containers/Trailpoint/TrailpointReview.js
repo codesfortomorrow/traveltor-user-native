@@ -1,5 +1,11 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {View, Text, ScrollView, StyleSheet} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
@@ -9,6 +15,7 @@ import Backheading from '../../components/Mobile/Backheading';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import {useRoute} from '@react-navigation/native';
 import TrailpointReviewFilter from './TrailpointReviewFilter';
+import FeedComment from '../../components/Modal/FeedComment';
 
 const TrailpointReview = () => {
   const {
@@ -19,10 +26,15 @@ const TrailpointReview = () => {
   const [showFilter, setShowFilter] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [trailPointInfo, setTrailPointInfo] = useState({});
-  const [trailPoints, setTrailPoints] = useState({});
+  const [trailPoints, setTrailPoints] = useState([]);
   const route = useRoute();
   const slug = route.params?.slug;
   const dispatch = useDispatch();
+  const [pageNumber, setPageNumber] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [contentLoader, setContentLoader] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const scrollViewRef = useRef(null);
   const [commentModal, setCommentModal] = useState(() => {
     try {
       const value = global.sessionStorage?.getItem('commentModal');
@@ -70,7 +82,6 @@ const TrailpointReview = () => {
       }
     } catch (error) {
       console.log('Session storage error:', error);
-      // Handle the error or implement alternative storage if needed
     }
   }, [commentModal]);
 
@@ -91,38 +102,56 @@ const TrailpointReview = () => {
   }, [slug]);
 
   const fetchTrailpointDetail = useCallback(
-    async (filterData, userId) => {
-      setIsLoading(true);
+    async (filterData, userId, page) => {
+      if (page === 0) {
+        setTrailPoints([]);
+        setIsLoading(true);
+      } else {
+        setIsLoadingMore(true);
+      }
+
       try {
         const response = await getSingleTrailpointforReview(
           slug,
           filterData,
           userId,
+          page,
         );
         if (response) {
-          setTrailPoints(response?.data);
+          setTrailPoints(prev =>
+            page === 0 ? response?.data : [...prev, ...response?.data],
+          );
+          setHasMore(response?.data?.length === 5);
         }
       } catch (error) {
         console.log('Error:', error);
+        dispatch(
+          setError({
+            open: true,
+            custom_message: 'Failed to load reviews. Please try again.',
+          }),
+        );
       } finally {
         setIsLoading(false);
+        setIsLoadingMore(false);
       }
     },
-    [slug],
+    [slug, dispatch],
   );
 
   useEffect(() => {
     fetchSingleTrailpoint();
-  }, []);
+  }, [fetchSingleTrailpoint]);
 
   useEffect(() => {
     if (user?.id) {
-      fetchTrailpointDetail('', user?.id);
+      fetchTrailpointDetail('', user?.id, pageNumber);
     }
-  }, [user?.id]);
+  }, [user?.id, pageNumber, fetchTrailpointDetail]);
 
   const handleFilterData = data => {
-    fetchTrailpointDetail(data, user?.id);
+    setPageNumber(0); // Reset to first page when applying filters
+    fetchTrailpointDetail(data, user?.id, 0);
     setShowFilter(false);
   };
 
@@ -132,7 +161,6 @@ const TrailpointReview = () => {
         setReactionDisabled(true);
 
         const response = await handleReactionOnTrekscapeFeed(id, type);
-        console.log(response, 'response');
         if (response?.status) {
           const newFeeds = [...trailPoints];
           if (type === 'Like') {
@@ -178,6 +206,32 @@ const TrailpointReview = () => {
     }
   };
 
+  // Improved scroll detection function with debounce-like behavior
+  const isCloseToBottom = ({layoutMeasurement, contentOffset, contentSize}) => {
+    const paddingToBottom = 50;
+    return (
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom
+    );
+  };
+
+  // Improved handler with guard against multiple triggers
+  const handleLoadMore = useCallback(() => {
+    if (!isLoading && !isLoadingMore && hasMore) {
+      setPageNumber(prevPage => prevPage + 1);
+    }
+  }, [isLoading, isLoadingMore, hasMore]);
+
+  // Optimized scroll handler
+  const handleScroll = useCallback(
+    ({nativeEvent}) => {
+      if (isCloseToBottom(nativeEvent)) {
+        handleLoadMore();
+      }
+    },
+    [handleLoadMore],
+  );
+
   return (
     <View style={styles.container}>
       <Backheading
@@ -188,32 +242,44 @@ const TrailpointReview = () => {
         addFilter={true}
         loading={isLoading}
       />
-      {isLoading && <FeedLoader />}
+      {isLoading && pageNumber === 0 && <FeedLoader />}
       <ScrollView
-        style={[styles.scrollView, isLoading ? styles.hidden : styles.visible]}
+        ref={scrollViewRef}
+        style={[
+          styles.scrollView,
+          isLoading && pageNumber === 0 ? styles.hidden : styles.visible,
+        ]}
         contentContainerStyle={styles.scrollViewContent}
-        showsVerticalScrollIndicator={false}>
-        {trailPoints?.length > 0 ? (
-          trailPoints?.map((item, index) => (
-            <FeedsContainer
-              item={item}
-              key={index}
-              handleLike={() => handleLikeDislike(item?.id, index, 'Like')}
-              handleDislike={() =>
-                handleLikeDislike(item?.id, index, 'Dislike')
-              }
-              commentModal={commentModal}
-              setIsLoading={setIsLoading}
-              setCommentModal={setCommentModal}
-              setPostId={setPostId}
-              setFeedUsername={setFeedUsername}
-              setIsShoutOut={setIsShoutOut}
-              setShoutOutFeed={setShoutOutFeed}
-              reactionDisabled={reactionDisabled}
-            />
-          ))
-        ) : (
-          <Text style={styles.noDataText}>Data not found</Text>
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}>
+        {trailPoints?.length > 0
+          ? trailPoints?.map((item, index) => (
+              <FeedsContainer
+                item={item}
+                key={item?.id || index} // Better key usage
+                handleLike={() => handleLikeDislike(item?.id, index, 'Like')}
+                handleDislike={() =>
+                  handleLikeDislike(item?.id, index, 'Dislike')
+                }
+                commentModal={commentModal}
+                setIsLoading={setIsLoading}
+                setCommentModal={setCommentModal}
+                setPostId={setPostId}
+                setFeedUsername={setFeedUsername}
+                setIsShoutOut={setIsShoutOut}
+                setShoutOutFeed={setShoutOutFeed}
+                reactionDisabled={reactionDisabled}
+              />
+            ))
+          : !isLoading && (
+              <Text style={styles.noDataText}>No reviews found</Text>
+            )}
+
+        {isLoadingMore && (
+          <View style={styles.loaderContainer}>
+            <ActivityIndicator size="large" color="#e93c00" />
+          </View>
         )}
       </ScrollView>
 
@@ -221,16 +287,13 @@ const TrailpointReview = () => {
         open={showFilter}
         handleClose={handleFilterData}
       />
-      {/* <FeedComment
+      <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
         postId={postId}
         feedUsername={feedUsername}
         setTrackScapeFeeds={setTrailPoints}
       />
-      {isShoutOut && (
-        <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
-      )} */}
     </View>
   );
 };
@@ -255,7 +318,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollViewContent: {
-    paddingBottom: 30,
+    paddingBottom: 100,
   },
   hidden: {
     display: 'none',
@@ -266,6 +329,14 @@ const styles = StyleSheet.create({
   noDataText: {
     padding: 16,
     textAlign: 'center',
+    fontSize: 16,
+    color: '#666',
+  },
+  loaderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+    height: 60,
   },
 });
 

@@ -69,7 +69,7 @@ const Constant = () => {
     },
     {
       title: 'CheckIn',
-      path: '/create-general-checkin',
+      path: 'GeneralCheckIn',
     },
     {
       icon: <Feeds name="file-text-o" color="#000" size={25} />,

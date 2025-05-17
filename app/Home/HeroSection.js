@@ -93,8 +93,13 @@ function HeroSection() {
           horizontal
           pagingEnabled={false}
           showsHorizontalScrollIndicator={false}
-          renderItem={({item}) => (
-            <View style={[styles.slide, {width: itemWidth}]}>
+          renderItem={({item, index}) => (
+            <View
+              style={[
+                styles.slide,
+                {width: itemWidth},
+                index !== heroSlider.length - 1 && {marginRight: 16},
+              ]}>
               <Image
                 source={item.image}
                 style={styles.slideImage}
@@ -200,7 +205,7 @@ const styles = StyleSheet.create({
     height: 92,
     borderRadius: 10,
     overflow: 'hidden',
-    marginRight: 16,
+    // marginRight: 16,
     position: 'relative',
   },
   slideImage: {

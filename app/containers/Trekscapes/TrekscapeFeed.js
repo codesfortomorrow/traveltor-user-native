@@ -17,6 +17,7 @@ import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import TrekscapeHeader from './TrekscapeHeader';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import {setError} from '../../redux/Slices/errorPopup';
+import FeedComment from '../../components/Modal/FeedComment';
 
 const TrekscapeFeed = () => {
   const dispatch = useDispatch();
@@ -224,17 +225,13 @@ const TrekscapeFeed = () => {
         </View>
       </View>
 
-      {/* <FeedComment
+      <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
         postId={postId}
         feedUsername={feedUsername}
         setTrackScapeFeeds={setTrackScapeFeeds}
-      /> */}
-
-      {/* {isShoutOut && (
-        <ShoutOut setIsShoutOut={setIsShoutOut} feed={shoutOutFeed} />
-      )} */}
+      />
     </View>
   );
 };

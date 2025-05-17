@@ -21,11 +21,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import {Heart} from 'react-native-feather';
 import {useSelector} from 'react-redux';
-import {getAuthReq} from '@/utils/apiHandlers';
+import {getAuthReq} from '../../utils/apiHandlers';
 import ReactionIcon from 'react-native-vector-icons/AntDesign';
 import CheckIcon from '../../../public/images/icons/check.svg';
 import Marker from '../../../public/images/icons/marker.svg';
-import FeedDot from 'react-native-vector-icons/Entypo';
+import FeedReactionList from '../Modal/FeedReactionList';
+import FeedMenuBar from '../Modal/FeedMenuBar';
+import ShoutOut from '../Modal/ShoutOut';
 
 const FeedsContainer = ({
   item,
@@ -37,8 +39,6 @@ const FeedsContainer = ({
   setCommentModal,
   setPostId,
   setFeedUsername,
-  setIsShoutOut,
-  setShoutOutFeed,
   reactionDisabled,
   setIsDeleteModal,
   setFeedId,
@@ -48,18 +48,19 @@ const FeedsContainer = ({
   const [expanded, setExpanded] = useState(false);
   const reviewText = item?.review || '';
   const displayText = expanded ? reviewText : reviewText.slice(0, 50);
-  const user = useSelector(state => state.user);
+  const user = useSelector(state => state?.user);
   const navigation = useNavigation();
   const route = useRoute();
   const [open, setOpen] = useState(false);
   const [reactionData, setReactionData] = useState([]);
   const [type, setType] = useState('');
   const [reactionLoader, setReactionLoader] = useState(false);
-  const [followUnfollow, setFollowUnfollow] = useState({});
   const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
   const windowWidth = Dimensions.get('window').width;
   const slug = route.params?.slug;
+  const [isShoutOut, setIsShoutOut] = useState(false);
+  const [shoutOutFeed, setShoutOutFeed] = useState([]);
 
   const isTrekscapeNameShow =
     route.name === 'MyFeeds' ||
@@ -108,45 +109,17 @@ const FeedsContainer = ({
   //   }, [commentModal]);
 
   const fetchReactions = async (checkInId, type) => {
-    // setReactionLoader(true);
-    // const res = await getAuthReq(
-    //   `/check-ins/users/${checkInId}/reactions?userId=${user?.id}&rection=${type}`,
-    // );
-    // if (res?.status) {
-    //   setReactionData(res?.data?.data);
-    //   setReactionLoader(false);
-    // } else {
-    //   setReactionLoader(false);
-    //   console.log(res?.error);
-    // }
-  };
-
-  const handleFollowUnFollow = async (userId, id) => {
-    // setFollowUnfollow(prev => ({
-    //   ...prev,
-    //   [id]: true,
-    // }));
-    // const response = await trailBlazerFollowUnFollowed(userId);
-    // if (response?.status) {
-    //   if (response?.status && response?.data?.hasOwnProperty('follow')) {
-    //     const isNowFollowed = response.data.follow;
-    //     setReactionData(prev =>
-    //       prev?.map(item =>
-    //         item?.id === id ? {...item, isFollowed: isNowFollowed} : item,
-    //       ),
-    //     );
-    //     setFollowUnfollow(prev => ({
-    //       ...prev,
-    //       [id]: false,
-    //     }));
-    //   } else {
-    //     setFollowUnfollow(prev => ({
-    //       ...prev,
-    //       [id]: false,
-    //     }));
-    //     console.log('Failed to follow or unfollow');
-    //   }
-    // }
+    setReactionLoader(true);
+    const res = await getAuthReq(
+      `/check-ins/users/${checkInId}/reactions?userId=${user?.id}&rection=${type}`,
+    );
+    if (res?.status) {
+      setReactionData(res?.data?.data);
+      setReactionLoader(false);
+    } else {
+      setReactionLoader(false);
+      console.log(res?.error);
+    }
   };
 
   const navigateToProfile = () => {
@@ -226,17 +199,15 @@ const FeedsContainer = ({
           </View>
         </TouchableOpacity>
         <View style={styles.menuContainer}>
-          {/* <FeedMenu
+          <FeedMenuBar
             feed={item}
             setIsShoutOut={setIsShoutOut}
             setShoutOutFeed={setShoutOutFeed}
             setIsDeleteModal={setIsDeleteModal}
             setFeedId={setFeedId}
-          /> */}
-          <FeedDot name="dots-three-vertical" color="#000" size={14} />
+          />
         </View>
       </View>
-
       <View style={styles.swiperContainer}>
         <Swiper
           style={styles.swiper}
@@ -281,7 +252,6 @@ const FeedsContainer = ({
           <Heart width={56} height={56} fill="white" stroke="white" />
         </Animated.View>
       </View>
-
       {isTrekscapeNameShow ? (
         <>
           <View style={styles.actionsContainer}>
@@ -492,18 +462,23 @@ const FeedsContainer = ({
           </View>
         </>
       )}
-
-      {/* {open && (
-        <LikesModal
+      {open && (
+        <FeedReactionList
           open={open}
           onClose={() => setOpen(false)}
-          likes={reactionData}
+          list={reactionData}
           type={type}
           isLoading={reactionLoader}
-          handleFollowUnFollow={handleFollowUnFollow}
-          followUnfollow={followUnfollow}
+          setReactionData={setReactionData}
         />
-      )} */}
+      )}
+      {isShoutOut && (
+        <ShoutOut
+          open={isShoutOut}
+          onClose={() => setIsShoutOut(false)}
+          feed={shoutOutFeed}
+        />
+      )}
     </View>
   );
 };
