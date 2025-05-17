@@ -32,9 +32,7 @@ const UserProfile = () => {
   const [commentModal, setCommentModal] = useState(false);
   const [postId, setPostId] = useState('');
   const [feedUsername, setFeedUsername] = useState('');
-  const [isShoutOut, setIsShoutOut] = useState(false);
   const [isDeleteModal, setIsDeleteModal] = useState(false);
-  const [shoutOutFeed, setShoutOutFeed] = useState([]);
   const [trailblazer, setTrailblazer] = useState({});
   const isLogin = isLoggedIn();
   const user = useSelector(state => state.user);
@@ -450,8 +448,6 @@ const UserProfile = () => {
               setCommentModal={setCommentModal}
               setPostId={setPostId}
               setFeedUsername={setFeedUsername}
-              setIsShoutOut={setIsShoutOut}
-              setShoutOutFeed={setShoutOutFeed}
               reactionDisabled={reactionDisabled}
               setIsDeleteModal={setIsDeleteModal}
               setFeedId={setFeedId}

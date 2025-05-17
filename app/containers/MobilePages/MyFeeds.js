@@ -432,8 +432,6 @@ const MyFeeds = () => {
                     setCommentModal={setCommentModal}
                     setPostId={setPostId}
                     setFeedUsername={setFeedUsername}
-                    setIsShoutOut={setIsShoutOut}
-                    setShoutOutFeed={setShoutOutFeed}
                     reactionDisabled={reactionDisabled}
                     handleTouchStart={handleTouchStart}
                     handleTouchEnd={handleTouchEnd}

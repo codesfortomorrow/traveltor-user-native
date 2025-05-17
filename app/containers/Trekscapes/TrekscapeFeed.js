@@ -31,8 +31,6 @@ const TrekscapeFeed = () => {
   const [commentModal, setCommentModal] = useState(false);
   const [postId, setPostId] = useState('');
   const [feedUsername, setFeedUsername] = useState('');
-  const [isShoutOut, setIsShoutOut] = useState(false);
-  const [shoutOutFeed, setShoutOutFeed] = useState([]);
   const [reactionDisabled, setReactionDisabled] = useState(false);
   const [pageNumber, setPageNumber] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -201,8 +199,6 @@ const TrekscapeFeed = () => {
                   setCommentModal={setCommentModal}
                   setPostId={setPostId}
                   setFeedUsername={setFeedUsername}
-                  setIsShoutOut={setIsShoutOut}
-                  setShoutOutFeed={setShoutOutFeed}
                   reactionDisabled={reactionDisabled}
                 />
               ))

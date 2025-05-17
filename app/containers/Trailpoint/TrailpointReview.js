@@ -59,8 +59,6 @@ const TrailpointReview = () => {
       return '';
     }
   });
-  const [isShoutOut, setIsShoutOut] = useState(false);
-  const [shoutOutFeed, setShoutOutFeed] = useState([]);
   const [reactionDisabled, setReactionDisabled] = useState(false);
   const user = useSelector(state => state?.user);
 
@@ -267,8 +265,6 @@ const TrailpointReview = () => {
                 setCommentModal={setCommentModal}
                 setPostId={setPostId}
                 setFeedUsername={setFeedUsername}
-                setIsShoutOut={setIsShoutOut}
-                setShoutOutFeed={setShoutOutFeed}
                 reactionDisabled={reactionDisabled}
               />
             ))

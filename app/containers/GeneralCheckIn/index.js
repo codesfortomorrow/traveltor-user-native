@@ -137,7 +137,6 @@ const GeneralCheckIn = () => {
         latitude: '22.7611853',
         longitude: '75.8831569',
       });
-      console.log(response, 'response');
       if (response) {
         setCurrentTrekscapes(response);
         setTrailPointDetail(response);
