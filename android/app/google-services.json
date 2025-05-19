@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "991315659289",
+    "project_id": "traveltor-c9146",
+    "storage_bucket": "traveltor-c9146.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:991315659289:android:f228fa5879087e8d303888",
+        "android_client_info": {
+          "package_name": "com.traveltornative"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJkZ7pSRPMKeG37pqxhUVJTgwpuq2Pil4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

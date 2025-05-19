@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
     elevation: 3,
     backgroundColor: 'white',
     height: 50,
+    zIndex: 100,
   },
   leftContainer: {
     flexDirection: 'row',

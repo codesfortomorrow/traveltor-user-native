@@ -1,13 +1,16 @@
-import React, {useEffect} from 'react';
+import React, {useContext, useEffect} from 'react';
 import {SafeAreaView, View} from 'react-native';
 import Header from './components/Layout/Header';
 import Footer from './components/Mobile/Footer';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import Geolocation from 'react-native-geolocation-service';
 import {PermissionsAndroid, Platform} from 'react-native';
-import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
-import {useDispatch} from 'react-redux';
+import {request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import {useDispatch, useSelector} from 'react-redux';
 import {setLocation} from './redux/Slices/geoLocation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {AuthContext} from './context/AuthContext';
+import {postAuthReq} from './utils/apiHandlers';
 
 const Layout = ({children}) => {
   return (
@@ -20,6 +23,8 @@ const Layout = ({children}) => {
 
 export const FooterLayout = ({children}) => {
   const dispatch = useDispatch();
+  const {isLoggedIn} = useContext(AuthContext);
+
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
       const granted = await PermissionsAndroid.request(
@@ -80,6 +85,78 @@ export const FooterLayout = ({children}) => {
   useEffect(() => {
     getLocation();
   }, []);
+
+  // const {fcmToken} = useSelector(state => state?.firebase);
+  // console.log(fcmToken, 'redux token');
+  // const localFCMToken = fcmToken !== AsyncStorage.getItem('fcmToken') || '';
+  // const savedToken = AsyncStorage.getItem('fcmToken');
+
+  // const setFirebaseToken = async token => {
+  //   const response = await postAuthReq('/users/notification-token', {
+  //     token,
+  //   });
+  //   console.log(response, 'setfirebase');
+  //   if (!response?.status) {
+  //     console.log(response?.error?.message);
+  //   }
+  //   return response;
+  // };
+
+  // useEffect(() => {
+  //   // console.log({isLogin: isLoggedIn, fcmToken, savedToken});
+  //   if (isLoggedIn && fcmToken && !savedToken) {
+  //     AsyncStorage.setItem('fcmToken', fcmToken);
+  //     setFirebaseToken(fcmToken);
+  //   }
+
+  //   async function name() {
+  //     if (isLoggedIn && fcmToken && savedToken && localFCMToken) {
+  //       const response = await setFirebaseToken(savedToken);
+  //       if (response?.status) {
+  //         setFirebaseToken(fcmToken);
+  //         AsyncStorage.setItem('fcmToken', fcmToken);
+  //       }
+  //     }
+  //   }
+  //   name();
+  // }, [fcmToken]);
+
+  const {fcmToken} = useSelector(state => state?.firebase);
+
+  const setFirebaseToken = async token => {
+    const response = await postAuthReq('/users/notification-token', {token});
+    console.log(response, 'setFirebase');
+    if (!response?.status) {
+      console.log(response?.error?.message);
+    }
+    return response;
+  };
+
+  useEffect(() => {
+    const syncFCMToken = async () => {
+      await AsyncStorage.removeItem('fcmToken');
+      try {
+        const savedToken = await AsyncStorage.getItem('fcmToken');
+        console.log({isLogin: isLoggedIn, fcmToken, savedToken});
+
+        const isNewToken = savedToken !== fcmToken;
+
+        if (isLoggedIn && fcmToken && !savedToken) {
+          await AsyncStorage.setItem('fcmToken', fcmToken);
+          await setFirebaseToken(fcmToken);
+        } else if (isLoggedIn && fcmToken && savedToken && isNewToken) {
+          const response = await setFirebaseToken(fcmToken);
+          if (response?.status) {
+            await AsyncStorage.setItem('fcmToken', fcmToken);
+          }
+        }
+      } catch (err) {
+        console.error('Error syncing FCM token:', err);
+      }
+    };
+
+    syncFCMToken();
+  }, [fcmToken, isLoggedIn]);
 
   return (
     <SafeAreaProvider>
