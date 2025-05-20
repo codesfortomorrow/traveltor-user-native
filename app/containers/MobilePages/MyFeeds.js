@@ -13,7 +13,6 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   Image,
   StyleSheet,
   Dimensions,
@@ -30,7 +29,6 @@ import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
 
 const MyFeeds = () => {
-  //   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const {getMyFeed, FeedReactionAction} = useAuth();
   const isLogin = isLoggedIn();
@@ -64,15 +62,9 @@ const MyFeeds = () => {
       try {
         const storedPageNumber = await AsyncStorage.getItem('pageNumber');
         const storedHasMore = await AsyncStorage.getItem('hasMore');
-        const storedCommentModal = await AsyncStorage.getItem('commentModal');
-        const storedPostId = await AsyncStorage.getItem('postId');
-        const storedFeedUsername = await AsyncStorage.getItem('feedUsername');
 
         if (storedPageNumber) setPageNumber(JSON.parse(storedPageNumber));
         if (storedHasMore) setHasMore(storedHasMore === 'true');
-        if (storedCommentModal) setCommentModal(JSON.parse(storedCommentModal));
-        if (storedPostId) setPostId(JSON.parse(storedPostId));
-        if (storedFeedUsername) setFeedUsername(JSON.parse(storedFeedUsername));
       } catch (error) {
         console.error('Error loading stored values:', error);
       }
@@ -80,30 +72,6 @@ const MyFeeds = () => {
 
     loadStoredValues();
   }, []);
-
-  useEffect(() => {
-    const storeValues = async () => {
-      try {
-        await AsyncStorage.setItem(
-          'commentModal',
-          JSON.stringify(commentModal),
-        );
-        await AsyncStorage.setItem('postId', JSON.stringify(postId));
-        await AsyncStorage.setItem(
-          'feedUsername',
-          JSON.stringify(feedUsername),
-        );
-        if (!commentModal) {
-          await AsyncStorage.setItem('postId', JSON.stringify(''));
-          await AsyncStorage.setItem('feedUsername', JSON.stringify(''));
-        }
-      } catch (error) {
-        console.error('Error storing values:', error);
-      }
-    };
-
-    storeValues();
-  }, [commentModal]);
 
   useEffect(() => {
     const storePageInfo = async () => {

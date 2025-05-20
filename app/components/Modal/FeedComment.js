@@ -216,30 +216,6 @@ const FeedComment = ({
     }
   }, [isVisible, commentId]);
 
-  // useEffect(() => {
-  //   const keyboardDidShowListener = Keyboard.addListener(
-  //     'keyboardDidShow',
-  //     e => {
-  //       setIsKeyboardOpen(true);
-  //       setContentHeight(
-  //         Dimensions.get('window').height - e.endCoordinates.height,
-  //       );
-  //     },
-  //   );
-  //   const keyboardDidHideListener = Keyboard.addListener(
-  //     'keyboardDidHide',
-  //     () => {
-  //       setIsKeyboardOpen(false);
-  //       setContentHeight(Dimensions.get('window').height);
-  //     },
-  //   );
-
-  //   return () => {
-  //     keyboardDidShowListener.remove();
-  //     keyboardDidHideListener.remove();
-  //   };
-  // }, [isVisible]);
-
   const handleKeyDown = e => {
     if (e.nativeEvent.key !== 'Enter') return;
 
@@ -252,28 +228,6 @@ const FeedComment = ({
       edit?.id ? handleEdit() : putComment(postId);
     }
   };
-
-  // const previousScrollTop = useRef(0);
-
-  // const closeKeyboard = event => {
-  //   const scrollElement = commentlistRef.current || userlistref.current;
-  //   if (!scrollElement) return;
-
-  //   const scrollTop = event.nativeEvent.contentOffset.y;
-  //   const scrollHeight = event.nativeEvent.contentSize.height;
-  //   const clientHeight = event.nativeEvent.layoutMeasurement.height;
-
-  //   const scrollBottom = scrollHeight - scrollTop - clientHeight;
-  //   const isScrollingUp = scrollTop < previousScrollTop.current;
-
-  //   if (scrollBottom < 300 && (isScrollingUp || !isScrollingUp)) return;
-
-  //   if (commentInputRef.current && scrollBottom > 300) {
-  //     Keyboard.dismiss();
-  //   }
-
-  //   previousScrollTop.current = scrollTop;
-  // };
 
   const prevPostCommentLength = useRef(postComment.length);
 
@@ -360,8 +314,7 @@ const FeedComment = ({
           ) : (
             <UserList
               users={users}
-              onClickUser={handleUserClick}
-              // handleScroll={closeKeyboard}
+              selectUser={handleUserClick}
               userlistref={userlistref}
             />
           )
@@ -372,7 +325,6 @@ const FeedComment = ({
             replyUsername={replyUsername}
             cancelReply={cancelReply}
             setPostComment={setPostComment}
-            // handleScroll={closeKeyboard}
             isLoading={isLoading}
             commentlistRef={commentlistRef}
             onClose={onClose}
@@ -475,11 +427,13 @@ const styles = StyleSheet.create({
     height: 50,
     justifyContent: 'center',
     shadowOpacity: 0.1,
-    elevation: 4,
+    elevation: 5,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
     shadowColor: '#000',
-    shadowOffset: {width: 0, height: -10},
+    shadowOffset: {width: 0, height: -3},
     shadowOpacity: 0.1,
-    shadowRadius: 10,
+    shadowRadius: 3,
     width: '100%',
   },
   inputContainer: {

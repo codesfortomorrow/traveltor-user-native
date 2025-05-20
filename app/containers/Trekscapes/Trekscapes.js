@@ -45,6 +45,8 @@ const Trekscapes = () => {
   const location = useSelector(state => state?.location);
   const [hasCategory, setHasCategory] = useState(false);
   const [haslive, setHasLive] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const isLoadingRef = useRef(false);
 
   useEffect(() => {
     const loadCategoryId = async () => {
@@ -96,6 +98,7 @@ const Trekscapes = () => {
         setHasLive(true);
       }
     }
+    setEventLoading(false);
   };
 
   useEffect(() => {
@@ -132,10 +135,12 @@ const Trekscapes = () => {
     const requestId = ++latestRequestIdRef.current;
 
     try {
-      setContentLoading(true);
-
-      if (page === 0 && !location) {
+      if (page === 0) {
         setIsLoading(searchTerm ? false : true);
+        setContentLoading(false);
+      } else {
+        setIsLoadingMore(true);
+        setContentLoading(true);
       }
 
       const response = await getTrekscape(
@@ -152,22 +157,30 @@ const Trekscapes = () => {
       if (response?.data) {
         if (page !== 0) {
           setTreckScapeList(prev => [...prev, ...response?.data]);
-          setHasMore(response.data.length == 10);
-          setNoData(false);
+          setHasMore(response.data.length === 10);
         } else {
           setTreckScapeList(response?.data);
-          setHasMore(response?.data?.length == 10);
-          setNoData(true);
+          setHasMore(response?.data?.length === 10);
+          setNoData(response?.data?.length === 0);
         }
       } else {
         setHasMore(false);
+        if (page === 0) {
+          setNoData(true);
+        }
       }
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching trekscape:', error);
+      if (page === 0) {
+        setNoData(true);
+      }
+      setHasMore(false);
     } finally {
       if (requestId === latestRequestIdRef.current) {
         setIsLoading(false);
         setContentLoading(false);
+        setIsLoadingMore(false);
+        isLoadingRef.current = false;
       }
     }
   };
@@ -187,7 +200,7 @@ const Trekscapes = () => {
   const debouncedFetchTrekscape = useCallback(
     debounce(
       () => fetchTrekscape(searchTerm, categoryId, pageNumber, location),
-      500,
+      300, // Reduced from 500ms to 300ms
     ),
     [searchTerm, categoryId, pageNumber, location],
   );
@@ -197,9 +210,11 @@ const Trekscapes = () => {
     return () => debouncedFetchTrekscape.cancel();
   }, [searchTerm, categoryId, pageNumber, location]);
 
-  // Replace IntersectionObserver with React Native's onEndReached
+  // Improved end reached handler with better loading state management
   const handleEndReached = () => {
-    if (hasMore && !contentLoading) {
+    // Prevent multiple concurrent load more requests
+    if (hasMore && !contentLoading && !isLoadingMore && !isLoadingRef.current) {
+      isLoadingRef.current = true; // Set ref immediately to prevent double triggers
       setPageNumber(prev => prev + 1);
     }
   };
@@ -211,6 +226,8 @@ const Trekscapes = () => {
     setEventLoading(true);
     setPageNumber(0);
     setIsLoading(true);
+    setHasMore(true);
+    isLoadingRef.current = false;
 
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({x: 0, y: 0, animated: true});
@@ -240,7 +257,7 @@ const Trekscapes = () => {
         fetchReviews(event.slug);
       });
     }
-  }, [categorySlug]);
+  }, [categorySlug, liveEvents]);
 
   function getTimeDifference(timestamp) {
     const now = new Date();
@@ -370,6 +387,17 @@ const Trekscapes = () => {
     );
   };
 
+  // Render loader at the bottom for better visibility
+  const renderFooterLoader = () => {
+    if (!contentLoading) return null;
+
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="large" color="#e93c00" />
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.topBarWrapper}>
@@ -389,17 +417,16 @@ const Trekscapes = () => {
           onScroll={({nativeEvent}) => {
             // Check if reached end for pagination
             const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-            const paddingToBottom = 20;
+            const paddingToBottom = 50; // Increased from 20 to 50 for earlier loading
             if (
               layoutMeasurement.height + contentOffset.y >=
               contentSize.height - paddingToBottom
             ) {
               handleEndReached();
             }
-            // Save scroll position if needed
-            // saveScrollPosition(contentOffset.y);
           }}
-          scrollEventThrottle={400}>
+          scrollEventThrottle={100} // Reduced from 400 to 100 for more responsive scrolling
+        >
           {isLoading ? (
             <View style={styles.searchContainer}>
               <Skeleton height={40} width="100%" />
@@ -515,11 +542,8 @@ const Trekscapes = () => {
               ))}
           </View>
 
-          {contentLoading && (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color="#e93c00" />
-            </View>
-          )}
+          {/* Loader at the bottom - more visible */}
+          {renderFooterLoader()}
 
           <View style={styles.endSpace} />
         </ScrollView>
@@ -529,16 +553,17 @@ const Trekscapes = () => {
           style={styles.scrollContainer}
           onScroll={({nativeEvent}) => {
             const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-            const paddingToBottom = 20;
+            const paddingToBottom = 50; // Increased from 20 to 50
             if (
               layoutMeasurement.height + contentOffset.y >=
               contentSize.height - paddingToBottom
             ) {
               handleEndReached();
             }
-            // saveScrollPosition(contentOffset.y);
           }}
-          scrollEventThrottle={400}>
+          scrollEventThrottle={100}>
+          {' '}
+          {/* Reduced from 400 to 100 */}
           <View style={styles.liveEventsContainer}>
             {eventLoading &&
               Array.from({length: 4}).map((_, index) => (
@@ -720,6 +745,10 @@ const Trekscapes = () => {
                   </View>
                 );
               })}
+
+            {/* Loader at the bottom - more visible */}
+            {renderFooterLoader()}
+
             <View style={styles.endSpace} />
           </View>
         </ScrollView>
@@ -835,7 +864,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   swiperDot: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: '#fff',
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -845,7 +874,7 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   swiperActiveDot: {
-    backgroundColor: '#fff',
+    backgroundColor: '#e93c00',
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -1133,6 +1162,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   endSpace: {
-    height: 50,
+    height: 100,
   },
 });

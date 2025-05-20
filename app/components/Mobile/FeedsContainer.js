@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
-  FlatList,
+  Pressable,
 } from 'react-native';
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -28,6 +28,7 @@ import Marker from '../../../public/images/icons/marker.svg';
 import FeedReactionList from '../Modal/FeedReactionList';
 import FeedMenuBar from '../Modal/FeedMenuBar';
 import ShoutOut from '../Modal/ShoutOut';
+import Swiper from 'react-native-swiper';
 
 const FeedsContainer = ({
   item,
@@ -61,8 +62,6 @@ const FeedsContainer = ({
   const slug = route.params?.slug;
   const [isShoutOut, setIsShoutOut] = useState(false);
   const [shoutOutFeed, setShoutOutFeed] = useState([]);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const flatListRef = useRef(null);
 
   const isTrekscapeNameShow =
     route.name === 'MyFeeds' ||
@@ -132,44 +131,24 @@ const FeedsContainer = ({
     lastTapRef.current = currentTime;
   };
 
-  const renderImageItem = ({item: imageUri, index}) => (
-    <TouchableWithoutFeedback onPress={handleDoubleTap}>
-      <View style={[styles.slideContainer, {height: (windowWidth * 4) / 3}]}>
-        <Image
-          source={{uri: imageUri}}
-          style={styles.slideImage}
-          resizeMode="cover"
-        />
-      </View>
-    </TouchableWithoutFeedback>
-  );
-
-  const handleViewableItemsChanged = useRef(({viewableItems}) => {
-    if (viewableItems.length > 0) {
-      setCurrentImageIndex(viewableItems[0].index);
-    }
-  }).current;
-
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 50,
-  }).current;
-
-  // Custom pagination dots for FlatList
-  const renderPaginationDots = () => {
-    if (!item?.media || item.media.length <= 2) return null;
-
+  const renderSwiperSlider = images => {
     return (
-      <View style={styles.paginationContainer}>
-        {item.media.map((_, index) => (
-          <View
-            key={`dot-${index}`}
-            style={[
-              styles.paginationDot,
-              index === currentImageIndex && styles.paginationDotActive,
-            ]}
-          />
-        ))}
-      </View>
+      <TouchableWithoutFeedback>
+        <View style={styles.swiperContainer}>
+          <Swiper
+            style={styles.swiper}
+            showsPagination={true}
+            loop={false}
+            dotStyle={styles.swiperDot}
+            activeDotStyle={styles.swiperActiveDot}>
+            {images?.map((image, index) => (
+              <View key={index} style={styles.swiperSlide}>
+                <Image source={{uri: image}} style={styles.slideImage} />
+              </View>
+            ))}
+          </Swiper>
+        </View>
+      </TouchableWithoutFeedback>
     );
   };
 
@@ -237,41 +216,16 @@ const FeedsContainer = ({
           />
         </View>
       </View>
-      <View style={styles.swiperContainer}>
-        {item?.media?.length > 0 ? (
-          <View style={{height: (windowWidth * 4) / 3}}>
-            <FlatList
-              ref={flatListRef}
-              data={item.media}
-              renderItem={renderImageItem}
-              keyExtractor={(_, index) => `image-${item.id}-${index}`}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onViewableItemsChanged={handleViewableItemsChanged}
-              viewabilityConfig={viewabilityConfig}
-              initialNumToRender={1}
-              maxToRenderPerBatch={2}
-              windowSize={3}
-              getItemLayout={(_, index) => ({
-                length: windowWidth,
-                offset: windowWidth * index,
-                index,
-              })}
-            />
-            {renderPaginationDots()}
-          </View>
-        ) : (
-          <View
-            style={[styles.noImageContainer, {height: (windowWidth * 4) / 3}]}>
-            <Text style={styles.noImageText}>No images available</Text>
-          </View>
-        )}
 
+      {/* Image Carousel Container */}
+      {item?.media?.length > 0 && renderSwiperSlider(item?.media)}
+
+      <View>
         <Animated.View style={[styles.heartOverlay, heartAnimatedStyle]}>
           <Heart width={56} height={56} fill="white" stroke="white" />
         </Animated.View>
       </View>
+
       {isTrekscapeNameShow ? (
         <>
           <View style={styles.actionsContainer}>
@@ -571,27 +525,31 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   swiperContainer: {
-    width: '100%',
+    width: windowWidth,
+    height: (windowWidth * 4) / 3,
     marginTop: 16,
-    backgroundColor: '#f2f2f2',
-    alignItems: 'center',
-    justifyContent: 'center',
     overflow: 'hidden',
+    alignSelf: 'center',
     position: 'relative',
+  },
+  swiper: {
+    // Removing fixed height to let content determine height
   },
   slideContainer: {
     width: windowWidth,
-    alignItems: 'center',
+    height: (windowWidth * 4) / 3,
     justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0', // Light background to see boundaries
   },
   slideImage: {
     width: windowWidth,
-    height: '100%',
-    minHeight: 262,
+    height: (windowWidth * 4) / 3,
     resizeMode: 'cover',
   },
   noImageContainer: {
     width: windowWidth,
+    height: (windowWidth * 4) / 3,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#e0e0e0',
@@ -600,20 +558,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  paginationContainer: {
-    flexDirection: 'row',
-    position: 'absolute',
+  paginationStyle: {
     bottom: 10,
-    alignSelf: 'center',
   },
-  paginationDot: {
-    backgroundColor: 'rgba(0,0,0,.2)',
+  swiperDot: {
+    backgroundColor: '#fff',
     width: 8,
     height: 8,
     borderRadius: 4,
     margin: 3,
   },
-  paginationDotActive: {
+  swiperActiveDot: {
     backgroundColor: '#E93C00',
     width: 8,
     height: 8,

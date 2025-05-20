@@ -13,7 +13,6 @@ import useAuth from '../../hooks/useAuth';
 import {isLoggedIn} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
 import {useRoute} from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Login from '../Modal/Login';
 import Signup from '../Signup';
 import Backheading from './Backheading';
@@ -48,27 +47,6 @@ const UserProfile = () => {
   const {getUserDetails, getUserFeeds, reactionOnFeed, userFollowUnFollow} =
     useAuth();
 
-  // Initialize state from AsyncStorage
-  useEffect(() => {
-    const loadAsyncStorageData = async () => {
-      try {
-        const commentModalValue = await AsyncStorage.getItem('commentModal');
-        const postIdValue = await AsyncStorage.getItem('postId');
-        const feedUsernameValue = await AsyncStorage.getItem('feedUsername');
-
-        setCommentModal(
-          commentModalValue ? JSON.parse(commentModalValue) : false,
-        );
-        setPostId(postIdValue ? JSON.parse(postIdValue) : '');
-        setFeedUsername(feedUsernameValue ? JSON.parse(feedUsernameValue) : '');
-      } catch (error) {
-        console.error('Error loading AsyncStorage data:', error);
-      }
-    };
-
-    loadAsyncStorageData();
-  }, []);
-
   const toCase = str => {
     return str
       ?.toLowerCase()
@@ -76,31 +54,6 @@ const UserProfile = () => {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
-
-  useEffect(() => {
-    const saveAsyncStorageData = async () => {
-      try {
-        await AsyncStorage.setItem(
-          'commentModal',
-          JSON.stringify(commentModal),
-        );
-        await AsyncStorage.setItem('postId', JSON.stringify(postId));
-        await AsyncStorage.setItem(
-          'feedUsername',
-          JSON.stringify(feedUsername),
-        );
-
-        if (!commentModal) {
-          await AsyncStorage.setItem('postId', JSON.stringify(''));
-          await AsyncStorage.setItem('feedUsername', JSON.stringify(''));
-        }
-      } catch (error) {
-        console.error('Error saving to AsyncStorage:', error);
-      }
-    };
-
-    saveAsyncStorageData();
-  }, [commentModal]);
 
   const fetchDetails = useCallback(
     async (id, userId) => {

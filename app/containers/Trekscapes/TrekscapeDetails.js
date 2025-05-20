@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   trailPointsContainer: {
     marginTop: 40,
     marginHorizontal: 10,
-    paddingBottom: 100,
+    marginBottom: 70,
   },
   trailPointCard: {
     flexDirection: 'row',

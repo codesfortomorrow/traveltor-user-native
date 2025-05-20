@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  TouchableWithoutFeedback,
+  Dimensions,
 } from 'react-native';
 import {getAuthReq} from '../../utils/apiHandlers';
 import Backheading from '../../components/Mobile/Backheading';
@@ -51,49 +53,6 @@ const SingleCheckIn = () => {
   const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
 
-  useEffect(() => {
-    const loadStorageData = async () => {
-      try {
-        const storedCommentModal = await AsyncStorage.getItem('commentModal');
-        const storedPostId = await AsyncStorage.getItem('postId');
-        const storedFeedUsername = await AsyncStorage.getItem('feedUsername');
-
-        if (storedCommentModal) setCommentModal(JSON.parse(storedCommentModal));
-        if (storedPostId) setPostId(JSON.parse(storedPostId));
-        if (storedFeedUsername) setFeedUsername(JSON.parse(storedFeedUsername));
-      } catch (error) {
-        console.error('Error loading data from AsyncStorage:', error);
-      }
-    };
-
-    loadStorageData();
-  }, []);
-
-  useEffect(() => {
-    const saveStorageData = async () => {
-      try {
-        await AsyncStorage.setItem(
-          'commentModal',
-          JSON.stringify(commentModal),
-        );
-        await AsyncStorage.setItem('postId', JSON.stringify(postId));
-        await AsyncStorage.setItem(
-          'feedUsername',
-          JSON.stringify(feedUsername),
-        );
-
-        if (!commentModal) {
-          await AsyncStorage.setItem('postId', JSON.stringify(''));
-          await AsyncStorage.setItem('feedUsername', JSON.stringify(''));
-        }
-      } catch (error) {
-        console.error('Error saving data to AsyncStorage:', error);
-      }
-    };
-
-    saveStorageData();
-  }, [commentModal]);
-
   const toggleReview = () => {
     setExpanded(prevState => !prevState);
   };
@@ -114,24 +73,6 @@ const SingleCheckIn = () => {
       fetchSinglefeed(user);
     }
   }, [feedId, user]);
-
-  useEffect(() => {
-    const handleBackButton = () => {
-      if (commentModal) {
-        setCommentModal(false);
-        return true; // Prevent default behavior
-      }
-      return false;
-    };
-
-    // For React Native, we would use the BackHandler from react-native
-    // This is a placeholder for the equivalent Web functionality
-    // BackHandler.addEventListener('hardwareBackPress', handleBackButton);
-
-    return () => {
-      //   BackHandler.removeEventListener('hardwareBackPress', handleBackButton);
-    };
-  }, [commentModal]);
 
   const handleLikeDislike = async (id, type) => {
     try {
@@ -235,13 +176,42 @@ const SingleCheckIn = () => {
     lastTapRef.current = currentTime;
   };
 
+  const navigateToProfile = () => {
+    navigation.navigate('Profile', {
+      userType: feed?.user?.type,
+      id: feed?.userId,
+    });
+  };
+
+  const renderSwiperSlider = images => {
+    return (
+      <TouchableWithoutFeedback>
+        <View style={styles.swiperContainer}>
+          <Swiper
+            style={styles.swiper}
+            showsPagination={true}
+            loop={false}
+            dotStyle={styles.swiperDot}
+            activeDotStyle={styles.swiperActiveDot}>
+            {images?.map((image, index) => (
+              <View key={index} style={styles.swiperSlide}>
+                <Image source={{uri: image}} style={styles.slideImage} />
+              </View>
+            ))}
+          </Swiper>
+        </View>
+      </TouchableWithoutFeedback>
+    );
+  };
+
   return (
     <>
       <View style={styles.container}>
         <Backheading heading={'CheckIn'} />
         <ScrollView
           showsVerticalScrollIndicator={false}
-          style={styles.scrollView}>
+          style={styles.scrollView}
+          contentContainerStyle={{paddingBottom: 20}}>
           <View style={styles.contentContainer}>
             {isLoading && (
               <View>
@@ -283,12 +253,7 @@ const SingleCheckIn = () => {
                 <View style={styles.headerContainer}>
                   <TouchableOpacity
                     style={styles.userInfoContainer}
-                    onPress={() =>
-                      navigation.navigate(
-                        `${feed?.user?.type?.toLowerCase()}Profile`,
-                        {userId: feed?.userId},
-                      )
-                    }>
+                    onPress={navigateToProfile}>
                     <View style={styles.avatarContainer}>
                       <Image
                         source={
@@ -307,13 +272,7 @@ const SingleCheckIn = () => {
                     </View>
                     <View style={styles.userInfoTextContainer}>
                       <View style={styles.nameContainer}>
-                        <TouchableOpacity
-                          onPress={() =>
-                            navigation.navigate(
-                              `${feed?.user?.type?.toLowerCase()}Profile`,
-                              {userId: feed?.userId},
-                            )
-                          }>
+                        <TouchableOpacity onPress={navigateToProfile}>
                           <Text style={styles.nameText}>
                             {feed?.user?.firstname + ' ' + feed?.user?.lastname}
                           </Text>
@@ -324,7 +283,7 @@ const SingleCheckIn = () => {
                         {feed?.trailPoint?.slug && feed?.trailPoint?.name && (
                           <TouchableOpacity
                             onPress={() =>
-                              navigation.navigate('TrailPoint', {
+                              navigation.navigate('TrailpointDetails', {
                                 slug: feed?.trailPoint?.slug,
                               })
                             }>
@@ -354,47 +313,10 @@ const SingleCheckIn = () => {
                     />
                   </View>
                 </View>
-                <View style={styles.imageContainer}>
-                  <Swiper
-                    style={styles.swiper}
-                    dotStyle={styles.swiperDot}
-                    activeDotStyle={styles.swiperActiveDot}
-                    showsButtons={false}
-                    loop={true}
-                    autoplay={false}
-                    scrollEnabled={true}
-                    bounces={true}
-                    paginationStyle={{bottom: 10}}
-                    removeClippedSubviews={false}>
-                    {feed?.media?.map((image, index) => (
-                      <View
-                        key={index}
-                        onDoubleTap={() =>
-                          onDoubleTap(
-                            null,
-                            feed,
-                            handleLikeDislike,
-                            setShowHeart,
-                            lastTapRef,
-                            true,
-                          )
-                        }>
-                        <Image
-                          source={{uri: image}}
-                          style={styles.feedImage}
-                          onLoad={() => setIsLoading(false)}
-                        />
-                      </View>
-                    ))}
-                    {/* {showHeart && (
-                      <AnimatePresence>
-                        <View style={styles.heartContainer}>
-                          <Heart color="white" size={56} fill="white" />
-                        </View>
-                      </AnimatePresence>
-                    )} */}
-                  </Swiper>
-                </View>
+
+                {/* Image Carousel Container */}
+                {feed?.media?.length > 0 && renderSwiperSlider(feed?.media)}
+
                 {feed?.review && (
                   <View style={styles.reviewContainer}>
                     <Text style={styles.reviewText}>
@@ -443,7 +365,7 @@ const SingleCheckIn = () => {
                         fetchReactions(feed?.id, 'Like');
                         setType('Likes');
                       }}>
-                      <Text style={styles.countText}>{feed.likes || 0}</Text>
+                      <Text style={styles.countText}>{feed?.likes || 0}</Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.dislikeContainer}>
@@ -477,7 +399,9 @@ const SingleCheckIn = () => {
                         fetchReactions(feed?.id, 'Dislike');
                         setType('DisLikes');
                       }}>
-                      <Text style={styles.countText}>{feed.dislikes || 0}</Text>
+                      <Text style={styles.countText}>
+                        {feed?.dislikes || 0}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                   <View style={styles.commentContainer}>
@@ -529,6 +453,8 @@ const SingleCheckIn = () => {
     </>
   );
 };
+
+const windowWidth = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
   container: {
@@ -684,11 +610,19 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     zIndex: 0,
   },
+  swiperContainer: {
+    width: windowWidth,
+    height: (windowWidth * 4) / 3,
+    marginTop: 16,
+    overflow: 'hidden',
+    alignSelf: 'center',
+    position: 'relative',
+  },
   swiper: {
-    height: 524,
+    // Removing fixed height to let content determine height
   },
   swiperDot: {
-    backgroundColor: 'rgba(0,0,0,.2)',
+    backgroundColor: '#fff',
     width: 8,
     height: 8,
     borderRadius: 4,
@@ -700,6 +634,12 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     margin: 3,
+  },
+  slideImage: {
+    width: windowWidth,
+    height: (windowWidth * 4) / 3,
+    minHeight: 523,
+    resizeMode: 'cover',
   },
   feedImage: {
     width: '100%',

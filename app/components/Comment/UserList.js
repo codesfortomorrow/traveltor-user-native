@@ -8,14 +8,13 @@ import {
   StyleSheet,
 } from 'react-native';
 
-const UserList = ({users, onClickUser, handleScroll, userlistref}) => {
+const UserList = ({users, selectUser, userlistref}) => {
   return (
     <ScrollView
       ref={userlistref}
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
-      onScroll={handleScroll}
       scrollEventThrottle={16}
       overScrollMode="never"
       onTouchStart={e => e.stopPropagation()}>
@@ -24,7 +23,7 @@ const UserList = ({users, onClickUser, handleScroll, userlistref}) => {
           <TouchableOpacity
             key={index}
             style={styles.userRow}
-            onPress={() => onClickUser(user?.username)}>
+            onPress={() => selectUser(user?.username)}>
             <View style={styles.profileImageContainer}>
               <Image
                 source={
@@ -55,7 +54,7 @@ const styles = StyleSheet.create({
     maxHeight: '95%',
   },
   contentContainer: {
-    paddingBottom: 60, // equivalent to pb-[60px]
+    paddingBottom: 20, // equivalent to pb-[60px]
     gap: 8, // equivalent to gap-2
   },
   userRow: {

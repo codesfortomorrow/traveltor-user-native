@@ -13,14 +13,256 @@ import {
 import {deleteApiReq, postAuthReq} from '../../utils/apiHandlers';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
+import Heart from 'react-native-vector-icons/MaterialCommunityIcons';
 
+// Component for the comment text with @ mention parsing
+const CommentTextContent = ({text}) => {
+  const parts = text.split(/(\B@\w+)/g);
+  return (
+    <Text style={styles.commentText}>
+      {parts.map((part, index) => {
+        if (part.startsWith('@')) {
+          return (
+            <Text key={index} style={styles.mentionText}>
+              {part}
+            </Text>
+          );
+        }
+        return part;
+      })}
+    </Text>
+  );
+};
+
+// Comment item component
+const CommentItem = ({
+  comment,
+  currentUser,
+  isReaction,
+  handleCommentLikeDislike,
+  replyOnComment,
+  handleLongPressStart,
+  handleLongPressEnd,
+  handleNavigate,
+  timeAgo,
+  menuVisible,
+  menuCommentId,
+}) => {
+  return (
+    <TouchableWithoutFeedback
+      onLongPress={e =>
+        currentUser?.id === comment?.userId &&
+        handleLongPressStart(e, comment.id, comment?.comment)
+      }
+      onPressOut={handleLongPressEnd}
+      delayLongPress={500}>
+      <View
+        style={[
+          styles.commentItem,
+          menuVisible && menuCommentId !== comment?.id && styles.blurredItem,
+        ]}>
+        <View style={styles.commentContentContainer}>
+          {/* Profile Image */}
+          <TouchableOpacity
+            onPress={() => handleNavigate(comment?.user)}
+            style={styles.profileImageContainer}>
+            <Image
+              source={
+                comment?.user?.profileImage
+                  ? {uri: comment?.user?.profileImage}
+                  : require('../../../public/images/dpPlaceholder.png')
+              }
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+
+          {/* Username & Comment */}
+          <View style={styles.commentTextContainer}>
+            <TouchableOpacity onPress={() => handleNavigate(comment?.user)}>
+              <Text style={styles.usernameText}>
+                {comment?.user?.username || comment?.user?.firstname}{' '}
+                <Text style={styles.timeAgoText}>
+                  {timeAgo(comment?.createdAt)}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.commentContent}>
+              <CommentTextContent text={comment?.comment} />
+            </View>
+
+            <TouchableOpacity
+              onPress={() =>
+                replyOnComment(comment?.user?.username, comment?.id)
+              }
+              style={styles.replyButton}>
+              <Text style={styles.replyText}>Reply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Like Icon */}
+        <TouchableOpacity
+          disabled={isReaction}
+          style={styles.likeContainer}
+          onPress={() =>
+            comment?.reaction === 'Like'
+              ? handleCommentLikeDislike(comment?.id, 'Dislike')
+              : handleCommentLikeDislike(comment?.id, 'Like')
+          }>
+          <Heart
+            name={
+              comment?.reaction === 'Like'
+                ? 'cards-heart'
+                : 'cards-heart-outline'
+            }
+            color={comment?.reaction === 'Like' ? 'red' : 'black'}
+            size={17}
+          />
+          <Text style={styles.likesCount}>{comment?.likes || 0}</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+};
+
+// Reply item component
+const ReplyItem = ({
+  reply,
+  currentUser,
+  isReaction,
+  handleCommentLikeDislike,
+  replyOnComment,
+  handleLongPressStart,
+  handleLongPressEnd,
+  handleNavigate,
+  timeAgo,
+  menuVisible,
+  menuCommentId,
+  parentId,
+}) => {
+  return (
+    <TouchableWithoutFeedback
+      key={reply?.id}
+      onLongPress={e =>
+        currentUser?.id === reply?.userId &&
+        handleLongPressStart(e, reply?.id, reply?.comment, parentId)
+      }
+      onPressOut={handleLongPressEnd}
+      delayLongPress={500}>
+      <View
+        style={[
+          styles.replyItem,
+          menuVisible && menuCommentId !== reply?.id && styles.blurredItem,
+        ]}>
+        <View style={styles.commentContentContainer}>
+          {/* Profile Image */}
+          <TouchableOpacity
+            onPress={() => handleNavigate(reply?.user)}
+            style={styles.replyProfileImageContainer}>
+            <Image
+              source={
+                reply?.user?.profileImage
+                  ? {uri: reply?.user?.profileImage}
+                  : require('../../../public/images/dpPlaceholder.png')
+              }
+              style={styles.profileImage}
+            />
+          </TouchableOpacity>
+
+          {/* Username & Comment */}
+          <View style={styles.commentTextContainer}>
+            <TouchableOpacity onPress={() => handleNavigate(reply?.user)}>
+              <Text style={styles.usernameText}>
+                {reply?.user?.username || reply?.user?.firstname}{' '}
+                <Text style={styles.timeAgoText}>
+                  {timeAgo(reply?.createdAt)}
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.commentContent}>
+              <CommentTextContent text={reply?.comment} />
+            </View>
+
+            <TouchableOpacity
+              onPress={() =>
+                replyOnComment(reply?.user?.username, reply?.replyTo)
+              }
+              style={styles.replyButton}>
+              <Text style={styles.replyText}>Reply</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Like Icon */}
+        <TouchableOpacity
+          disabled={isReaction}
+          style={styles.likeContainer}
+          onPress={() =>
+            reply?.reaction === 'Like'
+              ? handleCommentLikeDislike(reply?.id, 'Dislike', reply?.replyTo)
+              : handleCommentLikeDislike(reply?.id, 'Like', reply?.replyTo)
+          }>
+          <Heart
+            name={
+              reply?.reaction === 'Like' ? 'cards-heart' : 'cards-heart-outline'
+            }
+            color={reply?.reaction === 'Like' ? 'red' : 'black'}
+            size={15}
+          />
+          <Text style={styles.likesCount}>{reply?.likes || 0}</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+};
+
+// Empty state component
+const EmptyCommentState = () => (
+  <View style={styles.emptyContainer}>
+    <Text style={styles.emptyTitle}>No comments yet</Text>
+    <Text style={styles.emptySubtitle}>Start the conversation.</Text>
+  </View>
+);
+
+// Reply indicator component
+const ReplyingIndicator = ({replyUsername, cancelReply}) => (
+  <View style={styles.replyingContainer}>
+    <Text style={styles.replyingText}>Replying to {replyUsername}</Text>
+    <TouchableOpacity onPress={cancelReply} style={styles.cancelReplyButton}>
+      <Text style={styles.cancelReplyText}>×</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+// Header component
+const CommentHeader = ({onClose, setCommentField}) => (
+  <View style={styles.header}>
+    <TouchableOpacity
+      onPress={() => {
+        setCommentField('');
+        onClose();
+      }}
+      style={styles.backButton}>
+      {/* <CustomImage
+        src="/images/mobtrekscape/back.svg"
+        alt="Back"
+        style={styles.backIcon}
+      /> */}
+    </TouchableOpacity>
+    <Text style={styles.headerTitle}>Comments</Text>
+    <View style={styles.placeholderRight} />
+  </View>
+);
+
+// Main CommentList component
 const CommentList = ({
   postComment,
   replyOnComment,
   replyUsername,
   cancelReply,
   setPostComment,
-  handleScroll,
   isLoading,
   commentlistRef,
   onClose,
@@ -34,7 +276,7 @@ const CommentList = ({
 }) => {
   const navigation = useNavigation();
   const user = useSelector(state => state?.user);
-  const [isreaction, setIsReaction] = useState(false);
+  const [isReaction, setIsReaction] = useState(false);
   const [isDelete, setIsDelete] = useState(false);
   const [menu, setMenu] = useState({
     visible: false,
@@ -47,7 +289,7 @@ const CommentList = ({
   const longPressTimeout = useRef(null);
   const menuRef = useRef(null);
 
-  // Handle Long Press for comment options
+  // Handle long press for comment options
   const handleLongPressStart = (event, commentId, editText, parentId) => {
     if (event.nativeEvent.touches && event.nativeEvent.touches.length > 1)
       return;
@@ -80,6 +322,7 @@ const CommentList = ({
     clearTimeout(longPressTimeout.current);
   };
 
+  // Handle outside click to close menu
   useEffect(() => {
     const handleClickOutside = event => {
       if (menuRef.current && menu.visible) {
@@ -95,59 +338,64 @@ const CommentList = ({
     }
   }, [menu]);
 
-  // Handle Delete
+  // Handle Delete comment
   const handleDelete = async () => {
     setIsDelete(true);
-    const res = await deleteApiReq(`/check-ins/comments/${menu?.commentId}`);
-    if (res?.status) {
-      if (menu?.parentId) {
-        setPostComment(prev =>
-          prev.map(com =>
-            com?.id == menu?.parentId
-              ? {
-                  ...com,
-                  replies: com?.replies?.filter(
-                    reply => reply?.id !== menu?.commentId,
-                  ),
-                }
-              : com,
-          ),
+    try {
+      const res = await deleteApiReq(`/check-ins/comments/${menu?.commentId}`);
+      if (res?.status) {
+        if (menu?.parentId) {
+          setPostComment(prev =>
+            prev.map(com =>
+              com?.id === menu?.parentId
+                ? {
+                    ...com,
+                    replies: com?.replies?.filter(
+                      reply => reply?.id !== menu?.commentId,
+                    ),
+                  }
+                : com,
+            ),
+          );
+        } else {
+          setPostComment(prev =>
+            prev?.filter(com => com?.id !== menu?.commentId),
+          );
+        }
+        setMenu({...menu, visible: false});
+
+        const singlePost = postComment.filter(
+          post => post?.id === menu?.commentId,
         );
-      } else {
-        setPostComment(prev =>
-          prev?.filter(com => com?.id !== menu?.commentId),
-        );
-      }
-      setMenu({...menu, visible: false});
 
-      const singlePost = postComment.filter(
-        post => post?.id === menu?.commentId,
-      );
+        const totalCount = singlePost[0]?.replies?.length || 0;
 
-      const totalCount = singlePost[0]?.replies?.length || 0;
-
-      setTrackScapeFeeds?.(prev => {
-        return prev.map(comment => {
-          if (comment.id === postId) {
-            return {
-              ...comment,
-              _count: {
-                ...comment._count,
-                comments: comment._count.comments - (totalCount + 1),
-              },
-            };
-          }
-          return comment;
+        setTrackScapeFeeds?.(prev => {
+          return prev.map(comment => {
+            if (comment.id === postId) {
+              return {
+                ...comment,
+                _count: {
+                  ...comment._count,
+                  comments: comment._count.comments - (totalCount + 1),
+                },
+              };
+            }
+            return comment;
+          });
         });
-      });
-      fetchSinglefeed?.();
-    } else {
-      console.log('failed to delete comment', res?.error);
+        fetchSinglefeed?.();
+      } else {
+        console.log('failed to delete comment', res?.error);
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+    } finally {
+      setIsDelete(false);
     }
-    setIsDelete(false);
   };
 
-  // Handle Edit
+  // Handle Edit comment
   const handleEdit = () => {
     setEdit({
       ...edit,
@@ -158,45 +406,52 @@ const CommentList = ({
     setMenu({...menu, visible: false});
   };
 
+  // Handle like/dislike for comments
   const handleCommentLikeDislike = async (commentId, type, parentId) => {
     setIsReaction(true);
-    const res = await postAuthReq(
-      `/check-ins/comments/${commentId}/reactions`,
-      {type},
-    );
-
-    if (res?.status) {
-      setPostComment(prevComments =>
-        prevComments.map(comment => {
-          if (comment.id !== (parentId || commentId)) return comment;
-
-          const likeChange = type === 'Like' ? 1 : -1;
-          if (parentId) {
-            return {
-              ...comment,
-              replies: comment.replies.map(reply =>
-                reply.id === commentId
-                  ? {
-                      ...reply,
-                      reaction: type,
-                      likes: (reply.likes || 0) + likeChange,
-                    }
-                  : reply,
-              ),
-            };
-          } else {
-            return {
-              ...comment,
-              reaction: type,
-              likes: (comment.likes || 0) + likeChange,
-            };
-          }
-        }),
+    try {
+      const res = await postAuthReq(
+        `/check-ins/comments/${commentId}/reactions`,
+        {type},
       );
+
+      if (res?.status) {
+        setPostComment(prevComments =>
+          prevComments.map(comment => {
+            if (comment.id !== (parentId || commentId)) return comment;
+
+            const likeChange = type === 'Like' ? 1 : -1;
+            if (parentId) {
+              return {
+                ...comment,
+                replies: comment.replies.map(reply =>
+                  reply.id === commentId
+                    ? {
+                        ...reply,
+                        reaction: type,
+                        likes: (reply.likes || 0) + likeChange,
+                      }
+                    : reply,
+                ),
+              };
+            } else {
+              return {
+                ...comment,
+                reaction: type,
+                likes: (comment.likes || 0) + likeChange,
+              };
+            }
+          }),
+        );
+      }
+    } catch (error) {
+      console.error('Error handling like/dislike:', error);
+    } finally {
       setIsReaction(false);
     }
   };
 
+  // Format timestamp to relative time
   const timeAgo = timestamp => {
     const now = new Date();
     const past = new Date(timestamp);
@@ -220,6 +475,7 @@ const CommentList = ({
     return 'Just now';
   };
 
+  // Navigate to user profile
   const handleNavigate = userDetails => {
     // React Native navigation
     onClose();
@@ -232,46 +488,12 @@ const CommentList = ({
     navigation.navigate('Profile', {path});
   };
 
-  // Function to parse @ mentions in comment text
-  const renderCommentText = comment => {
-    const parts = comment.split(/(\B@\w+)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('@')) {
-        return (
-          <Text key={index} style={styles.mentionText}>
-            {part}
-          </Text>
-        );
-      }
-      return (
-        <Text key={index} style={styles.commentText}>
-          {part}
-        </Text>
-      );
-    });
-  };
-
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => {
-            setCommentField('');
-            onClose();
-          }}
-          style={styles.backButton}>
-          {/* <CustomImage
-            src="/images/mobtrekscape/back.svg"
-            alt="Back"
-            style={styles.backIcon}
-          /> */}
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Comments</Text>
-        <View style={styles.placeholderRight} />
-      </View>
+      <CommentHeader onClose={onClose} setCommentField={setCommentField} />
 
-      {/* Comments List */}
+      {/* Comments List or Loading State */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#e93c00" />
@@ -285,197 +507,50 @@ const CommentList = ({
               edit?.id ? styles.commentListWithEdit : null,
             ]}
             showsVerticalScrollIndicator={false}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}>
+            scrollEventThrottle={16}
+            overScrollMode="never"
+            contentContainerStyle={{paddingBottom: 80}}>
             {postComment?.length > 0 ? (
               postComment.map(comment => (
                 <View key={comment?.id} style={styles.commentContainer}>
-                  <TouchableWithoutFeedback
-                    onLongPress={e =>
-                      user?.id === comment?.userId &&
-                      handleLongPressStart(e, comment.id, comment?.comment)
-                    }
-                    onPressOut={handleLongPressEnd}
-                    delayLongPress={500}>
-                    <View
-                      style={[
-                        styles.commentItem,
-                        menu?.visible &&
-                          menu?.commentId !== comment?.id &&
-                          styles.blurredItem,
-                      ]}>
-                      <View style={styles.commentContentContainer}>
-                        {/* Profile Image */}
-                        <TouchableOpacity
-                          onPress={() => handleNavigate(comment?.user)}
-                          style={styles.profileImageContainer}>
-                          <Image
-                            source={
-                              comment?.user?.profileImage
-                                ? {uri: comment?.user?.profileImage}
-                                : require('../../../public/images/dpPlaceholder.png')
-                            }
-                            style={styles.profileImage}
-                          />
-                        </TouchableOpacity>
-
-                        {/* Username & Comment */}
-                        <View style={styles.commentTextContainer}>
-                          <TouchableOpacity
-                            onPress={() => handleNavigate(comment?.user)}>
-                            <Text style={styles.usernameText}>
-                              {comment?.user?.username ||
-                                comment?.user?.firstname}{' '}
-                              <Text style={styles.timeAgoText}>
-                                {timeAgo(comment?.createdAt)}
-                              </Text>
-                            </Text>
-                          </TouchableOpacity>
-
-                          <View style={styles.commentContent}>
-                            {renderCommentText(comment?.comment)}
-                          </View>
-
-                          <TouchableOpacity
-                            onPress={() =>
-                              replyOnComment(
-                                comment?.user?.username,
-                                comment?.id,
-                              )
-                            }
-                            style={styles.replyButton}>
-                            <Text style={styles.replyText}>Reply</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-
-                      {/* Like Icon */}
-                      <TouchableOpacity
-                        disabled={isreaction}
-                        style={styles.likeContainer}
-                        onPress={() =>
-                          comment?.reaction == 'Like'
-                            ? handleCommentLikeDislike(comment?.id, 'Dislike')
-                            : handleCommentLikeDislike(comment?.id, 'Like')
-                        }>
-                        {/* {comment?.reaction == 'Like' ? (
-                          <FaHeart style={styles.likedIcon} />
-                        ) : (
-                          <FaRegHeart style={styles.unlikedIcon} />
-                        )} */}
-                        <Text style={styles.likesCount}>
-                          {comment?.likes || 0}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </TouchableWithoutFeedback>
+                  {/* Main comment */}
+                  <CommentItem
+                    comment={comment}
+                    currentUser={user}
+                    isReaction={isReaction}
+                    handleCommentLikeDislike={handleCommentLikeDislike}
+                    replyOnComment={replyOnComment}
+                    handleLongPressStart={handleLongPressStart}
+                    handleLongPressEnd={handleLongPressEnd}
+                    handleNavigate={handleNavigate}
+                    timeAgo={timeAgo}
+                    menuVisible={menu.visible}
+                    menuCommentId={menu.commentId}
+                  />
 
                   {/* Reply comments */}
                   {comment?.replies &&
                     comment.replies.map(reply => (
-                      <TouchableWithoutFeedback
+                      <ReplyItem
                         key={reply?.id}
-                        onLongPress={e =>
-                          user?.id === reply?.userId &&
-                          handleLongPressStart(
-                            e,
-                            reply?.id,
-                            reply?.comment,
-                            comment?.id,
-                          )
-                        }
-                        onPressOut={handleLongPressEnd}
-                        delayLongPress={500}>
-                        <View
-                          style={[
-                            styles.replyItem,
-                            menu?.visible &&
-                              menu?.commentId !== reply?.id &&
-                              styles.blurredItem,
-                          ]}>
-                          <View style={styles.commentContentContainer}>
-                            {/* Profile Image */}
-                            <TouchableOpacity
-                              onPress={() => handleNavigate(reply?.user)}
-                              style={styles.replyProfileImageContainer}>
-                              <Image
-                                source={
-                                  reply?.user?.profileImage
-                                    ? {uri: reply?.user?.profileImage}
-                                    : require('../../../public/images/dpPlaceholder.png')
-                                }
-                                style={styles.profileImage}
-                              />
-                            </TouchableOpacity>
-
-                            {/* Username & Comment */}
-                            <View style={styles.commentTextContainer}>
-                              <TouchableOpacity
-                                onPress={() => handleNavigate(reply?.user)}>
-                                <Text style={styles.usernameText}>
-                                  {reply?.user?.username ||
-                                    reply?.user?.firstname}{' '}
-                                  <Text style={styles.timeAgoText}>
-                                    {timeAgo(reply?.createdAt)}
-                                  </Text>
-                                </Text>
-                              </TouchableOpacity>
-
-                              <View style={styles.commentContent}>
-                                {renderCommentText(reply?.comment)}
-                              </View>
-
-                              <TouchableOpacity
-                                onPress={() =>
-                                  replyOnComment(
-                                    reply?.user?.username,
-                                    reply?.replyTo,
-                                  )
-                                }
-                                style={styles.replyButton}>
-                                <Text style={styles.replyText}>Reply</Text>
-                              </TouchableOpacity>
-                            </View>
-                          </View>
-
-                          {/* Like Icon */}
-                          <TouchableOpacity
-                            disabled={isreaction}
-                            style={styles.likeContainer}
-                            onPress={() =>
-                              reply?.reaction == 'Like'
-                                ? handleCommentLikeDislike(
-                                    reply?.id,
-                                    'Dislike',
-                                    reply?.replyTo,
-                                  )
-                                : handleCommentLikeDislike(
-                                    reply?.id,
-                                    'Like',
-                                    reply?.replyTo,
-                                  )
-                            }>
-                            {/* {reply?.reaction == 'Like' ? (
-                              <FaHeart style={styles.likedIcon} />
-                            ) : (
-                              <FaRegHeart style={styles.unlikedIcon} />
-                            )} */}
-                            <Text style={styles.likesCount}>
-                              {reply?.likes || 0}
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </TouchableWithoutFeedback>
+                        reply={reply}
+                        currentUser={user}
+                        isReaction={isReaction}
+                        handleCommentLikeDislike={handleCommentLikeDislike}
+                        replyOnComment={replyOnComment}
+                        handleLongPressStart={handleLongPressStart}
+                        handleLongPressEnd={handleLongPressEnd}
+                        handleNavigate={handleNavigate}
+                        timeAgo={timeAgo}
+                        menuVisible={menu.visible}
+                        menuCommentId={menu.commentId}
+                        parentId={comment?.id}
+                      />
                     ))}
                 </View>
               ))
             ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyTitle}>No comments yet</Text>
-                <Text style={styles.emptySubtitle}>
-                  Start the conversation.
-                </Text>
-              </View>
+              <EmptyCommentState />
             )}
           </ScrollView>
 
@@ -492,16 +567,11 @@ const CommentList = ({
 
           {/* Replying indicator */}
           {replyUsername && (
-            <View ref={editboxRef} style={styles.replyingContainer}>
-              <Text style={styles.replyingText}>
-                Replying to {replyUsername}
-              </Text>
-              <TouchableOpacity
-                onPress={cancelReply}
-                style={styles.cancelReplyButton}>
-                <Text style={styles.cancelReplyText}>×</Text>
-              </TouchableOpacity>
-            </View>
+            <ReplyingIndicator
+              ref={editboxRef}
+              replyUsername={replyUsername}
+              cancelReply={cancelReply}
+            />
           )}
         </>
       )}
@@ -593,6 +663,7 @@ const styles = StyleSheet.create({
   },
   commentTextContainer: {
     flexDirection: 'column',
+    width: '85%',
   },
   usernameText: {
     fontWeight: 'normal',
@@ -608,6 +679,7 @@ const styles = StyleSheet.create({
   commentText: {
     fontWeight: '500',
     color: 'black',
+    lineHeight: 18,
   },
   mentionText: {
     fontWeight: '500',
