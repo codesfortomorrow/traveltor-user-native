@@ -7,11 +7,11 @@ import {
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
+  FlatList,
 } from 'react-native';
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import FaRegComment from 'react-native-vector-icons/FontAwesome';
-import Swiper from 'react-native-swiper';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -61,6 +61,8 @@ const FeedsContainer = ({
   const slug = route.params?.slug;
   const [isShoutOut, setIsShoutOut] = useState(false);
   const [shoutOutFeed, setShoutOutFeed] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const flatListRef = useRef(null);
 
   const isTrekscapeNameShow =
     route.name === 'MyFeeds' ||
@@ -70,43 +72,6 @@ const FeedsContainer = ({
   const toggleReview = () => {
     setExpanded(prevState => !prevState);
   };
-
-  //   useEffect(() => {
-  //     const handleBackButton = event => {
-  //       if (commentModal) {
-  //         setCommentModal(false);
-  //         event.preventDefault();
-  //       }
-  //     };
-
-  //     if (commentModal) {
-  //       window.history.pushState(null, '', window.location.href);
-  //     }
-
-  //     window.addEventListener('popstate', handleBackButton);
-
-  //     return () => {
-  //       window.removeEventListener('popstate', handleBackButton);
-  //     };
-  //   }, [commentModal]);
-
-  //   useEffect(() => {
-  //     const handleResize = () => {
-  //       if (commentModal) {
-  //         document.body.style.height = `${window.innerHeight}px`;
-  //         document.body.style.overflow = 'hidden';
-  //       }
-  //     };
-
-  //     if (commentModal) {
-  //       window.addEventListener('resize', handleResize);
-  //       handleResize(); // Initial call
-  //     }
-
-  //     return () => {
-  //       window.removeEventListener('resize', handleResize);
-  //     };
-  //   }, [commentModal]);
 
   const fetchReactions = async (checkInId, type) => {
     setReactionLoader(true);
@@ -130,7 +95,7 @@ const FeedsContainer = ({
   };
 
   const navigateToTrailPoint = () => {
-    navigation.navigate('TrailPoint', {
+    navigation.navigate('TrailpointDetails', {
       slug: item?.trailPoint?.slug,
     });
   };
@@ -151,13 +116,70 @@ const FeedsContainer = ({
     );
   };
 
+  const handleDoubleTap = event => {
+    const currentTime = new Date().getTime();
+    const tapGap = currentTime - lastTapRef.current;
+
+    if (tapGap < 300 && tapGap > 0) {
+      setShowHeart(true);
+      if (item?.reaction !== 'Like') {
+        handleLike(item?.id, 'Like');
+      }
+      animateHeart();
+      setTimeout(() => setShowHeart(false), 800);
+    }
+
+    lastTapRef.current = currentTime;
+  };
+
+  const renderImageItem = ({item: imageUri, index}) => (
+    <TouchableWithoutFeedback onPress={handleDoubleTap}>
+      <View style={[styles.slideContainer, {height: (windowWidth * 4) / 3}]}>
+        <Image
+          source={{uri: imageUri}}
+          style={styles.slideImage}
+          resizeMode="cover"
+        />
+      </View>
+    </TouchableWithoutFeedback>
+  );
+
+  const handleViewableItemsChanged = useRef(({viewableItems}) => {
+    if (viewableItems.length > 0) {
+      setCurrentImageIndex(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 50,
+  }).current;
+
+  // Custom pagination dots for FlatList
+  const renderPaginationDots = () => {
+    if (!item?.media || item.media.length <= 2) return null;
+
+    return (
+      <View style={styles.paginationContainer}>
+        {item.media.map((_, index) => (
+          <View
+            key={`dot-${index}`}
+            style={[
+              styles.paginationDot,
+              index === currentImageIndex && styles.paginationDotActive,
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
-        <TouchableOpacity
-          style={styles.userInfoContainer}
-          onPress={navigateToProfile}>
-          <View style={styles.avatarContainer}>
+        <View style={styles.userInfoContainer}>
+          <TouchableOpacity
+            style={styles.avatarContainer}
+            onPress={navigateToProfile}>
             <Image
               source={
                 item?.user?.profileImage != null
@@ -166,7 +188,7 @@ const FeedsContainer = ({
               }
               style={styles.profileImage}
             />
-          </View>
+          </TouchableOpacity>
           <View style={styles.userDetailsContainer}>
             <View style={styles.nameRow}>
               <TouchableOpacity onPress={navigateToProfile}>
@@ -174,15 +196,22 @@ const FeedsContainer = ({
                   {item?.user?.firstname + ' ' + item?.user?.lastname}
                 </Text>
               </TouchableOpacity>
+
               {item?.user?.type?.toLowerCase() === 'trailblazer' && (
-                <CheckIcon width={16} height={16} />
+                <CheckIcon width={16} height={16} style={{marginRight: 4}} />
               )}
+
               {item?.trailPoint?.slug && item?.trailPoint?.name && (
-                <TouchableOpacity onPress={navigateToTrailPoint}>
-                  <Text style={styles.trailPointName} numberOfLines={1}>
-                    {`at ${item?.trailPoint?.name}`}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.trailPointWrapper}>
+                  <TouchableOpacity onPress={navigateToTrailPoint}>
+                    <Text
+                      style={styles.trailPointName}
+                      numberOfLines={1}
+                      ellipsizeMode="tail">
+                      {`at ${item?.trailPoint?.name}`}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
 
@@ -197,7 +226,7 @@ const FeedsContainer = ({
               </Text>
             </View>
           </View>
-        </TouchableOpacity>
+        </View>
         <View style={styles.menuContainer}>
           <FeedMenuBar
             feed={item}
@@ -209,44 +238,35 @@ const FeedsContainer = ({
         </View>
       </View>
       <View style={styles.swiperContainer}>
-        <Swiper
-          style={styles.swiper}
-          dotStyle={styles.swiperDot}
-          activeDotStyle={styles.swiperActiveDot}
-          showsButtons={false}
-          loop={true}
-          autoplay={false}
-          scrollEnabled={true}
-          bounces={true}
-          paginationStyle={{bottom: 10}}
-          removeClippedSubviews={false}>
-          {item?.media?.map((image, index) => (
-            <View
-              key={index}
-              style={[styles.slideContainer, {height: (windowWidth * 4) / 3}]}>
-              <TouchableWithoutFeedback
-                onPress={e =>
-                  onDoubleTap(
-                    e,
-                    item,
-                    handleLike,
-                    setShowHeart,
-                    lastTapRef,
-                    true,
-                  )
-                }>
-                <Image
-                  source={{uri: image}}
-                  style={styles.slideImage}
-                  onTouchStart={e =>
-                    handleTouchStart && handleTouchStart(e, index)
-                  }
-                  onTouchEnd={() => handleTouchEnd && handleTouchEnd(index)}
-                />
-              </TouchableWithoutFeedback>
-            </View>
-          ))}
-        </Swiper>
+        {item?.media?.length > 0 ? (
+          <View style={{height: (windowWidth * 4) / 3}}>
+            <FlatList
+              ref={flatListRef}
+              data={item.media}
+              renderItem={renderImageItem}
+              keyExtractor={(_, index) => `image-${item.id}-${index}`}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onViewableItemsChanged={handleViewableItemsChanged}
+              viewabilityConfig={viewabilityConfig}
+              initialNumToRender={1}
+              maxToRenderPerBatch={2}
+              windowSize={3}
+              getItemLayout={(_, index) => ({
+                length: windowWidth,
+                offset: windowWidth * index,
+                index,
+              })}
+            />
+            {renderPaginationDots()}
+          </View>
+        ) : (
+          <View
+            style={[styles.noImageContainer, {height: (windowWidth * 4) / 3}]}>
+            <Text style={styles.noImageText}>No images available</Text>
+          </View>
+        )}
 
         <Animated.View style={[styles.heartOverlay, heartAnimatedStyle]}>
           <Heart width={56} height={56} fill="white" stroke="white" />
@@ -483,46 +503,7 @@ const FeedsContainer = ({
   );
 };
 
-const onDoubleTap = (
-  e,
-  item,
-  handleLike,
-  setShowHeart,
-  lastTapRef,
-  doubleclick,
-) => {
-  if (
-    e.nativeEvent &&
-    e.nativeEvent.touches &&
-    e.nativeEvent.touches.length > 1
-  )
-    return;
-
-  const currentTime = new Date().getTime();
-  const tapGap = currentTime - lastTapRef.current;
-
-  if (e.nativeEvent && e.nativeEvent.type === 'touchstart') {
-    const startY = e.nativeEvent.touches[0].pageY;
-
-    const touchMoveHandler = moveEvent => {
-      const moveY = moveEvent.nativeEvent.touches[0].pageY;
-      if (Math.abs(moveY - startY) > 10) {
-        // Too much vertical movement, not a tap
-        return false;
-      }
-    };
-  }
-
-  if (doubleclick || (tapGap < 300 && tapGap > 0)) {
-    setShowHeart(true);
-    if (item?.reaction !== 'Like') {
-      handleLike(item?.id, 'Like');
-    }
-    setTimeout(() => setShowHeart(false), 500);
-  }
-
-  lastTapRef.current = currentTime;
-};
+const windowWidth = Dimensions.get('window').width;
 
 const styles = StyleSheet.create({
   container: {
@@ -557,8 +538,6 @@ const styles = StyleSheet.create({
   nameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    maxWidth: '100%',
     overflow: 'hidden',
   },
   userName: {
@@ -566,10 +545,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontFamily: 'Inter',
     flexShrink: 0,
-    maxWidth: '100%',
+    marginRight: 4,
+  },
+  trailPointWrapper: {
+    flexShrink: 1,
+    flexGrow: 1,
+    overflow: 'hidden',
   },
   trailPointName: {
     fontSize: 14,
+    color: 'black',
   },
   locationRow: {
     flexDirection: 'row',
@@ -594,32 +579,46 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
-  swiper: {
-    height: 300, // Default height
+  slideContainer: {
+    width: windowWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  swiperDot: {
+  slideImage: {
+    width: windowWidth,
+    height: '100%',
+    minHeight: 262,
+    resizeMode: 'cover',
+  },
+  noImageContainer: {
+    width: windowWidth,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e0e0e0',
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 10,
+    alignSelf: 'center',
+  },
+  paginationDot: {
     backgroundColor: 'rgba(0,0,0,.2)',
     width: 8,
     height: 8,
     borderRadius: 4,
     margin: 3,
   },
-  swiperActiveDot: {
+  paginationDotActive: {
     backgroundColor: '#E93C00',
     width: 8,
     height: 8,
     borderRadius: 4,
     margin: 3,
-  },
-  slideContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  slideImage: {
-    width: '100%',
-    height: '100%',
-    minHeight: 262,
   },
   heartOverlay: {
     position: 'absolute',
@@ -749,10 +748,6 @@ const styles = StyleSheet.create({
   commentButton: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  image: {
-    width: 24,
-    height: 24,
   },
 });
 

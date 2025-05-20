@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   flatListItem: {
     width: 130,
     marginRight: 12,
-    height: 230,
+    height: 210,
     position: 'relative',
   },
   carouselWrapper: {
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   },
   slideImage: {
     width: '100%',
-    height: 230,
+    height: '100%',
     borderRadius: 12,
     resizeMode: 'cover',
   },

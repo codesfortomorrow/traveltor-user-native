@@ -141,7 +141,7 @@ const Header = ({handleSignUp, handleSignIn}) => {
   return (
     <View style={style.container}>
       <Image
-        style={{width: 220, height: 50, resizeMode: 'contain'}}
+        style={{width: 200, height: 50, resizeMode: 'contain'}}
         source={require('../../../public/images/logo-1.png')}
       />
       {isLoggedIn && (

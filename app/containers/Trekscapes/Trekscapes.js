@@ -9,6 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
   Image,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useAuth from '../../hooks/useAuth';
@@ -133,7 +134,7 @@ const Trekscapes = () => {
     try {
       setContentLoading(true);
 
-      if (page === 0) {
+      if (page === 0 && !location) {
         setIsLoading(searchTerm ? false : true);
       }
 
@@ -289,22 +290,25 @@ const Trekscapes = () => {
     };
   }
 
-  const renderSwiperSlider = ({images, id}) => {
+  const renderSwiperSlider = ({images, slug}) => {
     return (
-      <View style={styles.swiperContainer}>
-        <Swiper
-          style={styles.swiper}
-          showsPagination={true}
-          loop={false}
-          dotStyle={styles.swiperDot}
-          activeDotStyle={styles.swiperActiveDot}>
-          {images?.map((image, index) => (
-            <View key={index} style={styles.swiperSlide}>
-              <Image source={{uri: image}} style={styles.swiperImage} />
-            </View>
-          ))}
-        </Swiper>
-      </View>
+      <TouchableWithoutFeedback
+        onPress={() => navigate('TrekscapeDetail', {slug})}>
+        <View style={styles.swiperContainer}>
+          <Swiper
+            style={styles.swiper}
+            showsPagination={true}
+            loop={false}
+            dotStyle={styles.swiperDot}
+            activeDotStyle={styles.swiperActiveDot}>
+            {images?.map((image, index) => (
+              <View key={index} style={styles.swiperSlide}>
+                <Image source={{uri: image}} style={styles.swiperImage} />
+              </View>
+            ))}
+          </Swiper>
+        </View>
+      </TouchableWithoutFeedback>
     );
   };
 
@@ -444,7 +448,7 @@ const Trekscapes = () => {
                   <View key={index} style={styles.trekscapeCard}>
                     {renderSwiperSlider({
                       images: item?.previewMedia,
-                      id: item?.slug,
+                      slug: item?.slug,
                     })}
                     <View style={styles.cardFooter}>
                       <View>

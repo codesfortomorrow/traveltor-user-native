@@ -86,41 +86,6 @@ export const FooterLayout = ({children}) => {
     getLocation();
   }, []);
 
-  // const {fcmToken} = useSelector(state => state?.firebase);
-  // console.log(fcmToken, 'redux token');
-  // const localFCMToken = fcmToken !== AsyncStorage.getItem('fcmToken') || '';
-  // const savedToken = AsyncStorage.getItem('fcmToken');
-
-  // const setFirebaseToken = async token => {
-  //   const response = await postAuthReq('/users/notification-token', {
-  //     token,
-  //   });
-  //   console.log(response, 'setfirebase');
-  //   if (!response?.status) {
-  //     console.log(response?.error?.message);
-  //   }
-  //   return response;
-  // };
-
-  // useEffect(() => {
-  //   // console.log({isLogin: isLoggedIn, fcmToken, savedToken});
-  //   if (isLoggedIn && fcmToken && !savedToken) {
-  //     AsyncStorage.setItem('fcmToken', fcmToken);
-  //     setFirebaseToken(fcmToken);
-  //   }
-
-  //   async function name() {
-  //     if (isLoggedIn && fcmToken && savedToken && localFCMToken) {
-  //       const response = await setFirebaseToken(savedToken);
-  //       if (response?.status) {
-  //         setFirebaseToken(fcmToken);
-  //         AsyncStorage.setItem('fcmToken', fcmToken);
-  //       }
-  //     }
-  //   }
-  //   name();
-  // }, [fcmToken]);
-
   const {fcmToken} = useSelector(state => state?.firebase);
 
   const setFirebaseToken = async token => {
@@ -134,10 +99,8 @@ export const FooterLayout = ({children}) => {
 
   useEffect(() => {
     const syncFCMToken = async () => {
-      await AsyncStorage.removeItem('fcmToken');
       try {
         const savedToken = await AsyncStorage.getItem('fcmToken');
-        console.log({isLogin: isLoggedIn, fcmToken, savedToken});
 
         const isNewToken = savedToken !== fcmToken;
 

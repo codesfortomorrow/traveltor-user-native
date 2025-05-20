@@ -20,27 +20,35 @@ function HeroSection() {
   const listRef = useRef(null);
   const {heroSlider} = Constant();
   const itemWidth = screenWidth / 5.75;
+  const clonedSlider = [...heroSlider, ...heroSlider];
+  const scrollIndex = useRef(0);
+  const scrollTimer = useRef(null);
 
-  // Auto-scroll logic
   useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIndex(prev => {
-        const nextIndex = (prev + 1) % heroSlider.length;
+    scrollTimer.current = setInterval(() => {
+      scrollIndex.current += 1;
+
+      if (scrollIndex.current >= clonedSlider.length) {
+        scrollIndex.current = 0;
+        listRef.current?.scrollToOffset({offset: 0, animated: false});
+      } else {
         listRef.current?.scrollToOffset({
-          offset: nextIndex * itemWidth + 20,
+          offset: scrollIndex.current * (itemWidth + 16),
           animated: true,
         });
-        return nextIndex;
-      });
-    }, 3000);
+      }
 
-    return () => clearInterval(interval);
-  }, [heroSlider.length]);
+      const index = scrollIndex.current % heroSlider.length;
+      setTimeout(() => {
+        setActiveIndex(index);
+      }, 500);
+    }, 3000);
+    return () => clearInterval(scrollTimer.current);
+  }, [heroSlider.length, itemWidth]);
 
   return (
     <>
       <View style={styles.container}>
-        {/* Background Image */}
         <Image
           source={
             heroSlider[activeIndex]?.image ||
@@ -50,7 +58,6 @@ function HeroSection() {
           resizeMode="cover"
         />
 
-        {/* Search Box */}
         <View
           style={[
             styles.searchContainer,
@@ -68,6 +75,8 @@ function HeroSection() {
                 : styles.searchInputUnfocused,
             ]}
             placeholderTextColor="#8B8181"
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
           />
           <Image
             source={require('../../public/images/hero/search.png')}
@@ -88,17 +97,18 @@ function HeroSection() {
       <View style={styles.swiperWrapper}>
         <FlatList
           ref={listRef}
-          data={heroSlider}
+          data={clonedSlider}
           keyExtractor={(_, index) => index.toString()}
           horizontal
           pagingEnabled={false}
           showsHorizontalScrollIndicator={false}
+          scrollEnabled={false}
           renderItem={({item, index}) => (
             <View
               style={[
                 styles.slide,
                 {width: itemWidth},
-                index !== heroSlider.length - 1 && {marginRight: 16},
+                index !== clonedSlider.length - 1 && {marginRight: 16},
               ]}>
               <Image
                 source={item.image}
@@ -205,7 +215,6 @@ const styles = StyleSheet.create({
     height: 92,
     borderRadius: 10,
     overflow: 'hidden',
-    // marginRight: 16,
     position: 'relative',
   },
   slideImage: {

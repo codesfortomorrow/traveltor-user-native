@@ -5,10 +5,7 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
-  ScrollView,
   ActivityIndicator,
-  Dimensions,
-  Alert,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {useDispatch, useSelector} from 'react-redux';
@@ -17,37 +14,38 @@ import {
   convertToThreeFourRatio,
   getLocation,
 } from '../../components/Helpers/fileUploadHelper';
-import {useNavigation} from '@react-navigation/native';
-import CheckInStep2 from './CheckInStep2';
+import {useNavigation, useRoute} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckInTopBar from '../../components/Common/CheckInTopBar';
+import {Swiper} from 'react-native-swiper';
+import {TiDelete} from 'react-native-vector-icons/Ti';
+import 'react-native-get-random-values';
+import {v4 as uuidv4} from 'uuid';
 import {launchImageLibrary} from 'react-native-image-picker';
 import ImageResizer from 'react-native-image-resizer';
 import RNFS from 'react-native-fs';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import 'react-native-get-random-values';
-import {v4 as uuidv4} from 'uuid';
+import ImageCropper from '../../components/Crop/ImageCropperComponent';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import UploadImageMic from '../../../public/images/uploadImageMic.svg';
 import CameraIcon from '../../../public/images/camera.svg';
-import ImageCropper from '../../components/Crop/ImageCropperComponent';
 
-const {width, height} = Dimensions.get('window');
-
-const GeneralCheckIn = () => {
+const CreateCheckIn = () => {
   const dispatch = useDispatch();
+  const route = useRoute();
+  const {id} = route.params;
   const [successCheckin, setSuccessCheckin] = useState(null);
+  const [failureCheckin, setFailureCheckin] = useState(null);
   const [loading, setLoading] = useState(false);
-  const {getValidatedCheckInPoint} = useAuth();
-  const location = useSelector(state => state?.location);
+  const {getSingleTrailpoint} = useAuth();
   const navigation = useNavigation();
+  const location = useLocation();
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [reviewText, setReviewText] = useState('');
-  const [step, setStep] = useState(1);
-  const [trailPointDetail, setTrailPointDetail] = useState([]);
-  const [currentTrekscapes, setCurrentTrekscapes] = useState([]);
+  const [seletedValue, setSeletedValue] = useState('MustVisit');
+  const [step, setStep] = useState(2);
+  const [trailPointDetail, setTrailPointDetail] = useState({});
   const [locationloader, setLocationloader] = useState(true);
-  const [hasLocation, setHasLocation] = useState(true);
-  const [handleName, setHandleName] = useState('');
+  const currentLocation = useSelector(state => state?.location);
   const [getLocationLoader, setGetLocationLoader] = useState(false);
   const [showSingleFile, setShowSingleFile] = useState({});
   const [croppedImages, setCroppedImages] = useState({});
@@ -55,25 +53,22 @@ const GeneralCheckIn = () => {
   const inputRef = useRef(null);
   const isTriggered = useRef(false);
   const [isLoaded, setIsLoaded] = useState({});
+  const [showSelectedDateTime, setShowSelectedDateTime] = useState(false); // Added missing state
 
   const handleCheckInTreckScape = async () => {
     try {
       setLoading(true);
-      await AsyncStorage.removeItem('generalDraft');
+      // Using AsyncStorage instead of localStorage
+      await AsyncStorage.removeItem('checkinDraft');
 
-      const trailPoint = trailPointDetail[0];
       const payload = {
-        type: trailPoint?.trekscape_id ? 'TrailPoint' : 'Trekscape',
-        lat: location?.latitude || 0,
-        long: location?.longitude || 0,
+        type: 'TrailPoint',
+        visitType: seletedValue,
+        trailPointId: location?.state?.id,
+        lat: currentLocation?.latitude || 0,
+        long: currentLocation?.longitude || 0,
         review: reviewText,
       };
-
-      if (trailPoint?.trekscape_id) {
-        payload.trailPointId = trailPoint.id;
-      } else {
-        payload.trekscapeId = trailPoint.id;
-      }
 
       const updatedFiles = await Promise.all(
         selectedFiles.map(async file => {
@@ -92,79 +87,73 @@ const GeneralCheckIn = () => {
         }),
       );
 
-      // const draftId = await generateDraftId(payload, updatedFiles);
+      //   const draftId = await generateDraftId(payload, updatedFiles);
 
-      // const existingDraft = await getDraftById(draftId);
+      //   const existingDraft = await getDraftById(draftId);
 
-      // if (!existingDraft) {
-      //   await saveDraft({
-      //     id: draftId,
-      //     files: updatedFiles,
-      //     payload: payload,
-      //     status: 'readyforPublish',
-      //     type: 'general',
-      //   });
-      // }
+      //   if (!existingDraft) {
+      //     await saveDraft({
+      //       id: draftId,
+      //       files: updatedFiles,
+      //       payload: payload,
+      //       status: 'readyforPublish',
+      //       type: 'trailpoint',
+      //     });
+      //   }
 
-      // const response = await publishDraft();
-      // if (response?.status) {
-      //   setSuccessCheckin({
-      //     status: true,
-      //     data: {
-      //       name: handleName,
-      //       point: payload.type === 'TrailPoint' ? 1000 : 5,
-      //     },
-      //   });
-      // } else {
-      //   toast.error('Failed to publish check-in.');
-      // }
+      //   const response = await publishDraft();
+      //   if (response?.status) {
+      //     setSuccessCheckin({
+      //       status: true,
+      //       data: {name: trailPointDetail?.name, point: 1000},
+      //     });
+      //     navigate('/my-feed');
+      //   } else {
+      //     toast.error('Failed to publish check-in.');
+      //   }
     } catch (error) {
       dispatch(
         setError({
           open: true,
-          custom_message: error?.message || 'Something went wrong',
+          custom_message: error || 'Something went wrong',
         }),
       );
-      console.error('Check-in error:', error);
+      console.log(error, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchCurrentTrekscapes = useCallback(async ({latitude, longitude}) => {
-    setLocationloader(true);
+  const fetchTrailpointDetail = useCallback(async () => {
+    setLoading(true);
     try {
-      const response = await getValidatedCheckInPoint({
-        latitude: '22.7611853',
-        longitude: '75.8831569',
-      });
+      const response = await getSingleTrailpoint(id);
+
       if (response) {
-        setCurrentTrekscapes(response);
         setTrailPointDetail(response);
-      } else {
-        setCurrentTrekscapes([]);
-        setTrailPointDetail(null);
+        setLoading(false);
       }
     } catch (error) {
       console.log('Error:', error);
+      setLoading(false);
     } finally {
       setLocationloader(false);
-      setLoading(false);
-      setHasLocation(false);
     }
-  }, []);
+    //eslint-next-line-disable
+  }, [id]);
 
   useEffect(() => {
-    if (!location?.response && location?.latitude) {
-      fetchCurrentTrekscapes(location);
-    } else {
-      setCurrentTrekscapes([]);
-      setTrailPointDetail(null);
+    if (id) {
+      fetchTrailpointDetail();
     }
-  }, [fetchCurrentTrekscapes, location]);
+  }, [fetchTrailpointDetail, id]);
+
+  const handleSelectChange = value => {
+    setSeletedValue(value);
+  };
 
   const disable =
-    location?.response ||
+    currentLocation?.response ||
     !trailPointDetail ||
     selectedFiles?.length == 0 ||
     locationloader;
@@ -172,51 +161,40 @@ const GeneralCheckIn = () => {
   useEffect(() => {
     const loadSavedCrops = async () => {
       try {
-        const savedCrops = await AsyncStorage.getItem('croppedImages');
-        if (savedCrops) {
-          setCroppedImages(JSON.parse(savedCrops));
-        }
+        // Using AsyncStorage instead of sessionStorage
+        const savedCropsStr = await AsyncStorage.getItem('croppedImages');
+        const savedCrops = savedCropsStr ? JSON.parse(savedCropsStr) : {};
+        setCroppedImages(savedCrops);
       } catch (error) {
-        console.error('Error loading cropped images:', error);
+        console.log('Error loading crops:', error);
       }
     };
 
     loadSavedCrops();
   }, []);
 
-  const handleCropDone = async (originalImage, croppedImage) => {
-    try {
-      const updatedCrops = {...croppedImages, [originalImage]: croppedImage};
-      setCroppedImages(updatedCrops);
-      await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
-    } catch (error) {
-      console.error('Error saving cropped images:', error);
-    }
+  const handleCropDone = (originalImage, croppedImage) => {
+    setCroppedImages(prev => {
+      const updatedCrops = {...prev, [originalImage]: croppedImage};
+      // Using AsyncStorage instead of sessionStorage
+      AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
+      return updatedCrops;
+    });
   };
 
   useEffect(() => {
-    const triggerImagePicker = () => {
+    const triggerFileInput = () => {
       if (!isTriggered.current) {
         isTriggered.current = true;
         setTimeout(() => {
-          pickImage();
-        }, 500);
+          handleSelectImages();
+        }, 0);
       }
     };
-
-    // triggerImagePicker();
-  }, []);
-
-  const copyToCache = async (sourceUri, fileName) => {
-    const destPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
-    try {
-      await RNFS.copyFile(sourceUri, destPath);
-      return destPath;
-    } catch (err) {
-      console.error('Failed to copy file to cache:', err);
-      throw err;
+    if (step === 2) {
+      triggerFileInput();
     }
-  };
+  }, [step]);
 
   const pickImage = async () => {
     try {
@@ -468,227 +446,212 @@ const GeneralCheckIn = () => {
     }
   };
 
-  if (step === 2) {
-    return (
-      <CheckInStep2
-        currentTrekscapes={currentTrekscapes}
-        setReviewText={setReviewText}
-        disable={disable}
-        handleCheckInTreckScape={handleCheckInTreckScape}
-        setStep={setStep}
-        locationloader={locationloader}
-        handleName={handleName}
-        setHandleName={setHandleName}
-        setTrailPointDetail={setTrailPointDetail}
-        croppedImages={croppedImages}
-        successCheckin={successCheckin}
-        setSuccessCheckin={setSuccessCheckin}
-        selectedFiles={selectedFiles}
-      />
-    );
-  }
-
-  const renderNoLocationContent = () => (
-    <View style={styles.noLocationContainer}>
-      <View style={{marginBottom: 20}}>
-        <SadIcon width={60} height={60} />
-      </View>
-
-      <Text style={styles.notHereTitle}>
-        We're Not Here Yet, But We're Trying.
-      </Text>
-      <Text style={styles.notHereDescription}>
-        Not here yet! Locals, help us expand—join our Telegram to connect this
-        location!
-      </Text>
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Trekscapes')}
-        style={styles.exploreButton}>
-        <Text style={styles.exploreButtonText}>Explore</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderLocationDeniedContent = () => (
-    <View style={styles.noLocationContainer}>
-      <SadIcon width={30} height={30} />
-
-      <Text style={styles.notHereTitle}>
-        {location?.response?.code === 1
-          ? 'Permission denied. Please enable geolocation access.'
-          : location?.response?.message}
-      </Text>
-      <TouchableOpacity
-        disabled={getLocationLoader}
-        onPress={() => getLocation(setGetLocationLoader, dispatch)}
-        style={styles.retryButton}>
-        {getLocationLoader ? (
-          <ActivityIndicator size="small" color="#FFFFFF" />
-        ) : (
-          <Text style={styles.retryButtonText}>Retry</Text>
-        )}
-      </TouchableOpacity>
-    </View>
-  );
-
-  const renderImageUploadContent = () => (
-    <View
-      style={[
-        styles.imageUploadContainer,
-        selectedFiles?.length !== 0 && !isCropOpen && styles.justifyCenter,
-      ]}>
-      {selectedFiles.length === 0 && (
-        <View style={styles.uploadInstructionsContainer}>
-          <View style={styles.selfCenter}>
-            <Image
-              // source={require('../../../public/images/CheckInTvtor.jpg')}
-              source={{
-                uri: 'https://ik.imagekit.io/8u2famo7gp/prod/90e0c362d1ee4bd482fd9eda023862db.jpg',
-              }}
-              style={styles.earnTvtorImage}
-            />
-          </View>
-          <View style={styles.uploadInstructions}>
-            <UploadImageMic width={70} height={70} />
-
-            <Text style={styles.uploadInstructionsText}>
-              Crop or Adjust your photo before publishing, tap on to photo
-              preview.
-            </Text>
-          </View>
-        </View>
-      )}
-
-      {selectedFiles?.length !== 0 && !isCropOpen && (
-        <Text
-          style={[
-            styles.tapToAdjustText,
-            selectedFiles?.length !== 0 &&
-              !isCropOpen &&
-              styles.negativeMarginTop,
-          ]}>
-          *{selectedFiles?.length > 1 && 'Scroll to see more and'} Tap to adjust
-          display
-        </Text>
-      )}
-
-      {selectedFiles?.length !== 0 && (
-        <View>
-          {!isCropOpen && (
-            <ScrollView
-              horizontal
-              contentContainerStyle={styles.imageSwiper}
-              showsHorizontalScrollIndicator={false}
-              pagingEnabled>
-              {selectedFiles.map(file => {
-                const imageUrl = croppedImages[file.id] || file.url;
-                return (
-                  <View
-                    key={file?.id}
-                    style={[
-                      styles.imageSwiperSlide,
-                      selectedFiles?.length === 1 && styles.singleImage,
-                    ]}>
-                    {!isLoaded[file?.id] && (
-                      <View style={styles.imageLoader}>
-                        <Text style={styles.imageLoaderText}>
-                          Loading image...
-                        </Text>
-                      </View>
-                    )}
-                    <TouchableOpacity
-                      onPress={() => {
-                        setShowSingleFile(file);
-                        setIsCropOpen(true);
-                      }}
-                      activeOpacity={0.8}>
-                      <Image
-                        source={{uri: imageUrl}}
-                        style={[
-                          styles.selectedImage,
-                          isLoaded[file?.id] ? {opacity: 1} : {opacity: 0},
-                        ]}
-                        onLoad={() =>
-                          setIsLoaded(prev => ({
-                            ...prev,
-                            [file.id]: true,
-                          }))
-                        }
-                      />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteIcon}
-                      onPress={() =>
-                        setSelectedFiles(prevFiles =>
-                          prevFiles.filter(fileObj => fileObj.id !== file.id),
-                        )
-                      }>
-                      <Text style={styles.deleteIconText}>✕</Text>
-                    </TouchableOpacity>
-                  </View>
-                );
-              })}
-            </ScrollView>
-          )}
-        </View>
-      )}
-
-      {selectedFiles?.length !== 0 && isCropOpen && (
-        <View style={styles.cropperContainer}>
-          {/* <ImageCropper
-            fileId={showSingleFile?.id || selectedFiles[0]?.id}
-            originalFile={
-              showSingleFile?.file || selectedFiles[0]?.file
-            }
-            imageSrc={showSingleFile?.url || selectedFiles[0].url}
-            onCropDone={handleCropDone}
-            setIsCropOpen={setIsCropOpen}
-          /> */}
-          <ImageCropper
-            fileId={showSingleFile?.id || selectedFiles[0]?.id}
-            originalFile={showSingleFile.file}
-            imageSrc={showSingleFile?.url || selectedFiles[0]?.url}
-            onCropDone={handleCropDone}
-          />
-        </View>
-      )}
-
-      {!isCropOpen && (
-        <View style={styles.addPhotosButtonContainer}>
-          <TouchableOpacity style={styles.addPhotosButton} onPress={pickImage}>
-            <CameraIcon width={24} height={24} />
-
-            <Text style={styles.addPhotosButtonText}>Add your photos</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
-  );
-
   return (
     <>
-      <CheckInTopBar
-        disable={selectedFiles?.length === 0}
-        trigger={'Next'}
-        setStep={setStep}
-        isCropOpen={isCropOpen}
-        setIsCropOpen={setIsCropOpen}
-        selectedFiles={selectedFiles}
-        nextTrip={true}
-      />
-
-      {!location?.response &&
-      !loading &&
-      location &&
-      currentTrekscapes &&
-      !hasLocation &&
-      currentTrekscapes.length == 0 ? (
-        renderNoLocationContent()
+      {step == 3 ? (
+        // <CheckInStep3
+        //   setReviewText={setReviewText}
+        //   disable={disable}
+        //   handleCheckInTreckScape={handleCheckInTreckScape}
+        //   setStep={setStep}
+        //   locationloader={locationloader}
+        //   croppedImages={croppedImages}
+        //   selectedFiles={selectedFiles}
+        //   trailPointDetail={trailPointDetail}
+        //   seletedValue={seletedValue}
+        //   handleSelectChange={handleSelectChange}
+        // />
+        <></>
       ) : (
         <>
-          {location?.response
-            ? renderLocationDeniedContent()
-            : renderImageUploadContent()}
+          <View>
+            <CheckInTopBar
+              disable={disable}
+              handleCheckInTreckScape={handleCheckInTreckScape}
+              setShowSelectedDateTime={setShowSelectedDateTime}
+              trigger={'Next'}
+              setStep={setStep}
+              isCropOpen={isCropOpen}
+              setIsCropOpen={setIsCropOpen}
+              step={step}
+              type={'trailpoint'}
+              selectedFiles={selectedFiles}
+              nextTrip={true}
+            />
+            {currentLocation?.response && (
+              <>
+                <View style={styles.locationErrorContainer}>
+                  <View style={{marginBottom: 20}}>
+                    <SadIcon width={60} height={60} />
+                  </View>
+                  <Text style={styles.errorText}>
+                    {currentLocation?.response.code === 1
+                      ? 'Permission denied. Please enable geolocation access.'
+                      : currentLocation?.response.message}
+                  </Text>
+
+                  <TouchableOpacity
+                    disabled={getLocationLoader}
+                    onPress={() => getLocation(setGetLocationLoader, dispatch)}
+                    style={styles.retryButton}>
+                    {getLocationLoader ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.retryButtonText}>Retry</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {!currentLocation?.response && (
+              <View
+                style={[
+                  styles.mainContainer,
+                  selectedFiles?.length !== 0 &&
+                    !isCropOpen &&
+                    styles.justifyCenter,
+                ]}>
+                {selectedFiles.length == 0 && (
+                  <View style={styles.emptyStateContainer}>
+                    <View style={styles.imageContainer}>
+                      <Image
+                        source={{
+                          uri: 'https://ik.imagekit.io/8u2famo7gp/prod/5ab9e2e49445d4bdf1454b78585f9125.svg?tr=w-97,q-10',
+                        }}
+                        style={styles.earnTvtorImage}
+                      />
+                    </View>
+                    <View style={styles.uploadInfoBox}>
+                      <UploadImageMic width={70} height={70} />
+
+                      <Text style={styles.uploadInfoText}>
+                        Crop or Adjust your photo before publishing, tap on to
+                        photo preview.
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {selectedFiles?.length !== 0 && !isCropOpen && (
+                  <Text
+                    style={[
+                      styles.instructionText,
+                      selectedFiles?.length !== 0 &&
+                        !isCropOpen &&
+                        styles.adjustedInstructionText,
+                    ]}>
+                    *{selectedFiles?.length > 1 && 'Scroll to see more and'} Tap
+                    to adjust display
+                  </Text>
+                )}
+
+                {step === 2 && selectedFiles?.length !== 0 && (
+                  <>
+                    <View>
+                      <Swiper
+                        style={styles.swiper}
+                        showsPagination={false}
+                        loop={false}
+                        showsButtons={false}>
+                        {selectedFiles &&
+                          !isCropOpen &&
+                          selectedFiles?.map(file => {
+                            const imageUrl = croppedImages[file.id] || file.url;
+                            return (
+                              <View
+                                key={file?.id}
+                                style={[
+                                  styles.swiperSlide,
+                                  selectedFiles?.length === 1 &&
+                                    styles.singleImageSlide,
+                                ]}>
+                                {!isLoaded[file?.id] && (
+                                  <View style={styles.loadingOverlay}>
+                                    <Text style={styles.loadingText}>
+                                      Loading image...
+                                    </Text>
+                                  </View>
+                                )}
+                                <TouchableOpacity
+                                  onPress={() => {
+                                    setShowSingleFile(file);
+                                    setIsCropOpen(true);
+                                  }}
+                                  activeOpacity={0.9}>
+                                  <Image
+                                    source={{uri: imageUrl}}
+                                    style={[
+                                      styles.checkinImage,
+                                      isLoaded[file?.id]
+                                        ? styles.imageVisible
+                                        : styles.imageHidden,
+                                    ]}
+                                    onLoad={() =>
+                                      setIsLoaded(prev => ({
+                                        ...prev,
+                                        [file.id]: true,
+                                      }))
+                                    }
+                                  />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                  style={styles.deleteButton}
+                                  onPress={() =>
+                                    setSelectedFiles(prevFiles =>
+                                      prevFiles.filter(
+                                        fileObj => fileObj.id !== file.id,
+                                      ),
+                                    )
+                                  }>
+                                  <TiDelete style={styles.deleteIcon} />
+                                </TouchableOpacity>
+                              </View>
+                            );
+                          })}
+                      </Swiper>
+                    </View>
+
+                    {selectedFiles?.length !== 0 && isCropOpen && (
+                      <View style={styles.cropperContainer}>
+                        <ImageCropper
+                          fileId={showSingleFile?.id || selectedFiles[0]?.id}
+                          originalFile={
+                            showSingleFile?.file || selectedFiles[0]?.file
+                          }
+                          imageSrc={
+                            showSingleFile?.url || selectedFiles[0]?.url
+                          }
+                          onCropDone={handleCropDone}
+                          setIsCropOpen={setIsCropOpen}
+                        />
+                      </View>
+                    )}
+                  </>
+                )}
+
+                {!isCropOpen && (
+                  <View style={styles.addPhotoContainer}>
+                    <TouchableOpacity
+                      onPress={pickImage}
+                      style={styles.addPhotoButton}>
+                      <CameraIcon width={24} height={24} />
+
+                      <Text style={styles.addPhotoText}>Add your photos</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            )}
+
+            {/* {failureCheckin?.status && (
+              <FailCheckin
+                open={failureCheckin?.status}
+                handleClose={() => setFailureCheckin(null)}
+                errorMessage={failureCheckin?.message}
+              />
+            )} */}
+          </View>
         </>
       )}
     </>
@@ -696,11 +659,12 @@ const GeneralCheckIn = () => {
 };
 
 const styles = StyleSheet.create({
-  noLocationContainer: {
-    flex: 1,
+  locationErrorContainer: {
+    flexDirection: 'column',
     justifyContent: 'center',
     alignItems: 'center',
-    height: height - 100,
+    height: '100%',
+    width: '100%',
     backgroundColor: 'white',
     padding: 12,
     shadowColor: '#000',
@@ -709,85 +673,61 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 3,
   },
-  sadIcon: {
+  errorImage: {
     height: 240,
-    marginVertical: 8,
     marginBottom: 16,
   },
-  notHereTitle: {
-    fontFamily: 'Inter-Light',
-    fontSize: 18,
+  errorText: {
+    fontFamily: 'Inter',
+    fontWeight: '300',
+    fontSize: 16,
     textAlign: 'center',
     lineHeight: 20,
-  },
-  notHereDescription: {
-    fontFamily: 'Inter-Light',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginVertical: 12,
-    marginBottom: 20,
-  },
-  exploreButton: {
-    backgroundColor: '#E93C00',
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    marginVertical: 8,
-    borderRadius: 15,
-  },
-  exploreButtonText: {
-    color: 'white',
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
   },
   retryButton: {
     backgroundColor: '#E93C00',
-    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    marginVertical: 20,
+    paddingVertical: 8,
+    marginTop: 20,
     width: 75,
     height: 30,
     borderRadius: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   retryButtonText: {
     color: 'white',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Inter',
     fontSize: 14,
   },
-  imageUploadContainer: {
+  mainContainer: {
     shadowColor: '#000',
     shadowOffset: {width: 0, height: -2},
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 3,
     height: 'auto',
-    minHeight: height * 0.9,
+    minHeight: '90%',
     flexDirection: 'column',
     gap: 20,
     paddingTop: 20,
-    backgroundColor: 'white',
   },
   justifyCenter: {
     justifyContent: 'center',
   },
-  uploadInstructionsContainer: {
+  emptyStateContainer: {
     paddingHorizontal: 20,
     flexDirection: 'column',
     gap: 50,
   },
-  selfCenter: {
+  imageContainer: {
     alignSelf: 'center',
-    width: '100%',
   },
   earnTvtorImage: {
     minHeight: 95,
-    width: '100%',
-    resizeMode: 'cover',
+    width: 97,
   },
-  uploadInstructions: {
+  uploadInfoBox: {
     width: '100%',
     height: 125,
     borderWidth: 2,
@@ -798,98 +738,100 @@ const styles = StyleSheet.create({
     gap: 32,
     paddingHorizontal: 12,
   },
-  uploadInstructionsText: {
-    width: 200,
-    lineHeight: 20,
-    fontSize: 16,
+  uploadIcon: {
+    width: 40,
+    height: 40,
   },
-  tapToAdjustText: {
+  uploadInfoText: {
+    width: '65%',
+  },
+  instructionText: {
     textAlign: 'center',
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Inter',
+    fontWeight: 'normal',
     fontSize: 16,
     color: 'rgba(0, 0, 0, 0.6)',
   },
-  negativeMarginTop: {
+  adjustedInstructionText: {
     marginTop: -90,
   },
-  imageSwiper: {
-    paddingHorizontal: 10,
+  swiper: {
+    position: 'relative',
+    height: 400,
   },
-  imageSwiperSlide: {
+  swiperSlide: {
     width: 300,
     maxWidth: 300,
-    flexDirection: 'row',
+    height: 400,
     justifyContent: 'center',
     alignItems: 'center',
-    height: 400,
+    marginHorizontal: 'auto',
     position: 'relative',
     borderRadius: 8,
     overflow: 'hidden',
-    marginHorizontal: 10,
   },
-  singleImage: {
-    marginHorizontal: 'auto',
+  singleImageSlide: {
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
-  imageLoader: {
+  loadingOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: '#f1f1f1',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f1f1f1',
     zIndex: 10,
   },
-  imageLoaderText: {
-    color: '#666',
+  loadingText: {
+    color: '#6b7280',
     fontSize: 14,
   },
-  selectedImage: {
+  checkinImage: {
     width: 300,
     height: 400,
     resizeMode: 'cover',
   },
-  deleteIcon: {
+  imageVisible: {
+    opacity: 1,
+  },
+  imageHidden: {
+    opacity: 0,
+  },
+  deleteButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'red',
-    borderRadius: 15,
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 100,
   },
-  deleteIconText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+  deleteIcon: {
+    color: '#dc2626',
+    fontSize: 32,
   },
   cropperContainer: {
     position: 'relative',
     top: 0,
     left: 0,
     right: 0,
-    height: height * 0.7,
+    height: '70%',
     alignItems: 'center',
   },
-  addPhotosButtonContainer: {
+  addPhotoContainer: {
     paddingHorizontal: 56,
     marginHorizontal: 'auto',
     width: '100%',
     paddingTop: 20,
   },
-  addPhotosButton: {
+  addPhotoButton: {
     backgroundColor: '#E93C00',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
     justifyContent: 'center',
     marginHorizontal: 'auto',
-    paddingVertical: 8,
     paddingHorizontal: 16,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: '#D9D9D9',
     borderRadius: 8,
@@ -899,11 +841,11 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  addPhotosButtonText: {
-    fontFamily: 'Inter-Regular',
+  addPhotoText: {
+    fontFamily: 'Inter',
     fontSize: 14,
     color: 'white',
   },
 });
 
-export default GeneralCheckIn;
+export default CreateCheckIn;

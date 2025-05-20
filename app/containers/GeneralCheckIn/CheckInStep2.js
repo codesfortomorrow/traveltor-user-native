@@ -202,11 +202,8 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: 172,
     height: 229,
-    borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 8,
     overflow: 'hidden',
-    marginRight: 20,
   },
   image: {
     width: '100%',

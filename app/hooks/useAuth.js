@@ -20,6 +20,8 @@ import {useDispatch} from 'react-redux';
 import {setSuccess} from '../redux/Slices/successPopup';
 import {setError} from '../redux/Slices/errorPopup';
 import {useNavigation} from '@react-navigation/native';
+import {clearToken} from '../redux/Slices/firebase';
+import messaging from '@react-native-firebase/messaging';
 
 const useAuth = () => {
   const {setIsLoggedIn} = useContext(AuthContext);
@@ -45,25 +47,18 @@ const useAuth = () => {
 
   const logout = useCallback(async () => {
     try {
-      // const auth = getAuth();
       const response = await postAuthReq('/auth/logout');
       if (response?.status) {
+        try {
+          await messaging().deleteToken();
+          console.log('Old FCM Token deleted');
+        } catch (tokenError) {
+          console.log('Error deleting FCM token:', tokenError);
+        }
         setIsLoggedIn(false);
         AsyncStorage.clear();
+        dispatch(clearToken());
         //   dispatch(cleanup());
-        //   dispatch(setToken(''));
-        //   deleteToken(messaging).then(() => {
-        //     console.log('Old FCM Token deleted');
-        //   });
-        //   signOut(auth)
-        //     .then(function () {
-        //       // Sign-out successful.
-        //       console.log('sign out firebase success');
-        //     })
-        //     .catch(function (error) {
-        //       // An error happened.
-        //       console.log('sign out failed firebase', error);
-        //     });
         return true;
       }
     } catch (error) {
