@@ -157,7 +157,7 @@ const Trekscapes = () => {
       if (response?.data) {
         if (page !== 0) {
           setTreckScapeList(prev => [...prev, ...response?.data]);
-          setHasMore(response.data.length === 10);
+          setHasMore(response?.data?.length === 10);
         } else {
           setTreckScapeList(response?.data);
           setHasMore(response?.data?.length === 10);
@@ -437,7 +437,8 @@ const Trekscapes = () => {
                 <View style={styles.searchContainer}>
                   <TextInput
                     style={styles.searchInput}
-                    placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
+                    // placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
+                    placeholder="Search by name"
                     value={searchTerm}
                     onChangeText={handleSearchChange}
                   />

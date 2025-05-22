@@ -27,6 +27,8 @@ import SadIcon from '../../../public/images/sadIcon.svg';
 import FeedLoader from '../../components/Common/FeedLoader';
 import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
+import {EventRegister} from 'react-native-event-listeners';
+import {initBackgroundTask} from '../../utils/BackgroundTaskService';
 
 const MyFeeds = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -50,11 +52,42 @@ const MyFeeds = () => {
   const isCalled = useRef(false);
   const [isScrollAtTop, setIsScrollAtTop] = useState(true);
   const dispatch = useDispatch();
+  const [progress, setProgress] = useState({
+    imgUrl: '',
+    isPending: false,
+    progress: 20,
+    status: 'Uploading...',
+    publishedAt: Date.now(),
+  });
 
-  //   const {isPending, status, progress, imgUrl, publishedAt} = useSelector(
-  //     state => state.publish,
-  //   );
   //   const {isScroll} = useSelector(state => state.myfeedScroll);
+
+  useEffect(() => {
+    // Initialize background tasks
+    // initBackgroundTask();
+
+    // Listen for upload progress updates
+    const progressListener = EventRegister.addEventListener(
+      'uploadProgress',
+      data => {
+        setProgress(data);
+      },
+    );
+
+    // Listen for upload completion
+    const completeListener = EventRegister.addEventListener(
+      'uploadComplete',
+      () => {
+        console.log('upload complete');
+      },
+    );
+
+    return () => {
+      // Clean up listeners
+      EventRegister.removeEventListener(progressListener);
+      EventRegister.removeEventListener(completeListener);
+    };
+  }, []);
 
   // Load stored values on component mount
   useEffect(() => {
@@ -370,17 +403,7 @@ const MyFeeds = () => {
         onScroll={handleScroll}
         onScrollEndDrag={handleScrollEnd}
         scrollEventThrottle={16}>
-        {/* {isPending && (
-            <PublishStatus
-              publishStatus={{
-                isPending,
-                imgUrl,
-                status,
-                progress,
-                publishedAt,
-              }}
-            />
-          )} */}
+        {progress?.isPending && <PublishStatus publishStatus={progress} />}
         <View style={styles.feedContainer}>
           {isLoading && <FeedLoader />}
           {!isLoading && feeds?.length > 0
@@ -439,10 +462,9 @@ const MyFeeds = () => {
 export default MyFeeds;
 
 const PublishStatus = ({publishStatus}) => {
+  const {imgUrl, isPending, progress, status, publishedAt} = publishStatus;
   const showStatus =
-    publishStatus.isPending ||
-    (publishStatus.publishedAt &&
-      Date.now() - publishStatus.publishedAt < 5000);
+    isPending || (publishedAt && Date.now() - publishedAt < 5000);
 
   if (!showStatus) return null;
 
@@ -451,26 +473,19 @@ const PublishStatus = ({publishStatus}) => {
       <View style={styles.publishStatusHeader}>
         <Image
           source={
-            publishStatus?.imgUrl && {
-              uri: URL.createObjectURL(publishStatus?.imgUrl),
+            imgUrl && {
+              uri: typeof imgUrl === 'string' ? imgUrl : imgUrl.uri,
             }
           }
           style={styles.publishStatusImage}
         />
         <View style={styles.publishStatusTextContainer}>
-          {publishStatus?.status === 'Published' && (
-            <IoCheckmarkSharp size={20} />
-          )}
-          <Text style={styles.publishStatusText}>{publishStatus?.status}</Text>
+          {status === 'Published' && <IoCheckmarkSharp size={20} />}
+          <Text style={styles.publishStatusText}>{status}</Text>
         </View>
       </View>
       <View style={styles.progressBarBackground}>
-        <View
-          style={[
-            styles.progressBarForeground,
-            {width: `${publishStatus?.progress}%`},
-          ]}
-        />
+        <View style={[styles.progressBarForeground, {width: `${progress}%`}]} />
       </View>
     </View>
   );

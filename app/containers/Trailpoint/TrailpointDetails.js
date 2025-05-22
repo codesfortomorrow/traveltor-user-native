@@ -9,6 +9,8 @@ import {
   Linking,
   Dimensions,
   FlatList,
+  Share as NativeShare,
+  Alert,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {setError} from '../../redux/Slices/errorPopup';
@@ -23,6 +25,7 @@ import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitema
 import CheckIn from '../../../public/images/mobtrekscape/trialpoints/checkin.svg';
 import Reviews from '../../../public/images/mobtrekscape/trialpoints/reviews.svg';
 import Share from '../../../public/images/mobtrekscape/trialpoints/share.svg';
+import SocialShare from '../../components/Modal/SocialShare';
 
 const TrailpointDetails = () => {
   const dispatch = useDispatch();
@@ -127,6 +130,25 @@ const TrailpointDetails = () => {
     );
   };
 
+  const onShare = async () => {
+    try {
+      const result = await NativeShare.share({
+        message: `${process.env.CHECK_URL}/trailpoint/${slug}`,
+      });
+      if (result.action === NativeShare.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      } else if (result.action === NativeShare.dismissedAction) {
+        // dismissed
+      }
+    } catch (error) {
+      Alert.alert(error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Backheading
@@ -152,9 +174,9 @@ const TrailpointDetails = () => {
               style={styles.actionButton}
               onPress={() => {
                 if (isLogin) {
-                  navigation.navigate('CreateCheckIn', {
-                    slug: trailPoints?.slug,
-                    ...trailPoints,
+                  navigation.navigate('TrailpointCheckIn', {
+                    id: trailPoints?.slug,
+                    trailpointId: trailPoints?.id,
                   });
                 } else {
                   dispatch(
@@ -215,9 +237,7 @@ const TrailpointDetails = () => {
                 </TouchableOpacity>
               )}
 
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setIsOpen(true)}>
+            <TouchableOpacity style={styles.actionButton} onPress={onShare}>
               <Share width={18} height={18} />
               <Text style={styles.primaryButtonText}>Share</Text>
             </TouchableOpacity>
@@ -308,14 +328,14 @@ const TrailpointDetails = () => {
       </ScrollView>
 
       {/* Social sharing modal would go here */}
-      {/* Implement your Social component for React Native */}
-      {/* <Social
-        open={isOpen}
-        handleClose={() => setIsOpen(false)}
-        setOpen={setIsOpen}
-        code={window.location.href}
-        title={'Join the Journey with Trailpoint'}
-      /> */}
+      {isOpen && (
+        <SocialShare
+          open={isOpen}
+          handleClose={() => setIsOpen(false)}
+          code={`${process.env.CHECK_URL}/${route.name}`}
+          title={'Join the Journey with Trailpoint'}
+        />
+      )}
     </View>
   );
 };

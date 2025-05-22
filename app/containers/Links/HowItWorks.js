@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,13 @@ import {
   Dimensions,
 } from 'react-native';
 import {StyleSheet} from 'react-native';
-import Swiper from 'react-native-swiper';
 import Backheading from '../../components/Mobile/Backheading';
 
 const {width, height} = Dimensions.get('window');
 
 const HowItWorks = () => {
   const [activeIndex, setActiveIndex] = useState(0);
+
   const imagesAll = [
     require('../../../public/images/how-it-work/1.png'),
     require('../../../public/images/how-it-work/2.png'),
@@ -81,6 +81,15 @@ const HowItWorks = () => {
     },
   ];
 
+  // Simple timer-based approach - updates both image and text together
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveIndex(prevIndex => (prevIndex + 1) % data.length);
+    }, 4000); // Change every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [data.length]);
+
   return (
     <SafeAreaView style={styles.main}>
       <Backheading heading={'How It Works'} />
@@ -104,23 +113,14 @@ const HowItWorks = () => {
                   <View style={styles.cameraLens}></View>
                 </View>
 
-                {/* Swiper Section */}
-                <Swiper
-                  style={styles.swiper}
-                  showsPagination={false}
-                  autoplay={true}
-                  autoplayTimeout={5}
-                  onIndexChanged={index => setActiveIndex(index)}>
-                  {imagesAll?.map((image, index) => (
-                    <View key={index} style={styles.slideContainer}>
-                      <Image
-                        source={image}
-                        style={styles.slideImage}
-                        resizeMode="cover"
-                      />
-                    </View>
-                  ))}
-                </Swiper>
+                {/* Simple Image Display - No Swiper */}
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={imagesAll[activeIndex]}
+                    style={styles.slideImage}
+                    resizeMode="cover"
+                  />
+                </View>
               </View>
 
               <Text style={styles.title}>{data[activeIndex]?.title}</Text>
@@ -199,12 +199,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 3,
   },
-  swiper: {
+  imageContainer: {
     height: 506,
     width: 293,
-  },
-  slideContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

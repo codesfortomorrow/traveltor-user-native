@@ -15,6 +15,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {setError} from '../../redux/Slices/errorPopup';
 import {
   convertToThreeFourRatio,
+  convertToThreeFourRatioRN,
   getLocation,
 } from '../../components/Helpers/fileUploadHelper';
 import {useNavigation} from '@react-navigation/native';
@@ -30,6 +31,13 @@ import SadIcon from '../../../public/images/sadIcon.svg';
 import UploadImageMic from '../../../public/images/uploadImageMic.svg';
 import CameraIcon from '../../../public/images/camera.svg';
 import ImageCropper from '../../components/Crop/ImageCropperComponent';
+import {
+  generateDraftId,
+  getDraftById,
+  processFilesForDraft,
+  saveDraft,
+} from '../../utils/draftManager';
+import {publishDraft} from '../../utils/BackgroundTaskService';
 
 const {width, height} = Dimensions.get('window');
 
@@ -75,50 +83,68 @@ const GeneralCheckIn = () => {
         payload.trekscapeId = trailPoint.id;
       }
 
-      const updatedFiles = await Promise.all(
-        selectedFiles.map(async file => {
-          const croppedImage = croppedImages[file.id];
-          if (croppedImage) {
-            const blob = await fetch(croppedImage).then(res => res.blob());
-            return new File(
-              [blob],
-              `cropped_${file.file?.name || 'image'}.jpg`,
-              {
-                type: 'image/jpeg',
-              },
+      // const updatedFiles = await Promise.all(
+      //   selectedFiles.map(async file => {
+      //     const croppedImage = croppedImages[file.id];
+      //     if (croppedImage) {
+      //       const blob = await fetch(croppedImage).then(res => res.blob());
+      //       return new File(
+      //         [blob],
+      //         `cropped_${file.file?.name || 'image'}.jpg`,
+      //         {
+      //           type: 'image/jpeg',
+      //         },
+      //       );
+      //     }
+      //     return await convertToThreeFourRatio(file.file);
+      //   }),
+      // );
+
+      const threeFourFiles = await Promise.all(
+        selectedFiles.map(async f => {
+          try {
+            const converted = await convertToThreeFourRatioRN(f.file);
+            return converted;
+          } catch (e) {
+            console.warn(
+              'Failed to convert ratio, using original:',
+              f.file.name,
             );
+            return f.file;
           }
-          return await convertToThreeFourRatio(file.file);
         }),
       );
 
-      // const draftId = await generateDraftId(payload, updatedFiles);
+      const processedFiles = await processFilesForDraft(threeFourFiles);
 
-      // const existingDraft = await getDraftById(draftId);
+      const draftId = await generateDraftId(payload, processedFiles);
 
-      // if (!existingDraft) {
-      //   await saveDraft({
-      //     id: draftId,
-      //     files: updatedFiles,
-      //     payload: payload,
-      //     status: 'readyforPublish',
-      //     type: 'general',
-      //   });
-      // }
+      const existingDraft = await getDraftById(draftId);
 
-      // const response = await publishDraft();
-      // if (response?.status) {
-      //   setSuccessCheckin({
-      //     status: true,
-      //     data: {
-      //       name: handleName,
-      //       point: payload.type === 'TrailPoint' ? 1000 : 5,
-      //     },
-      //   });
-      // } else {
-      //   toast.error('Failed to publish check-in.');
-      // }
+      if (!existingDraft) {
+        await saveDraft({
+          id: draftId,
+          files: processedFiles,
+          payload: payload,
+          status: 'readyforPublish',
+          type: 'general',
+        });
+      }
+
+      const response = await publishDraft();
+      if (response?.status) {
+        setSuccessCheckin({
+          status: true,
+          data: {
+            name: handleName,
+            point: payload.type === 'TrailPoint' ? 1000 : 5,
+          },
+        });
+      } else {
+        toast.error('Failed to publish check-in.');
+      }
     } catch (error) {
+      console.log(error, 'error');
       dispatch(
         setError({
           open: true,
@@ -184,9 +210,26 @@ const GeneralCheckIn = () => {
     loadSavedCrops();
   }, []);
 
-  const handleCropDone = async (originalImage, croppedImage) => {
+  // const handleCropDone = async (originalImage, croppedImage) => {
+  //   try {
+  //     const updatedCrops = {...croppedImages, [originalImage]: croppedImage};
+  //     setCroppedImages(updatedCrops);
+  //     await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
+  //   } catch (error) {
+  //     console.error('Error saving cropped images:', error);
+  //   }
+  // };
+
+  const handleCropDone = async (fileId, croppedImageUri) => {
+    console.log({fileId, croppedImageUri});
+    // setCroppedImages(prevFiles =>
+    //   prevFiles.map(file =>
+    //     file.id === fileId ? {...file, croppedUri: croppedImageUri} : file,
+    //   ),
+    // );
+
     try {
-      const updatedCrops = {...croppedImages, [originalImage]: croppedImage};
+      const updatedCrops = {...croppedImages, [fileId]: croppedImageUri};
       setCroppedImages(updatedCrops);
       await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
     } catch (error) {
@@ -248,11 +291,7 @@ const GeneralCheckIn = () => {
 
       const tempFiles = result.assets.map(asset => ({
         id: uuidv4(),
-        file: {
-          uri: asset.uri,
-          name: asset.fileName || `image_${Date.now()}.jpg`,
-          type: asset.type || 'image/jpeg',
-        },
+        file: asset,
         url: asset.uri,
         status: 'ready',
       }));
@@ -278,11 +317,9 @@ const GeneralCheckIn = () => {
               ? processedFile.type.toLowerCase()
               : '';
 
-            const isAllowedType = allowedTypes.some(
-              type =>
-                mimeType.includes(type.replace('image/', '')) ||
-                type.includes(fileExtension),
-            );
+            const isAllowedType =
+              allowedTypes.includes(mimeType) ||
+              allowedTypes.includes(`image/${fileExtension}`);
 
             if (!isAllowedType) {
               dispatch(
@@ -360,7 +397,9 @@ const GeneralCheckIn = () => {
               ['jpeg', 'jpg', 'png', 'webp'].includes(fileExtension)
             ) {
               try {
-                const fileStats = await RNFS.stat(processedFile.uri);
+                const fileStats = await RNFS.stat(
+                  processedFile.uri.replace('file://', ''),
+                );
                 const fileSizeInMB = fileStats.size / (1024 * 1024);
 
                 if (fileSizeInMB > 2 || true) {
@@ -644,10 +683,19 @@ const GeneralCheckIn = () => {
             onCropDone={handleCropDone}
             setIsCropOpen={setIsCropOpen}
           /> */}
-          <ImageCropper
+          {/*} <ImageCropper
             fileId={showSingleFile?.id || selectedFiles[0]?.id}
             originalFile={showSingleFile.file}
             imageSrc={showSingleFile?.url || selectedFiles[0]?.url}
+            onCropDone={handleCropDone}
+          /> */}
+
+          <ImageCropper
+            fileId={showSingleFile?.id || selectedFiles[0]?.id}
+            originalFile={
+              showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri
+            }
+            imageSrc={showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri}
             onCropDone={handleCropDone}
           />
         </View>

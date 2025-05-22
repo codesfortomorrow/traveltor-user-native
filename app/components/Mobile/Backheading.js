@@ -113,8 +113,9 @@ const Backheading = ({
           <TouchableOpacity
             onPress={() => {
               if (isLoggedIn()) {
-                navigation.navigate('CreateCheckIn', {
-                  slug: trailPoints?.slug,
+                navigation.navigate('TrailpointCheckIn', {
+                  id: trailPoints?.slug,
+                  trailpointId: trailPoints?.id,
                 });
               } else {
                 dispatch(

@@ -35,6 +35,13 @@ import {useForegroundNotification} from './app/notifications/ForegroundHandler';
 import {useNotificationRedirect} from './app/notifications/NotificationRedirect';
 import ForegroundToast from './app/components/FirebaseToaster/ForegroundToast';
 import {AuthContext} from './app/context/AuthContext';
+import {setupBackgroundTasks} from './app/utils/Setup';
+import {Buffer} from 'buffer';
+global.Buffer = Buffer;
+
+import process from 'process';
+import TrailpointCheckIn from './app/containers/TrailpointCheckIn';
+global.process = process;
 
 const Stack = createNativeStackNavigator();
 
@@ -46,6 +53,7 @@ function App() {
 
   useEffect(() => {
     if (isLoggedIn) {
+      setupBackgroundTasks();
       requestUserPermission(dispatch);
     }
   }, [isLoggedIn]);
@@ -232,6 +240,15 @@ function App() {
                     children={() => (
                       <FooterLayout>
                         <GeneralCheckIn />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
+                  />
+                  <Stack.Screen
+                    name="TrailpointCheckIn"
+                    children={() => (
+                      <FooterLayout>
+                        <TrailpointCheckIn />
                       </FooterLayout>
                     )}
                     options={{headerShown: false}}

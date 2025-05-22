@@ -42,7 +42,7 @@ const CheckInSuccessPopup = ({open, handleClose, data}) => {
               <View style={styles.rewardContainer}>
                 <Text style={styles.rewardText}>
                   "You earned{' '}
-                  <Text style={styles.pointsText}> {data?.point} tvtor</Text> as
+                  <Text style={styles.pointsText}>{data?.point} tvtor</Text> as
                   Reward."
                 </Text>
               </View>
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     borderColor: '#FFFFFF3B',
   },
   rewardText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '300',
     textAlign: 'center',
     fontFamily: 'Jim',

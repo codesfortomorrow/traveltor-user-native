@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   ScrollView,
   TouchableWithoutFeedback,
+  Share as NativeShare,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
@@ -28,6 +29,7 @@ import Login from '../../components/Modal/Login';
 import Signup from '../../components/Signup';
 import Social from '../../components/Modal/SocialShare';
 import {setError} from '../../redux/Slices/errorPopup';
+import SocialShare from '../../components/Modal/SocialShare';
 
 const TrekscapeDetails = () => {
   const user = useSelector(state => state?.user);
@@ -194,6 +196,25 @@ const TrekscapeDetails = () => {
     }
   };
 
+  const onShare = async () => {
+    try {
+      const result = await NativeShare.share({
+        message: `${process.env.CHECK_URL}/trekscape/${slug}`,
+      });
+      if (result.action === NativeShare.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      } else if (result.action === NativeShare.dismissedAction) {
+        // dismissed
+      }
+    } catch (error) {
+      Alert.alert(error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <TrekscapeHeader />
@@ -277,7 +298,7 @@ const TrekscapeDetails = () => {
                         )}
                       </View>
                     </TouchableWithoutFeedback>
-                    <TouchableOpacity onPress={() => setIsOpen(true)}>
+                    <TouchableOpacity onPress={onShare}>
                       <Share width={20} height={20} />
                     </TouchableOpacity>
                   </View>
@@ -474,9 +495,9 @@ const TrekscapeDetails = () => {
                           style={styles.actionContainer}
                           onPress={() => {
                             if (isLogin) {
-                              navigation.navigate('CreateCheckin', {
-                                slug: item?.slug,
-                                ...item,
+                              navigation.navigate('TrailpointCheckIn', {
+                                id: item?.slug,
+                                trailpointId: item?.id,
                               });
                             } else {
                               setIsLoginOpen(true);
@@ -495,13 +516,14 @@ const TrekscapeDetails = () => {
       </View>
 
       {/* Replace these with appropriate React Native modals */}
-      {/* <Social
-        open={isOpen}
-        handleClose={() => setIsOpen(false)}
-        setOpen={setIsOpen}
-        code={window.location.href}
-        title={'Join the Journey with Trekscape'}
-      /> */}
+      {isOpen && (
+        <SocialShare
+          open={isOpen}
+          handleClose={() => setIsOpen(false)}
+          code={`${process.env.CHECK_URL}/${route.name}`}
+          title={'Join the Journey with Trekscape'}
+        />
+      )}
       {isLoginOpen && (
         <Login
           open={isLoginOpen}

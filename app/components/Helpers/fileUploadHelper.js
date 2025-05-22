@@ -1,66 +1,62 @@
 import {setLocation} from '../../redux/Slices/geoLocation';
 import {RESULTS} from 'react-native-permissions';
 import {PermissionsAndroid, Platform} from 'react-native';
+import ImageResizer from 'react-native-image-resizer';
+import {Image} from 'react-native';
 
-export const convertToThreeFourRatio = async inputFile => {
+export const convertToThreeFourRatioRN = async file => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    const uri = file.uri.replace('file://', '');
 
-    reader.onload = () => {
-      const img = new Image();
+    Image.getSize(
+      file.uri,
+      async (width, height) => {
+        try {
+          const targetRatio = 3 / 4;
+          let cropWidth = width;
+          let cropHeight = cropWidth / targetRatio;
 
-      img.onload = () => {
-        const originalWidth = img.width;
-        const originalHeight = img.height;
-        const targetRatio = 3 / 4;
+          if (cropHeight > height) {
+            cropHeight = height;
+            cropWidth = cropHeight * targetRatio;
+          }
 
-        let cropWidth = originalWidth;
-        let cropHeight = cropWidth / targetRatio;
+          const offsetX = (width - cropWidth) / 2;
+          const offsetY = (height - cropHeight) / 2;
 
-        if (cropHeight > originalHeight) {
-          cropHeight = originalHeight;
-          cropWidth = cropHeight * targetRatio;
-        }
-
-        const offsetX = (originalWidth - cropWidth) / 2;
-        const offsetY = (originalHeight - cropHeight) / 2;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = cropWidth;
-        canvas.height = cropHeight;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject('Canvas not supported');
-
-        ctx.drawImage(
-          img,
-          offsetX,
-          offsetY,
-          cropWidth,
-          cropHeight,
-          0,
-          0,
-          cropWidth,
-          cropHeight,
-        );
-
-        canvas.toBlob(blob => {
-          if (!blob) return reject('Image conversion failed');
-          const croppedFile = new File(
-            [blob],
-            `cropped_${inputFile.name.replace(/\.[^/.]+$/, '')}.jpg`,
-            {type: 'image/jpeg'},
+          // Crop and resize using ImageResizer
+          const result = await ImageResizer.createResizedImage(
+            file.uri,
+            cropWidth,
+            cropHeight,
+            'JPEG',
+            80,
+            0,
+            undefined,
+            false,
+            {
+              mode: 'cover',
+              onlyScaleDown: false,
+              offset: {x: offsetX, y: offsetY},
+              size: {width: cropWidth, height: cropHeight},
+            },
           );
-          resolve(croppedFile);
-        }, 'image/jpeg');
-      };
 
-      img.onerror = reject;
-      img.src = reader.result;
-    };
-
-    reader.onerror = reject;
-    reader.readAsDataURL(inputFile);
+          resolve({
+            uri: result.uri,
+            name: `cropped_${file.name || Date.now()}.jpg`,
+            type: 'image/jpeg',
+          });
+        } catch (error) {
+          console.error('Image crop error:', error);
+          reject(error);
+        }
+      },
+      error => {
+        console.error('Image.getSize error:', error);
+        reject(error);
+      },
+    );
   });
 };
 
