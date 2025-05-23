@@ -72,14 +72,14 @@ const Footer = () => {
     Animated.loop(
       Animated.sequence([
         Animated.timing(bounceAnim, {
-          toValue: -10,
-          duration: 500,
+          toValue: -14,
+          duration: 400,
           easing: Easing.bezier(0.8, 0, 1, 1),
           useNativeDriver: true,
         }),
         Animated.timing(bounceAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 400,
           easing: Easing.bezier(0, 0, 0.2, 1),
           useNativeDriver: true,
         }),

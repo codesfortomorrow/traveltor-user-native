@@ -6,16 +6,17 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Share as NativeShare,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
 import {useDispatch, useSelector} from 'react-redux';
 import Backheading from '../../components/Mobile/Backheading';
 import {setSuccess} from '../../redux/Slices/successPopup';
+import Icons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 const Referral = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const baseUrl = process.env.BASE_URL;
   const {getReferralData} = useAuth();
   const user = useSelector(state => state?.user);
   const [earningData, setEarningData] = useState(null);
@@ -27,13 +28,13 @@ const Referral = () => {
   const [referral, setReferral] = useState([]);
   const dispatch = useDispatch();
 
-  const handleCopy = () => {
-    // dispatch(cleanSuccess());
+  const handleCopy = referralCode => {
+    Clipboard.setString(referralCode);
     dispatch(
       setSuccess({
         open: true,
         custom_message:
-          ' Copied your Referral Code, better if you share the invite link directly.',
+          'Copied your Referral Code, better if you share the invite link directly.',
       }),
     );
   };
@@ -82,6 +83,25 @@ const Referral = () => {
     }
   }, [isLoading, hasMore, pageNumber]);
 
+  const onShare = async referralCode => {
+    try {
+      const result = await NativeShare.share({
+        message: referralCode,
+      });
+      if (result.action === NativeShare.sharedAction) {
+        if (result.activityType) {
+          // shared with activity type of result.activityType
+        } else {
+          // shared
+        }
+      } else if (result.action === NativeShare.dismissedAction) {
+        // dismissed
+      }
+    } catch (error) {
+      Alert.alert(error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Backheading heading={'Referral & Bonus'} />
@@ -120,13 +140,17 @@ const Referral = () => {
                   {user?.meta?.referralCode}
                 </Text>
                 <View style={styles.referralCodeActions}>
-                  {/* <CopyToClipboard
-                    text={user?.meta?.referralCode}
-                    onCopy={handleCopy}>
-                    {reactIcons.copy}
-                  </CopyToClipboard> */}
-                  <TouchableOpacity onPress={() => setIsOpen(true)}>
-                    {/* {reactIcons.share} */}
+                  <TouchableOpacity
+                    onPress={() => handleCopy(user?.meta?.referralCode)}>
+                    <Icons name="content-copy" size={20} color="#fff" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => onShare(user?.meta?.referralCode)}>
+                    <Icons
+                      name="share-variant-outline"
+                      size={20}
+                      color="#fff"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -153,7 +177,7 @@ const Referral = () => {
             <View style={styles.earningAmountCircle}>
               <Text style={styles.earningAmountText}>{_item?.amount}</Text>
             </View>
-            <View>
+            <View style={{paddingRight: 20}}>
               <Text style={styles.earningDescription}>
                 {_item?.narration
                   ? _item?.narration
@@ -178,14 +202,6 @@ const Referral = () => {
 
         <View ref={loader} style={styles.loaderRef} />
       </ScrollView>
-
-      {/* <Social
-        open={isOpen}
-        handleClose={() => setIsOpen(false)}
-        setOpen={setIsOpen}
-        code={baseUrl + '/referral/' + user?.meta?.referralCode}
-        title="Here&apas;s my Traveltor referral code! Sign up now and enjoy exciting rewards on joining."
-      /> */}
     </View>
   );
 };
@@ -216,7 +232,7 @@ const styles = StyleSheet.create({
     fontWeight: '300',
   },
   earningAmount: {
-    color: '#primary-1200',
+    color: '#e93c00',
     fontWeight: 'bold',
     fontSize: 24,
   },
@@ -235,7 +251,7 @@ const styles = StyleSheet.create({
   },
   referralCodeContainer: {
     flexDirection: 'row',
-    backgroundColor: '#e93c00', // Approximating gradient
+    backgroundColor: '#e93c00',
     borderRadius: 10,
   },
   referralCodeContent: {
@@ -297,12 +313,14 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,208,191,0.2)',
     paddingVertical: 10,
     paddingHorizontal: 20,
+    paddingRight: 60,
     marginBottom: 24,
+    width: '100%',
   },
   earningAmountCircle: {
-    backgroundColor: '#primary-1200',
+    backgroundColor: '#e93c00',
     padding: 10,
-    borderRadius: 50,
+    borderRadius: 100,
     height: 56,
     width: 56,
     justifyContent: 'center',
@@ -316,6 +334,8 @@ const styles = StyleSheet.create({
   earningDescription: {
     fontSize: 14,
     fontWeight: '300',
+    lineHeight: 22,
+    color: '#000',
   },
   earningTimeContainer: {
     flexDirection: 'row',
@@ -326,6 +346,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '300',
     textTransform: 'capitalize',
+    color: '#000',
   },
   noDataText: {
     textAlign: 'center',

@@ -27,9 +27,7 @@ import EventJoin from '../../../public/images/eventjoin.svg';
 import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
 import Login from '../../components/Modal/Login';
 import Signup from '../../components/Signup';
-import Social from '../../components/Modal/SocialShare';
 import {setError} from '../../redux/Slices/errorPopup';
-import SocialShare from '../../components/Modal/SocialShare';
 
 const TrekscapeDetails = () => {
   const user = useSelector(state => state?.user);
@@ -37,7 +35,6 @@ const TrekscapeDetails = () => {
   const route = useRoute();
   const isLogin = isLoggedIn();
   const {slug} = route.params || {};
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const {getSingleTrekscapeData, followOnTrekscape} = useAuth();
   const [treckScapeDetails, setTreckScapeDetails] = useState([]);
@@ -514,16 +511,6 @@ const TrekscapeDetails = () => {
           )}
         </ScrollView>
       </View>
-
-      {/* Replace these with appropriate React Native modals */}
-      {isOpen && (
-        <SocialShare
-          open={isOpen}
-          handleClose={() => setIsOpen(false)}
-          code={`${process.env.CHECK_URL}/${route.name}`}
-          title={'Join the Journey with Trekscape'}
-        />
-      )}
       {isLoginOpen && (
         <Login
           open={isLoginOpen}

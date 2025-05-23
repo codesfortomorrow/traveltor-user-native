@@ -43,8 +43,6 @@ const FeedsContainer = ({
   reactionDisabled,
   setIsDeleteModal,
   setFeedId,
-  handleTouchStart,
-  handleTouchEnd,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const reviewText = item?.review || '';

@@ -69,7 +69,7 @@ const SingleCheckIn = () => {
   };
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && feedId) {
       fetchSinglefeed(user);
     }
   }, [feedId, user]);

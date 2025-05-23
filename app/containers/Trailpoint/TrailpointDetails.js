@@ -17,7 +17,6 @@ import {setError} from '../../redux/Slices/errorPopup';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import Swiper from 'react-native-swiper';
 import HTML from 'react-native-render-html';
 import TrialPointSlider from './TrailpointSlider';
 import Backheading from '../../components/Mobile/Backheading';
@@ -25,11 +24,9 @@ import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitema
 import CheckIn from '../../../public/images/mobtrekscape/trialpoints/checkin.svg';
 import Reviews from '../../../public/images/mobtrekscape/trialpoints/reviews.svg';
 import Share from '../../../public/images/mobtrekscape/trialpoints/share.svg';
-import SocialShare from '../../components/Modal/SocialShare';
 
 const TrailpointDetails = () => {
   const dispatch = useDispatch();
-  const [isOpen, setIsOpen] = useState(false);
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const [trailPoints, setTrailPoints] = useState({});
@@ -326,16 +323,6 @@ const TrailpointDetails = () => {
           </View>
         )}
       </ScrollView>
-
-      {/* Social sharing modal would go here */}
-      {isOpen && (
-        <SocialShare
-          open={isOpen}
-          handleClose={() => setIsOpen(false)}
-          code={`${process.env.CHECK_URL}/${route.name}`}
-          title={'Join the Journey with Trailpoint'}
-        />
-      )}
     </View>
   );
 };

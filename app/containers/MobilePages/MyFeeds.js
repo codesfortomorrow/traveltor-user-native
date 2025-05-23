@@ -17,6 +17,7 @@ import {
   StyleSheet,
   Dimensions,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch, useSelector} from 'react-redux';
@@ -51,6 +52,7 @@ const MyFeeds = () => {
   const [disablePull, setDisablePull] = useState(false);
   const isCalled = useRef(false);
   const [isScrollAtTop, setIsScrollAtTop] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
   const [progress, setProgress] = useState({
     imgUrl: '',
@@ -141,6 +143,7 @@ const MyFeeds = () => {
       } finally {
         setContentLoader(false);
         setIsLoading(false);
+        setRefreshing(false);
         await AsyncStorage.setItem('refresh', 'true');
       }
     },
@@ -286,11 +289,10 @@ const MyFeeds = () => {
   }).current;
 
   const handleRefresh = async () => {
-    if (isScrollAtTop) {
-      setIsPageRefresh(false);
-      setPageNumber(0);
-      await fetchTreckScapeFeeds(0, true, true);
-    }
+    setRefreshing(true);
+    setIsPageRefresh(false);
+    setPageNumber(0);
+    await fetchTreckScapeFeeds(0, true, true);
   };
 
   useEffect(() => {
@@ -344,23 +346,6 @@ const MyFeeds = () => {
     saveScrollPosition();
   };
 
-  const handleTouchStart = (e, indexed) => {
-    if (
-      e.target &&
-      e.target.tagName === 'IMG' &&
-      (indexed === 0 || indexed === 1)
-    ) {
-      e.preventDefault();
-      setDisablePull(true);
-    }
-  };
-
-  const handleTouchEnd = indexed => {
-    if (indexed === 0 || indexed === 1) {
-      setDisablePull(false);
-    }
-  };
-
   useEffect(() => {
     if (!isCalled.current) {
       isCalled.current = true;
@@ -391,10 +376,6 @@ const MyFeeds = () => {
   return (
     <View style={styles.container}>
       <Backheading heading={'My Feeds'} notifyIcon={true} nextTrip={false} />
-      {/* <PTRView
-        onRefresh={isScrollAtTop && !disablePull ? handleRefresh : null}
-        ref={pullToRefreshRef}
-        style={styles.ptrView}> */}
       <ScrollView
         ref={feedContainerRef}
         style={styles.scrollView}
@@ -402,7 +383,10 @@ const MyFeeds = () => {
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         onScrollEndDrag={handleScrollEnd}
-        scrollEventThrottle={16}>
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }>
         {progress?.isPending && <PublishStatus publishStatus={progress} />}
         <View style={styles.feedContainer}>
           {isLoading && <FeedLoader />}
@@ -424,8 +408,6 @@ const MyFeeds = () => {
                     setPostId={setPostId}
                     setFeedUsername={setFeedUsername}
                     reactionDisabled={reactionDisabled}
-                    handleTouchStart={handleTouchStart}
-                    handleTouchEnd={handleTouchEnd}
                   />
                 </View>
               ))
@@ -447,7 +429,6 @@ const MyFeeds = () => {
           <View style={styles.endLoader} ref={loader} />
         </View>
       </ScrollView>
-      {/* </PTRView> */}
       <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
