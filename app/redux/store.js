@@ -5,6 +5,7 @@ import geoReducer from '../redux/Slices/geoLocation';
 import successReducer from './Slices/successPopup';
 import errorReducer from './Slices/errorPopup';
 import firebaseReducer from './Slices/firebase';
+import myfeedScrollReducer from './Slices/myfeedScroll';
 
 export const store = configureStore({
   reducer: {
@@ -13,5 +14,6 @@ export const store = configureStore({
     successModule: successReducer,
     errorModule: errorReducer,
     firebase: firebaseReducer,
+    myfeedScroll: myfeedScrollReducer,
   },
 });

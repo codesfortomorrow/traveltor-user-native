@@ -161,8 +161,8 @@ const GeneralCheckIn = () => {
     setLocationloader(true);
     try {
       const response = await getValidatedCheckInPoint({
-        latitude: '22.7611853',
-        longitude: '75.8831569',
+        latitude: '22.7590909',
+        longitude: '75.867182',
       });
       if (response) {
         setCurrentTrekscapes(response);
@@ -210,26 +210,11 @@ const GeneralCheckIn = () => {
     loadSavedCrops();
   }, []);
 
-  // const handleCropDone = async (originalImage, croppedImage) => {
-  //   try {
-  //     const updatedCrops = {...croppedImages, [originalImage]: croppedImage};
-  //     setCroppedImages(updatedCrops);
-  //     await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
-  //   } catch (error) {
-  //     console.error('Error saving cropped images:', error);
-  //   }
-  // };
-
-  const handleCropDone = async (fileId, croppedImageUri) => {
-    console.log({fileId, croppedImageUri});
-    // setCroppedImages(prevFiles =>
-    //   prevFiles.map(file =>
-    //     file.id === fileId ? {...file, croppedUri: croppedImageUri} : file,
-    //   ),
-    // );
+  const handleCropDone = async (fileId, croppedDataUrl) => {
+    console.log({fileId, croppedDataUrl}, 'handlecropdone');
 
     try {
-      const updatedCrops = {...croppedImages, [fileId]: croppedImageUri};
+      const updatedCrops = {...croppedImages, [fileId]: croppedDataUrl};
       setCroppedImages(updatedCrops);
       await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
     } catch (error) {
@@ -550,7 +535,7 @@ const GeneralCheckIn = () => {
 
   const renderLocationDeniedContent = () => (
     <View style={styles.noLocationContainer}>
-      <SadIcon width={30} height={30} />
+      <SadIcon width={60} height={60} />
 
       <Text style={styles.notHereTitle}>
         {location?.response?.code === 1
@@ -620,7 +605,7 @@ const GeneralCheckIn = () => {
               showsHorizontalScrollIndicator={false}
               pagingEnabled>
               {selectedFiles.map(file => {
-                const imageUrl = croppedImages[file.id] || file.url;
+                const imageUrl = croppedImages[file?.id] || file?.url;
                 return (
                   <View
                     key={file?.id}
@@ -677,26 +662,15 @@ const GeneralCheckIn = () => {
           {/* <ImageCropper
             fileId={showSingleFile?.id || selectedFiles[0]?.id}
             originalFile={
-              showSingleFile?.file || selectedFiles[0]?.file
-            }
-            imageSrc={showSingleFile?.url || selectedFiles[0].url}
-            onCropDone={handleCropDone}
-            setIsCropOpen={setIsCropOpen}
-          /> */}
-          {/*} <ImageCropper
-            fileId={showSingleFile?.id || selectedFiles[0]?.id}
-            originalFile={showSingleFile.file}
-            imageSrc={showSingleFile?.url || selectedFiles[0]?.url}
-            onCropDone={handleCropDone}
-          /> */}
-
-          <ImageCropper
-            fileId={showSingleFile?.id || selectedFiles[0]?.id}
-            originalFile={
               showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri
             }
             imageSrc={showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri}
             onCropDone={handleCropDone}
+          /> */}
+          <ImageCropper
+            imageUri={showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri}
+            fileId={showSingleFile?.id || selectedFiles[0]?.id}
+            onCropComplete={handleCropDone}
           />
         </View>
       )}
@@ -767,6 +741,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     lineHeight: 20,
+    paddingTop: 10,
   },
   notHereDescription: {
     fontFamily: 'Inter-Light',
@@ -790,11 +765,10 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: '#E93C00',
-    paddingVertical: 8,
+    paddingVertical: 4,
     paddingHorizontal: 20,
     marginVertical: 20,
     width: 75,
-    height: 30,
     borderRadius: 15,
     flexDirection: 'row',
     alignItems: 'center',
@@ -876,7 +850,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   singleImage: {
-    marginHorizontal: 'auto',
+    // marginHorizontal: 'auto',
+    alignContent: 'center',
   },
   imageLoader: {
     position: 'absolute',

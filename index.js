@@ -10,6 +10,7 @@ import {store} from './app/redux/store';
 import {AuthProvider} from './app/context/AuthContext';
 import {setBackgroundHandler} from './app/notifications/BackgroundHandler';
 import {initBackgroundTask} from './app/utils/BackgroundTaskService';
+import 'react-native-gesture-handler';
 // import {syncDrafts} from './app/utils/draftManager';
 
 setBackgroundHandler();

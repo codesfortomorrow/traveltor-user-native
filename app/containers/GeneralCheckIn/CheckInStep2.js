@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingRight: 8,
     alignItems: 'center',
     width: '100%',
-    height: 42,
+    minHeight: 42,
   },
   locationText: {
     width: '85%',
@@ -297,11 +297,10 @@ const styles = StyleSheet.create({
   dropdownItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
     paddingLeft: 8,
     paddingRight: 14,
     width: '100%',
-    height: 42,
   },
 });
 

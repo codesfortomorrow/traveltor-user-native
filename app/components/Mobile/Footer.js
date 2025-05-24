@@ -14,7 +14,8 @@ import Signup from '../Signup';
 import Menu from '../../containers/MobilePages/Menu';
 import CheckInIcon from '../../../public/images/footer/footerCheckinIcon.svg';
 import {AuthContext} from '../../context/AuthContext';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
+import {updateScroll} from '../../redux/Slices/myfeedScroll';
 
 const Footer = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +27,7 @@ const Footer = () => {
   const {isLoggedIn} = useContext(AuthContext);
   const {navigate} = useNavigation();
   const user = useSelector(state => state?.user);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -51,6 +53,8 @@ const Footer = () => {
       navigate('Home');
     } else if (item?.title === 'Login') {
       setIsLoginOpen(true);
+    } else if (item?.title === 'MyFeeds' && route.name === 'MyFeeds') {
+      dispatch(updateScroll(true));
     } else {
       navigate(item?.path);
     }

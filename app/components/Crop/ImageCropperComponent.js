@@ -1,346 +1,262 @@
-import React, {useState, useEffect, useCallback, useRef, useMemo} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useState, useCallback, useRef, useEffect} from 'react';
 import {
   View,
-  Image,
-  StyleSheet,
-  ActivityIndicator,
-  Text,
   Dimensions,
+  Alert,
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
 } from 'react-native';
 import {
-  Gesture,
   GestureDetector,
+  Gesture,
   GestureHandlerRootView,
 } from 'react-native-gesture-handler';
 import Animated, {
-  useSharedValue,
   useAnimatedStyle,
-  withTiming,
+  useSharedValue,
+  withSpring,
   runOnJS,
 } from 'react-native-reanimated';
-import {ImageEditor} from '@react-native-community/image-editor';
-import RNFS from 'react-native-fs';
-import _ from 'lodash';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {captureRef} from 'react-native-view-shot';
 
-const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
+const {width: screenWidth} = Dimensions.get('window');
 
-const ImageCropper = ({fileId, originalFile, imageSrc, onCropDone}) => {
-  console.log({fileId, originalFile, imageSrc, onCropDone});
-  // Define crop dimensions
-  const cropBoxWidth = Math.min(300, screenWidth - 40);
-  const cropBoxHeight = 400;
-  const aspectRatio = cropBoxWidth / cropBoxHeight;
+const ImageCropper = ({
+  imageUri,
+  fileId,
+  onCropComplete,
+  containerWidth = screenWidth * 0.9,
+}) => {
+  // Calculate container dimensions with 3:4 ratio
+  const cropWidth = containerWidth;
+  const cropHeight = (containerWidth * 4) / 3;
 
-  // Animated values for gestures
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
+  // Refs
+  const cropViewRef = useRef();
+
+  // Animated values
   const scale = useSharedValue(1);
   const savedScale = useSharedValue(1);
-  const focalX = useSharedValue(0);
-  const focalY = useSharedValue(0);
-  const minZoomRef = useRef(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
 
-  // State variables
-  const [isImageLoaded, setIsImageLoaded] = useState(false);
-  const [imageSize, setImageSize] = useState({width: 0, height: 0});
-  const scaleFactorRef = useRef(1);
-  const debouncedCropDoneRef = useRef();
-
-  // Store crop data
+  // Image dimensions state
+  const [imageDimensions, setImageDimensions] = useState({width: 0, height: 0});
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isImageLoading, setIsImageLoading] = useState(true);
   const [cropData, setCropData] = useState({});
-  const [previewImageSrc, setPreviewImageSrc] = useState(imageSrc);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Initialize AsyncStorage
+  // Load crop data from storage
   useEffect(() => {
-    const loadStoredCropData = async () => {
+    const loadCropData = async () => {
       try {
         const storedData = await AsyncStorage.getItem('cropData');
         if (storedData) {
           setCropData(JSON.parse(storedData));
         }
       } catch (error) {
-        console.log('Error loading stored crop data:', error);
+        console.error('Error loading crop data:', error);
       }
     };
-
-    loadStoredCropData();
+    loadCropData();
   }, []);
 
-  // Save crop data to AsyncStorage when it changes
+  // Save crop data to storage
   useEffect(() => {
     const saveCropData = async () => {
       try {
         await AsyncStorage.setItem('cropData', JSON.stringify(cropData));
       } catch (error) {
-        console.log('Error saving crop data:', error);
+        console.error('Error saving crop data:', error);
       }
     };
-
-    saveCropData();
+    if (Object.keys(cropData).length > 0) {
+      saveCropData();
+    }
   }, [cropData]);
 
-  // Generate a preview of the image
-  const generatePreviewImage = async (uri, maxWidth = 1000) => {
-    try {
-      // Get image dimensions
-      const {width, height} = await new Promise((resolve, reject) => {
-        Image.getSize(uri, (width, height) => resolve({width, height}), reject);
-      });
-
-      // Calculate scale factor
-      const scaleFactor = Math.min(maxWidth / width, 1);
-      scaleFactorRef.current = scaleFactor;
-
-      // For simplicity, we'll just return the original URI in this version
-      return {previewUrl: uri, scale: scaleFactor};
-    } catch (error) {
-      console.error('Error generating preview image:', error);
-      return {previewUrl: uri, scale: 1};
-    }
-  };
-
-  // Load and prepare the image
+  // Initialize crop data for new files
   useEffect(() => {
-    let isMounted = true;
-
-    const prepareImage = async () => {
-      if (imageSrc) {
-        try {
-          const {previewUrl, scale: previewScale} = await generatePreviewImage(
-            imageSrc,
-          );
-
-          console.log({previewUrl, previewScale});
-
-          if (isMounted) {
-            setPreviewImageSrc(previewUrl);
-            scaleFactorRef.current = previewScale;
-
-            // Get image dimensions
-            Image.getSize(previewUrl, (width, height) => {
-              console.log({previewUrl, width, height});
-              if (isMounted) {
-                setImageSize({width, height});
-                setIsImageLoaded(true);
-
-                // Calculate initial zoom to fit
-                const imageRatio = width / height;
-                const zoomToFit =
-                  imageRatio > aspectRatio
-                    ? cropBoxHeight / height
-                    : cropBoxWidth / width;
-
-                minZoomRef.current = zoomToFit;
-                scale.value = zoomToFit;
-                savedScale.value = zoomToFit;
-
-                // Initialize or restore stored crop settings
-                const storedData = cropData[fileId];
-                if (storedData) {
-                  scale.value = storedData.zoom;
-                  savedScale.value = storedData.zoom;
-                  translateX.value = storedData.crop.x;
-                  translateY.value = storedData.crop.y;
-                } else {
-                  // Center the image
-                  translateX.value = 0;
-                  translateY.value = 0;
-
-                  setCropData(prev => ({
-                    ...prev,
-                    [fileId]: {
-                      crop: {x: 0, y: 0},
-                      zoom: zoomToFit,
-                      minZoom: zoomToFit,
-                      croppedAreaPixels: null,
-                    },
-                  }));
-                }
-              }
-            });
-          }
-        } catch (error) {
-          console.error('Error preparing image:', error);
-          if (isMounted) setIsImageLoaded(true);
-        }
-      }
-    };
-
-    prepareImage();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [imageSrc, fileId]);
-
-  // Set up debounced crop function
-  useEffect(() => {
-    debouncedCropDoneRef.current = _.debounce((fileId, croppedImage) => {
-      onCropDone(fileId, croppedImage);
-    }, 300);
-
-    return () => {
-      if (debouncedCropDoneRef.current) {
-        debouncedCropDoneRef.current.cancel();
-      }
-    };
-  }, [onCropDone]);
-
-  // Process the crop area and generate cropped image
-  const processCrop = useCallback(async () => {
-    if (!isImageLoaded || !imageSrc) return;
-
-    // Get current values safely outside of render
-    const currentScale = scale.value;
-    const currentTranslateX = translateX.value;
-    const currentTranslateY = translateY.value;
-
-    // Calculate crop area in pixels
-    const cropWidth = cropBoxWidth / currentScale;
-    const cropHeight = cropBoxHeight / currentScale;
-
-    // Calculate the center of the image and visible area
-    const centerX = imageSize.width / 2;
-    const centerY = imageSize.height / 2;
-
-    // Calculate the crop coordinates
-    const cropX = centerX - currentTranslateX / currentScale - cropWidth / 2;
-    const cropY = centerY - currentTranslateY / currentScale - cropHeight / 2;
-
-    const croppedAreaPixels = {
-      x: Math.max(0, cropX),
-      y: Math.max(0, cropY),
-      width: cropWidth,
-      height: cropHeight,
-    };
-
-    // Save crop data
-    setCropData(prev => ({
-      ...prev,
-      [fileId]: {
-        ...prev[fileId],
-        crop: {x: currentTranslateX, y: currentTranslateY},
-        zoom: currentScale,
-        croppedAreaPixels,
-      },
-    }));
-
-    // Generate cropped image using React Native's ImageEditor
-    try {
-      const cropData = {
-        offset: {
-          x: croppedAreaPixels.x / scaleFactorRef.current,
-          y: croppedAreaPixels.y / scaleFactorRef.current,
+    if (imageUri && fileId && !cropData[fileId]) {
+      setCropData(prev => ({
+        ...prev,
+        [fileId]: {
+          crop: {x: 0, y: 0},
+          zoom: 1,
+          minZoom: 1,
+          translateX: 0,
+          translateY: 0,
+          scale: 1,
         },
-        size: {
-          width: croppedAreaPixels.width / scaleFactorRef.current,
-          height: croppedAreaPixels.height / scaleFactorRef.current,
-        },
-        displaySize: {
-          width: croppedAreaPixels.width / scaleFactorRef.current,
-          height: croppedAreaPixels.height / scaleFactorRef.current,
-        },
-        resizeMode: 'contain',
-      };
-
-      const croppedImageURI = await ImageEditor.cropImage(
-        originalFile || imageSrc,
-        cropData,
-      );
-
-      console.log({croppedImageURI});
-
-      // Call the crop done callback
-      if (debouncedCropDoneRef.current) {
-        debouncedCropDoneRef.current(fileId, croppedImageURI);
-      }
-    } catch (error) {
-      console.error('Error cropping image:', error);
+      }));
     }
-  }, [
-    fileId,
-    imageSrc,
-    isImageLoaded,
-    imageSize,
-    scale,
-    translateX,
-    translateY,
-    originalFile,
-    cropBoxWidth,
-    cropBoxHeight,
-  ]);
+  }, [fileId, imageUri, cropData]);
 
-  // Debounced crop function
-  const debouncedProcessCrop = useMemo(
-    () => _.debounce(processCrop, 200),
-    [processCrop],
+  // Reset loading state when imageUri changes
+  useEffect(() => {
+    if (imageUri) {
+      setIsImageLoading(true);
+      setIsInitialized(false);
+    }
+  }, [imageUri, fileId]);
+
+  // Function to apply saved crop state
+  const applySavedCropState = useCallback(() => {
+    if (cropData[fileId] && imageDimensions.width && imageDimensions.height) {
+      const savedCropState = cropData[fileId];
+
+      // Apply saved values
+      scale.value = savedCropState.scale || 1;
+      savedScale.value = savedCropState.scale || 1;
+      translateX.value = savedCropState.translateX || 0;
+      translateY.value = savedCropState.translateY || 0;
+      savedTranslateX.value = savedCropState.translateX || 0;
+      savedTranslateY.value = savedCropState.translateY || 0;
+
+      console.log('Applied saved crop state:', savedCropState);
+    } else {
+      // Calculate initial scale to fit image in container
+      const scaleX = cropWidth / imageDimensions.width;
+      const scaleY = cropHeight / imageDimensions.height;
+      const initialScale = Math.max(scaleX, scaleY);
+
+      scale.value = initialScale;
+      savedScale.value = initialScale;
+      translateX.value = 0;
+      translateY.value = 0;
+      savedTranslateX.value = 0;
+      savedTranslateY.value = 0;
+    }
+
+    setIsInitialized(true);
+  }, [cropData, fileId, imageDimensions, cropWidth, cropHeight]);
+
+  // Get image dimensions when loaded
+  const handleImageLoad = useCallback(event => {
+    const {width, height} = event.nativeEvent.source;
+    setImageDimensions({width, height});
+
+    // Hide loading indicator
+    setIsImageLoading(false);
+  }, []);
+
+  // Apply saved crop state after image loads and crop data is available
+  useEffect(() => {
+    if (
+      !isImageLoading &&
+      imageDimensions.width &&
+      imageDimensions.height &&
+      !isInitialized
+    ) {
+      applySavedCropState();
+    }
+  }, [isImageLoading, imageDimensions, isInitialized, applySavedCropState]);
+
+  // Handle image load error
+  const handleImageError = useCallback(() => {
+    setIsImageLoading(false);
+    Alert.alert('Error', 'Failed to load image');
+  }, []);
+
+  // Function to save current crop state
+  const saveCropState = useCallback(() => {
+    if (fileId) {
+      setCropData(prev => ({
+        ...prev,
+        [fileId]: {
+          ...prev[fileId],
+          scale: scale.value,
+          translateX: translateX.value,
+          translateY: translateY.value,
+        },
+      }));
+    }
+  }, [fileId]);
+
+  // Constrain translation within bounds
+  const constrainTranslation = useCallback(
+    (x, y, currentScale) => {
+      'worklet';
+      if (!imageDimensions.width || !imageDimensions.height) return {x, y};
+
+      const scaledWidth = imageDimensions.width * currentScale;
+      const scaledHeight = imageDimensions.height * currentScale;
+
+      const maxTranslateX = Math.max(0, (scaledWidth - cropWidth) / 2);
+      const maxTranslateY = Math.max(0, (scaledHeight - cropHeight) / 2);
+
+      const constrainedX = Math.max(-maxTranslateX, Math.min(maxTranslateX, x));
+      const constrainedY = Math.max(-maxTranslateY, Math.min(maxTranslateY, y));
+
+      return {x: constrainedX, y: constrainedY};
+    },
+    [cropWidth, cropHeight, imageDimensions],
   );
 
-  // Clean up
-  useEffect(() => {
-    return () => {
-      debouncedProcessCrop.cancel();
-    };
-  }, [debouncedProcessCrop]);
-
-  // Set up gesture handlers using the new API
+  // Pan gesture
   const panGesture = Gesture.Pan()
-    .minDistance(10) // Add a minimum distance to prevent accidental pans
-    .maxPointers(1) // Limit to single finger pan
     .onStart(() => {
-      // No additional setup needed
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
     })
     .onUpdate(event => {
-      translateX.value += event.changeX;
-      translateY.value += event.changeY;
+      const newX = savedTranslateX.value + event.translationX;
+      const newY = savedTranslateY.value + event.translationY;
+
+      translateX.value = newX;
+      translateY.value = newY;
     })
     .onEnd(() => {
-      runOnJS(debouncedProcessCrop)();
+      const constrained = constrainTranslation(
+        translateX.value,
+        translateY.value,
+        scale.value,
+      );
+      translateX.value = withSpring(constrained.x);
+      translateY.value = withSpring(constrained.y);
+
+      // Save crop state after pan ends
+      runOnJS(saveCropState)();
     });
 
+  // Pinch gesture
   const pinchGesture = Gesture.Pinch()
     .onStart(() => {
-      // Save the current scale when starting a new pinch
       savedScale.value = scale.value;
-      // Store the focal point
-      focalX.value = 0;
-      focalY.value = 0;
     })
     .onUpdate(event => {
-      // Apply scaling but ensure it doesn't go below minimum zoom
-      scale.value = Math.max(
-        minZoomRef.current,
-        savedScale.value * event.scale,
-      );
+      const newScale = savedScale.value * event.scale;
 
-      // Calculate focal point adjustment for zooming in/out at the pinch point
-      // These are the deltas from the center of the pinch
-      const deltaX = event.focalX - cropBoxWidth / 2;
-      const deltaY = event.focalY - cropBoxHeight / 2;
-
-      // Only update focal adjustments on first update to prevent continuous focal point shifting
-      if (focalX.value === 0 && focalY.value === 0) {
-        focalX.value = deltaX;
-        focalY.value = deltaY;
+      // Limit scale between 0.5x and 5x
+      if (newScale >= 0.5 && newScale <= 5) {
+        scale.value = newScale;
       }
-
-      // Adjust translation to maintain the focal point during zoom
-      const pinchAdjustmentX = focalX.value * (1 - event.scale);
-      const pinchAdjustmentY = focalY.value * (1 - event.scale);
-
-      // Apply small adjustments during pinch to maintain focal point
-      translateX.value += pinchAdjustmentX * 0.05;
-      translateY.value += pinchAdjustmentY * 0.05;
     })
     .onEnd(() => {
-      runOnJS(debouncedProcessCrop)();
+      // Constrain translation after scaling
+      const constrained = constrainTranslation(
+        translateX.value,
+        translateY.value,
+        scale.value,
+      );
+      translateX.value = withSpring(constrained.x);
+      translateY.value = withSpring(constrained.y);
+      scale.value = withSpring(scale.value);
+
+      // Save crop state after pinch ends
+      runOnJS(saveCropState)();
     });
 
-  // Create a composite gesture that allows pan and pinch to work together
-  const gesture = Gesture.Race(panGesture, pinchGesture);
+  // Combine gestures
+  const composedGesture = Gesture.Simultaneous(panGesture, pinchGesture);
 
-  const animatedImageStyle = useAnimatedStyle(() => {
+  // Animated style for the image
+  const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
         {translateX: translateX.value},
@@ -350,105 +266,218 @@ const ImageCropper = ({fileId, originalFile, imageSrc, onCropDone}) => {
     };
   });
 
-  // If the image is not loaded yet, show a loading indicator
-  if (!isImageLoaded) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>Loading image...</Text>
-      </View>
-    );
-  }
+  // Function to generate cropped image using view-shot
+  const generateCroppedImageUrl = useCallback(async () => {
+    if (!imageDimensions.width || !imageDimensions.height) {
+      Alert.alert('Error', 'Image not loaded yet');
+      return;
+    }
+
+    if (!cropViewRef.current) {
+      Alert.alert('Error', 'Crop view not ready');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+
+      // Save current crop state before generating
+      saveCropState();
+
+      // Capture the crop container as image
+      const uri = await captureRef(cropViewRef.current, {
+        format: 'jpg',
+        quality: 0.9,
+        width: cropWidth,
+        height: cropHeight,
+      });
+
+      if (onCropComplete) {
+        onCropComplete(fileId, uri);
+      }
+
+      Alert.alert('Success', 'Cropped image generated successfully!');
+      return uri;
+    } catch (error) {
+      console.error('Error generating cropped image:', error);
+      Alert.alert(
+        'Error',
+        'Failed to generate cropped image: ' + error.message,
+      );
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [imageDimensions, cropWidth, cropHeight, onCropComplete, saveCropState]);
+
+  // Reset function
+  const resetTransform = useCallback(() => {
+    if (!imageDimensions.width || !imageDimensions.height) return;
+
+    const scaleX = cropWidth / imageDimensions.width;
+    const scaleY = cropHeight / imageDimensions.height;
+    const initialScale = Math.max(scaleX, scaleY);
+
+    scale.value = withSpring(initialScale);
+    savedScale.value = initialScale;
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+    savedTranslateX.value = 0;
+    savedTranslateY.value = 0;
+
+    // Update crop data
+    setCropData(prev => ({
+      ...prev,
+      [fileId]: {
+        ...prev[fileId],
+        scale: initialScale,
+        translateX: 0,
+        translateY: 0,
+      },
+    }));
+  }, [cropWidth, cropHeight, imageDimensions, fileId]);
 
   return (
     <GestureHandlerRootView style={styles.container}>
       <View
-        style={[
-          styles.cropContainer,
-          {width: cropBoxWidth, height: cropBoxHeight},
-        ]}>
-        <GestureDetector gesture={gesture}>
-          <Animated.View style={styles.imageContainer}>
+        ref={cropViewRef}
+        style={[styles.cropContainer, {width: cropWidth, height: cropHeight}]}>
+        {/* Loading indicator */}
+        {(isImageLoading || !isInitialized) && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>
+              {isImageLoading ? 'Loading image...' : 'Initializing...'}
+            </Text>
+          </View>
+        )}
+
+        <GestureDetector gesture={composedGesture}>
+          <Animated.View style={styles.gestureContainer}>
             <Animated.Image
-              source={{uri: previewImageSrc}}
+              source={{uri: imageUri}}
               style={[
-                styles.image,
-                {width: imageSize.width, height: imageSize.height},
-                animatedImageStyle,
+                {
+                  width: imageDimensions.width || cropWidth,
+                  height: imageDimensions.height || cropHeight,
+                  opacity: isImageLoading || !isInitialized ? 0 : 1,
+                },
+                animatedStyle,
               ]}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
               resizeMode="contain"
             />
           </Animated.View>
         </GestureDetector>
-
-        {/* Overlay to show crop area */}
-        <View style={styles.cropOverlay}>
-          <View style={styles.cropBox} />
-        </View>
       </View>
-      {/* Optional: Debug information - commented out to avoid the shared value warning */}
-      {/* 
-  <View style={styles.debugInfo}>
-    <Text>Scale: {scale._value.toFixed(2)}</Text>
-    <Text>TranslateX: {translateX._value.toFixed(0)}</Text>
-    <Text>TranslateY: {translateY._value.toFixed(0)}</Text>
-  </View>
-  */}
+
+      {/* Crop overlay - positioned outside the capture area */}
+      <View
+        style={[styles.cropOverlay, {width: cropWidth, height: cropHeight}]}
+        pointerEvents="none">
+        <View style={styles.cropBorder} />
+      </View>
+
+      {/* Controls */}
+      <View style={styles.controls}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            (isGenerating || isImageLoading || !isInitialized) &&
+              styles.disabledButton,
+          ]}
+          onPress={resetTransform}
+          disabled={isGenerating || isImageLoading || !isInitialized}>
+          <Text style={styles.buttonText}>Reset</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.primaryButton,
+            (isGenerating || isImageLoading || !isInitialized) &&
+              styles.disabledButton,
+          ]}
+          onPress={generateCroppedImageUrl}
+          disabled={isGenerating || isImageLoading || !isInitialized}>
+          <Text style={styles.buttonText}>
+            {isGenerating ? 'Generating...' : 'Generate Crop'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </GestureHandlerRootView>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = {
   container: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    padding: 20,
   },
   cropContainer: {
+    backgroundColor: '#000',
     overflow: 'hidden',
     borderRadius: 8,
-    backgroundColor: '#000',
-  },
-  loadingContainer: {
-    height: 400,
-    alignItems: 'center',
+    position: 'relative',
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  loadingText: {
-    marginTop: 10,
-    color: '#666',
-    fontSize: 14,
-  },
-  imageContainer: {
+  gestureContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  image: {
-    position: 'absolute',
+    alignItems: 'center',
   },
   cropOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    alignItems: 'center',
+    position: 'absolute',
+    top: 20, // Adjust based on container padding
     justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
   },
-  cropBox: {
+  cropBorder: {
     width: '100%',
     height: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    backgroundColor: 'transparent',
+    borderRadius: 8,
   },
-  debugInfo: {
+  loadingContainer: {
     position: 'absolute',
-    bottom: 10,
-    left: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    padding: 5,
-    borderRadius: 5,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1,
   },
-});
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
+  },
+  controls: {
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  button: {
+    backgroundColor: '#6c757d',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+};
 
 export default ImageCropper;

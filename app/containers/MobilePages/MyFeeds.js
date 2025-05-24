@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch, useSelector} from 'react-redux';
-import PTRView from 'react-native-pull-to-refresh';
 import {IoCheckmarkSharp} from 'react-native-vector-icons/Ionicons';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import SadIcon from '../../../public/images/sadIcon.svg';
@@ -30,6 +29,7 @@ import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
 import {EventRegister} from 'react-native-event-listeners';
 import {initBackgroundTask} from '../../utils/BackgroundTaskService';
+import {updateScroll} from '../../redux/Slices/myfeedScroll';
 
 const MyFeeds = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ const MyFeeds = () => {
     publishedAt: Date.now(),
   });
 
-  //   const {isScroll} = useSelector(state => state.myfeedScroll);
+  const {isScroll} = useSelector(state => state?.myfeedScroll);
 
   useEffect(() => {
     // Initialize background tasks
@@ -358,20 +358,20 @@ const MyFeeds = () => {
     };
   }, []);
 
-  //   useEffect(() => {
-  //     if (isScroll) {
-  //       if (feedContainerRef.current) {
-  //         feedContainerRef.current.scrollTo({
-  //           y: 0,
-  //           animated: true,
-  //         });
-  //         setTimeout(() => {
-  //           handleRefresh();
-  //         }, 1000);
-  //       }
-  //       //   dispatch(updateScroll(false));
-  //     }
-  //   }, [isScroll]);
+  useEffect(() => {
+    if (isScroll) {
+      if (feedContainerRef.current) {
+        feedContainerRef.current.scrollTo({
+          y: 0,
+          animated: true,
+        });
+        setTimeout(() => {
+          handleRefresh();
+        }, 1000);
+      }
+      dispatch(updateScroll(false));
+    }
+  }, [isScroll]);
 
   return (
     <View style={styles.container}>

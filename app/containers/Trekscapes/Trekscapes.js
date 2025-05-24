@@ -309,8 +309,9 @@ const Trekscapes = () => {
 
   const renderSwiperSlider = ({images, slug}) => {
     return (
-      <TouchableWithoutFeedback
-        onPress={() => navigate('TrekscapeDetail', {slug})}>
+      <View
+      // onPress={() => navigate('TrekscapeDetail', {slug})}
+      >
         <View style={styles.swiperContainer}>
           <Swiper
             style={styles.swiper}
@@ -325,7 +326,7 @@ const Trekscapes = () => {
             ))}
           </Swiper>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
     );
   };
 

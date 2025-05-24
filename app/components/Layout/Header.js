@@ -118,7 +118,8 @@ const Header = ({handleSignUp, handleSignIn}) => {
   }, [data?.mustGo, data?.comment, data?.newFollower]);
 
   useEffect(() => {
-    // AsyncStorage.removeItem('uploadsDB:drafts');
+    // AsyncStorage.removeItem('cropData');
+    // AsyncStorage.removeItem('croppedImages');
     AsyncStorage.getAllKeys().then(keys => {
       AsyncStorage.multiGet(keys).then(result => {
         console.log('Stored items:', result);

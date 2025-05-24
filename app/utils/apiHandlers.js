@@ -67,7 +67,6 @@ export const postReq = async (url, data) => {
 
 export const getReq = async url => {
   const route_url = apiUrl + url;
-  console.log(route_url);
   return await axios
     .get(route_url, {
       headers: {
