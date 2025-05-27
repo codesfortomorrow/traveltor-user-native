@@ -22,6 +22,8 @@ import {setError} from '../redux/Slices/errorPopup';
 import {useNavigation} from '@react-navigation/native';
 import {clearToken} from '../redux/Slices/firebase';
 import messaging from '@react-native-firebase/messaging';
+import axios from 'axios';
+import {getToken} from '../utils/tokenStorage';
 
 const useAuth = () => {
   const {setIsLoggedIn} = useContext(AuthContext);
@@ -357,12 +359,12 @@ const useAuth = () => {
     if (response?.status) {
       return response;
     } else {
-      dispatch(
-        setError({
-          open: true,
-          custom_message: ` ${response.error.message}`,
-        }),
-      );
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: ` ${response.error.message}`,
+      //   }),
+      // );
 
       return response;
     }
@@ -394,14 +396,23 @@ const useAuth = () => {
   );
 
   const uploadImage = async data => {
-    const response = await postAuthReq('/upload', data);
+    const route_url = process.env.API_URL;
+    const token = await getToken();
+
+    const response = await axios.post(`${route_url}/upload`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    console.log(response, 'response');
     if (response?.status) {
-      return response.data;
+      return response?.data;
     } else {
       dispatch(
         setError({
           open: true,
-          custom_message: ` ${response.error.message}`,
+          custom_message: ` ${response?.error?.message}`,
         }),
       );
     }
@@ -412,7 +423,7 @@ const useAuth = () => {
     if (response?.status) {
       // dispatch(cleanSuccess());
       dispatch(
-        setSuccess({open: true, custom_message: ' updated your profile.'}),
+        setSuccess({open: true, custom_message: 'updated your profile.'}),
       );
       // dispatch(init());
     } else {
@@ -620,12 +631,12 @@ const useAuth = () => {
     if (response?.status) {
       return response.data;
     } else {
-      dispatch(
-        setError({
-          open: true,
-          custom_message: response?.error?.message,
-        }),
-      );
+      // dispatch(
+      //   setError({
+      //     open: true,
+      //     custom_message: response?.error?.message,
+      //   }),
+      // );
     }
   }, []);
 

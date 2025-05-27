@@ -72,9 +72,11 @@ const FeedMenuBar = ({
       onDismiss={() => setMenuVisible(false)}
       contentStyle={{paddingVertical: 0, backgroundColor: 'white'}}
       anchor={
-        <TouchableWithoutFeedback onPress={() => setMenuVisible(true)}>
+        <TouchableWithoutFeedback
+          onPress={() => setMenuVisible(true)}
+          style={{width: 30, height: 30}}>
           <Animated.View style={{opacity: opacityAnim}}>
-            <FeedDot name="dots-three-vertical" color="#000" size={14} />
+            <FeedDot name="dots-three-horizontal" color="#000" size={16} />
           </Animated.View>
         </TouchableWithoutFeedback>
       }

@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
-  Pressable,
+  ScrollView,
 } from 'react-native';
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -28,7 +28,9 @@ import Marker from '../../../public/images/icons/marker.svg';
 import FeedReactionList from '../Modal/FeedReactionList';
 import FeedMenuBar from '../Modal/FeedMenuBar';
 import ShoutOut from '../Modal/ShoutOut';
-import Swiper from 'react-native-swiper';
+import Constant from '../../utils/constant';
+
+const windowWidth = Dimensions.get('window').width;
 
 const FeedsContainer = ({
   item,
@@ -56,10 +58,11 @@ const FeedsContainer = ({
   const [reactionLoader, setReactionLoader] = useState(false);
   const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
-  const windowWidth = Dimensions.get('window').width;
   const slug = route.params?.slug;
   const [isShoutOut, setIsShoutOut] = useState(false);
   const [shoutOutFeed, setShoutOutFeed] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const {optimizeImageKitUrl} = Constant();
 
   const isTrekscapeNameShow =
     route.name === 'MyFeeds' ||
@@ -129,24 +132,74 @@ const FeedsContainer = ({
     lastTapRef.current = currentTime;
   };
 
-  const renderSwiperSlider = images => {
+  const renderScrollViewSlider = images => {
+    const handleScroll = event => {
+      const slideWidth = windowWidth;
+      const currentIndex = Math.round(
+        event.nativeEvent.contentOffset.x / slideWidth,
+      );
+      setCurrentIndex(currentIndex);
+    };
+
     return (
-      <TouchableWithoutFeedback>
-        <View style={styles.swiperContainer}>
-          <Swiper
-            style={styles.swiper}
-            showsPagination={true}
-            loop={false}
-            dotStyle={styles.swiperDot}
-            activeDotStyle={styles.swiperActiveDot}>
-            {images?.map((image, index) => (
-              <View key={index} style={styles.swiperSlide}>
-                <Image source={{uri: image}} style={styles.slideImage} />
-              </View>
+      <View style={styles.swiperContainer}>
+        <TouchableWithoutFeedback
+          onPress={handleDoubleTap}
+          delayPressIn={0}
+          delayPressOut={0}
+          style={styles.touchableContainer}>
+          <View style={styles.scrollViewWrapper}>
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              // Better performance props
+              removeClippedSubviews={false}
+              scrollEventThrottle={16}
+              decelerationRate="fast"
+              bounces={true}
+              // Improve touch responsiveness
+              directionalLockEnabled={true}
+              // Add scroll event handler
+              onScroll={handleScroll}>
+              {images?.map((image, index) => (
+                <View key={index} style={styles.scrollSlide}>
+                  <Image
+                    source={{
+                      uri: optimizeImageKitUrl(
+                        image,
+                        windowWidth,
+                        (windowWidth * 4) / 3,
+                        {quality: 100},
+                      ),
+                    }}
+                    style={styles.slideImage}
+                  />
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </TouchableWithoutFeedback>
+
+        {/* Custom Pagination Dots - positioned outside the touchable area */}
+        {images?.length > 1 && (
+          <View style={styles.paginationContainer} pointerEvents="none">
+            {images?.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  currentIndex === index
+                    ? styles.paginationActiveDot
+                    : styles.paginationInactiveDot,
+                ]}
+              />
             ))}
-          </Swiper>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -216,12 +269,14 @@ const FeedsContainer = ({
       </View>
 
       {/* Image Carousel Container */}
-      {item?.media?.length > 0 && renderSwiperSlider(item?.media)}
+      <View style={{position: 'relative'}}>
+        {item?.media?.length > 0 && renderScrollViewSlider(item?.media)}
 
-      <View>
-        <Animated.View style={[styles.heartOverlay, heartAnimatedStyle]}>
-          <Heart width={56} height={56} fill="white" stroke="white" />
-        </Animated.View>
+        <View style={styles.heartOverlay}>
+          <Animated.View style={[heartAnimatedStyle]}>
+            <Heart width={56} height={56} fill="white" stroke="white" />
+          </Animated.View>
+        </View>
       </View>
 
       {isTrekscapeNameShow ? (
@@ -455,8 +510,6 @@ const FeedsContainer = ({
   );
 };
 
-const windowWidth = Dimensions.get('window').width;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -530,20 +583,29 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     position: 'relative',
   },
-  swiper: {
-    // Removing fixed height to let content determine height
-  },
-  slideContainer: {
-    width: windowWidth,
-    height: (windowWidth * 4) / 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0', // Light background to see boundaries
-  },
   slideImage: {
     width: windowWidth,
     height: (windowWidth * 4) / 3,
     resizeMode: 'cover',
+  },
+  // ScrollView alternative styles
+  touchableContainer: {
+    flex: 1,
+  },
+  scrollViewWrapper: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    alignItems: 'center',
+  },
+  scrollSlide: {
+    width: windowWidth,
+    height: (windowWidth * 4) / 3,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   noImageContainer: {
     width: windowWidth,
@@ -559,29 +621,47 @@ const styles = StyleSheet.create({
   paginationStyle: {
     bottom: 10,
   },
-  swiperDot: {
-    backgroundColor: '#fff',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    margin: 3,
+  // Custom Pagination Dots Styles
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 1,
   },
-  swiperActiveDot: {
-    backgroundColor: '#E93C00',
+  paginationDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    margin: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3, // For Android shadow
+  },
+  paginationActiveDot: {
+    backgroundColor: '#E93C00',
+  },
+  paginationInactiveDot: {
+    backgroundColor: '#fff',
   },
   heartOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
+    left: '60%',
+    transform: [{translateX: -60}],
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
+    pointerEvents: 'none',
   },
   actionsContainer: {
     flexDirection: 'row',

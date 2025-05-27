@@ -1,14 +1,16 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {
+  ScrollView,
   View,
   Text,
-  ScrollView,
   TouchableOpacity,
   Image,
-  Animated,
   StyleSheet,
+  useWindowDimensions,
+  Animated,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SvgUri, SvgXml} from 'react-native-svg';
 
 const TrekscapeTopBar = ({
   categoryId,
@@ -17,12 +19,30 @@ const TrekscapeTopBar = ({
   setCategorySlug,
 }) => {
   const scrollRef = useRef(null);
+  const {width} = useWindowDimensions();
   const SCROLL_KEY = 'categoryScrollPosition';
+
+  // Animation value
   const blinkAnim = useRef(new Animated.Value(1)).current;
 
-  // Create blinking animation for 'live' items
   useEffect(() => {
-    const blinkingAnimation = Animated.loop(
+    const loadScroll = async () => {
+      const savedScroll = await AsyncStorage.getItem(SCROLL_KEY);
+      if (savedScroll && scrollRef.current) {
+        setTimeout(() => {
+          scrollRef.current.scrollTo({
+            x: parseInt(savedScroll, 10),
+            animated: false,
+          });
+        }, 10);
+      }
+    };
+    loadScroll();
+  }, [category]);
+
+  useEffect(() => {
+    // Start blink animation loop
+    Animated.loop(
       Animated.sequence([
         Animated.timing(blinkAnim, {
           toValue: 0,
@@ -35,141 +55,157 @@ const TrekscapeTopBar = ({
           useNativeDriver: true,
         }),
       ]),
-    );
-
-    blinkingAnimation.start();
-
-    return () => blinkingAnimation.stop();
+    ).start();
   }, [blinkAnim]);
 
-  // Restore scroll position
-  useEffect(() => {
-    const restoreScrollPosition = async () => {
-      try {
-        const savedScrollPosition = await AsyncStorage.getItem(SCROLL_KEY);
+  const handleScroll = async event => {
+    const x = event.nativeEvent.contentOffset.x;
+    await AsyncStorage.setItem(SCROLL_KEY, String(x));
+  };
 
-        if (savedScrollPosition && scrollRef.current) {
-          setTimeout(() => {
-            scrollRef.current.scrollTo({
-              x: parseInt(savedScrollPosition, 10),
-              animated: false,
-            });
-          }, 10);
+  const itemMinWidth = category?.length <= 5 ? width * 0.2 : width * 0.18;
+
+  const ColoredSvg = ({uri}) => {
+    const [svgXml, setSvgXml] = useState(null);
+
+    useEffect(() => {
+      const loadSvg = async () => {
+        try {
+          const res = await fetch(uri);
+          let svgText = await res.text();
+
+          const targetColor = '#F53E0D';
+
+          // Replace stroke colors
+          svgText = svgText.replace(
+            /stroke="[^"]*"/g,
+            `stroke="${targetColor}"`,
+          );
+
+          // Optionally clear fills to keep outline-only effect
+          svgText = svgText.replace(/fill="[^"]*"/g, 'fill="none"');
+
+          setSvgXml(svgText);
+        } catch (err) {
+          console.error('Error loading SVG:', err);
         }
-      } catch (error) {
-        console.error('Failed to restore scroll position:', error);
-      }
-    };
+      };
 
-    restoreScrollPosition();
-  }, [category]);
+      loadSvg();
+    }, [uri]);
 
-  // Save scroll position
-  const handleScroll = event => {
-    const scrollPosition = event.nativeEvent.contentOffset.x;
-    try {
-      AsyncStorage.setItem(SCROLL_KEY, scrollPosition.toString());
-    } catch (error) {
-      console.error('Failed to save scroll position:', error);
-    }
+    return svgXml ? <SvgXml xml={svgXml} width={20} height={20} /> : null;
   };
 
   return (
     <ScrollView
-      ref={scrollRef}
       horizontal
-      showsHorizontalScrollIndicator={false}
+      ref={scrollRef}
       onScroll={handleScroll}
       scrollEventThrottle={16}
-      style={styles.scrollContainer}>
-      <View style={styles.categoriesContainer}>
-        {category?.map((item, index) => (
-          <TouchableOpacity
-            key={index}
-            style={[
-              styles.categoryItem,
-              {minWidth: category?.length <= 5 ? '20%' : '18%'},
-            ]}
-            onPress={() => {
-              setCategoryId(item?.id);
-              setCategorySlug(item?.slug);
-            }}>
-            <View>
-              <Image
-                source={item?.slug === 'live' ? item?.icon : {uri: item?.icon}}
-                style={[
-                  styles.categoryIcon,
-                  item?.id == categoryId &&
-                    item?.slug != 'live' &&
-                    styles.filteredIcon,
-                ]}
-                resizeMode="contain"
-              />
-            </View>
-            {item?.slug === 'live' ? (
-              <Animated.Text
-                style={[
-                  styles.categoryText,
-                  item?.id == categoryId && styles.activeText,
-                  {opacity: blinkAnim},
-                ]}>
-                {item?.name}
-              </Animated.Text>
-            ) : (
-              <Text
-                style={[
-                  styles.categoryText,
-                  item?.id == categoryId && styles.activeText,
-                ]}>
-                {item?.name}
-              </Text>
-            )}
-          </TouchableOpacity>
-        ))}
+      showsHorizontalScrollIndicator={false}
+      style={styles.container}>
+      <View style={styles.content}>
+        {category?.map((item, index) => {
+          const isLive = item.slug === 'live';
+          const isActive = item.id == categoryId;
+
+          return (
+            <TouchableOpacity
+              key={index}
+              style={[styles.item, {minWidth: itemMinWidth}]}
+              onPress={() => {
+                setCategoryId(item.id);
+                setCategorySlug(item.slug);
+              }}>
+              {item.slug === 'live' ? (
+                <Image
+                  source={item.icon}
+                  style={[
+                    styles.icon,
+                    isActive && !isLive && styles.filterIcon,
+                  ]}
+                />
+              ) : isActive ? (
+                <View style={{minHeight: 20}}>
+                  <ColoredSvg uri={item?.icon} />
+                </View>
+              ) : (
+                <View style={{minHeight: 20}}>
+                  <SvgUri
+                    width="20"
+                    height="20"
+                    uri={item?.icon}
+                    color="#000"
+                  />
+                </View>
+              )}
+              {isLive ? (
+                <Animated.Text
+                  style={[
+                    styles.label,
+                    styles.blinkText,
+                    {opacity: blinkAnim},
+                    isActive ? styles.activeText : styles.inactiveText,
+                  ]}>
+                  {item.name}
+                </Animated.Text>
+              ) : (
+                <Text
+                  style={[
+                    styles.label,
+                    isActive ? styles.activeText : styles.inactiveText,
+                  ]}>
+                  {item.name}
+                </Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    backgroundColor: 'white',
+  container: {
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
     elevation: 3,
     zIndex: 10,
   },
-  categoriesContainer: {
+  content: {
     flexDirection: 'row',
-    minWidth: '100%',
+    alignItems: 'center',
   },
-  categoryItem: {
+  item: {
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'column',
-    gap: 4,
-    paddingTop: 9,
-    paddingBottom: 4,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
   },
-  categoryIcon: {
+  icon: {
     width: 20,
     height: 20,
+    resizeMode: 'contain',
   },
-  filteredIcon: {
-    tintColor: '#e93c00',
+  filterIcon: {
+    tintColor: '#007e3b',
   },
-  categoryText: {
+  label: {
     fontSize: 12,
     fontWeight: '600',
-    fontFamily: 'System',
-    color: 'black',
+    marginTop: 4,
+  },
+  blinkText: {
+    color: '#000',
   },
   activeText: {
     color: '#e93c00',
+  },
+  inactiveText: {
+    color: '#000',
   },
 });
 

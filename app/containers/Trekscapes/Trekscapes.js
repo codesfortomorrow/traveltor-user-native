@@ -21,6 +21,8 @@ import {useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import DoubleRight from 'react-native-vector-icons/AntDesign';
 import SadIcon from '../../../public/images/sadIcon.svg';
+import Search from 'react-native-vector-icons/EvilIcons';
+import TrekscapeTopBar from './TrekscapeTopBar';
 
 const Trekscapes = () => {
   const {navigate} = useNavigation();
@@ -36,7 +38,6 @@ const Trekscapes = () => {
   const [noData, setNoData] = useState(false);
   const [pageNumber, setPageNumber] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const loader = useRef(null);
   const scrollContainerRef = useRef(null);
   const [categorySlug, setCategorySlug] = useState('cities');
   const [eventLoading, setEventLoading] = useState(true);
@@ -52,8 +53,8 @@ const Trekscapes = () => {
     const loadCategoryId = async () => {
       try {
         const storedCategoryId = await AsyncStorage.getItem('categoryId');
-        if (storedCategoryId) {
-          setCategoryId(storedCategoryId);
+        if (storedCategoryId !== null) {
+          setCategoryId(JSON.parse(storedCategoryId));
         }
       } catch (error) {
         console.log('Error loading categoryId from AsyncStorage', error);
@@ -66,13 +67,15 @@ const Trekscapes = () => {
   useEffect(() => {
     const saveCategoryId = async () => {
       try {
-        await AsyncStorage.setItem('categoryId', categoryId);
+        await AsyncStorage.setItem('categoryId', JSON.stringify(categoryId));
       } catch (error) {
         console.log('Error saving categoryId to AsyncStorage', error);
       }
     };
 
-    saveCategoryId();
+    if (categoryId !== null) {
+      saveCategoryId();
+    }
   }, [categoryId]);
 
   const fetchCategory = async () => {
@@ -214,7 +217,7 @@ const Trekscapes = () => {
   const handleEndReached = () => {
     // Prevent multiple concurrent load more requests
     if (hasMore && !contentLoading && !isLoadingMore && !isLoadingRef.current) {
-      isLoadingRef.current = true; // Set ref immediately to prevent double triggers
+      isLoadingRef.current = true;
       setPageNumber(prev => prev + 1);
     }
   };
@@ -233,8 +236,6 @@ const Trekscapes = () => {
       scrollContainerRef.current.scrollTo({x: 0, y: 0, animated: true});
     }
   }, [categoryId]);
-
-  const currentCategory = category?.find(item => item.id == categoryId);
 
   const fetchReviews = async slug => {
     if (reviewsMap[slug]) return;
@@ -309,23 +310,38 @@ const Trekscapes = () => {
 
   const renderSwiperSlider = ({images, slug}) => {
     return (
-      <View
-      // onPress={() => navigate('TrekscapeDetail', {slug})}
-      >
-        <View style={styles.swiperContainer}>
-          <Swiper
-            style={styles.swiper}
-            showsPagination={true}
-            loop={false}
-            dotStyle={styles.swiperDot}
-            activeDotStyle={styles.swiperActiveDot}>
-            {images?.map((image, index) => (
-              <View key={index} style={styles.swiperSlide}>
-                <Image source={{uri: image}} style={styles.swiperImage} />
+      <View style={styles.swiperContainer}>
+        <Swiper
+          style={styles.swiper}
+          showsPagination={true}
+          loop={false}
+          dotStyle={styles.swiperDot}
+          activeDotStyle={styles.swiperActiveDot}
+          removeClippedSubviews={false}
+          loadMinimal={false}
+          loadMinimalSize={images?.length || 1}
+          horizontal={true}
+          pagingEnabled={true}
+          showsHorizontalScrollIndicator={false}
+          threshold={20}
+          autoplay={false}
+          lazy={false}
+          bounces={false}
+          scrollEnabled={true}>
+          {images?.map((image, index) => (
+            <TouchableWithoutFeedback
+              key={index}
+              onPress={() => navigate('TrekscapeDetail', {slug})}>
+              <View style={styles.swiperSlide}>
+                <Image
+                  source={{uri: image}}
+                  style={styles.swiperImage}
+                  resizeMode="cover"
+                />
               </View>
-            ))}
-          </Swiper>
-        </View>
+            </TouchableWithoutFeedback>
+          ))}
+        </Swiper>
       </View>
     );
   };
@@ -345,42 +361,7 @@ const Trekscapes = () => {
     );
   };
 
-  const TrekscapeTopBar = ({
-    categoryId,
-    setCategoryId,
-    category,
-    setCategorySlug,
-  }) => {
-    return (
-      <View style={styles.topBarContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {category.map(item => (
-            <TouchableOpacity
-              key={item.id}
-              style={[
-                styles.categoryItem,
-                categoryId === String(item.id) && styles.activeCategoryItem,
-              ]}
-              onPress={() => {
-                setCategoryId(String(item.id));
-                setCategorySlug(item.slug);
-              }}>
-              <Text
-                style={[
-                  styles.categoryText,
-                  categoryId === String(item.id) && styles.activeCategoryText,
-                ]}>
-                {item.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-    );
-  };
-
   const renderFeedMenu = ({feed}) => {
-    // Placeholder for FeedMenu component
     return (
       <TouchableOpacity style={styles.feedMenuButton}>
         <Text>⋯</Text>
@@ -446,7 +427,13 @@ const Trekscapes = () => {
                   <TouchableOpacity
                     style={styles.searchIcon}
                     onPress={searchTerm ? handleClearSearch : null}>
-                    <Text>{searchTerm ? '✕' : '🔍'}</Text>
+                    {searchTerm ? (
+                      <Text>✕</Text>
+                    ) : (
+                      <View style={{marginTop: -6, marginRight: -6}}>
+                        <Search name="search" size={30} color="#000" />
+                      </View>
+                    )}
                   </TouchableOpacity>
                 </View>
               )}
@@ -689,11 +676,13 @@ const Trekscapes = () => {
                                 </View>
                                 <View style={styles.reviewUserInfo}>
                                   <Image
-                                    source={{
-                                      uri:
-                                        review?.user?.profileImage ||
-                                        '/images/dpPlaceholder.png',
-                                    }}
+                                    source={
+                                      review?.user?.profileImage
+                                        ? {
+                                            uri: review?.user?.profileImage,
+                                          }
+                                        : require('../../../public/images/dpPlaceholder.png')
+                                    }
                                     style={styles.reviewUserImage}
                                   />
                                   <View>
@@ -774,40 +763,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topBarContainer: {
-    width: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    // iOS shadow
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-
-    // Android shadow
-    elevation: 8,
-
-    zIndex: 10,
-  },
-  categoryItem: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginHorizontal: 5,
-    backgroundColor: '#f0f0f0',
-  },
-  activeCategoryItem: {
-    backgroundColor: '#e93c00',
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  activeCategoryText: {
-    color: '#fff',
-  },
   scrollContainer: {
     flex: 1,
     height: height - 100,
@@ -823,7 +778,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingLeft: 15,
     paddingRight: 40,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 25,
     fontSize: 12,
   },
@@ -927,7 +882,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 20,
-    height: height - 165,
+    height: height - 300,
   },
   emptyStateIcon: {
     height: 60,
@@ -940,7 +895,7 @@ const styles = StyleSheet.create({
   },
   emptyStateButton: {
     textAlign: 'center',
-    color: '#3498db',
+    color: '#e93c00',
   },
   loaderContainer: {
     justifyContent: 'center',
@@ -1164,6 +1119,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
   },
   endSpace: {
-    height: 100,
+    height: 110,
   },
 });

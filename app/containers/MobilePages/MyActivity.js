@@ -236,13 +236,6 @@ const MyActivity = () => {
                     <ActivityIndicator size="large" color="#E93c00" />
                   </View>
                 )}
-                {!hasMore && events.length > 0 && (
-                  <View style={styles.endContainer}>
-                    <Text style={styles.endText}>
-                      No more activities to show
-                    </Text>
-                  </View>
-                )}
               </>
             )}
           </View>

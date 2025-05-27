@@ -28,7 +28,6 @@ import FeedLoader from '../../components/Common/FeedLoader';
 import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
 import {EventRegister} from 'react-native-event-listeners';
-import {initBackgroundTask} from '../../utils/BackgroundTaskService';
 import {updateScroll} from '../../redux/Slices/myfeedScroll';
 
 const MyFeeds = () => {
@@ -48,10 +47,6 @@ const MyFeeds = () => {
   const feedContainerRef = useRef(null);
   const {feeds, setFeeds} = useContext(FeedContext);
   const isFirstRender = useRef(true);
-  const pullToRefreshRef = useRef(null);
-  const [disablePull, setDisablePull] = useState(false);
-  const isCalled = useRef(false);
-  const [isScrollAtTop, setIsScrollAtTop] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
   const [progress, setProgress] = useState({
@@ -65,9 +60,6 @@ const MyFeeds = () => {
   const {isScroll} = useSelector(state => state?.myfeedScroll);
 
   useEffect(() => {
-    // Initialize background tasks
-    // initBackgroundTask();
-
     // Listen for upload progress updates
     const progressListener = EventRegister.addEventListener(
       'uploadProgress',
@@ -184,27 +176,11 @@ const MyFeeds = () => {
     };
 
     checkReload();
-
-    return () => {
-      // Clean up on component unmount
-      const cleanUp = async () => {
-        try {
-          await AsyncStorage.removeItem('reloaded');
-          await AsyncStorage.removeItem('pageNumber');
-          await AsyncStorage.removeItem('hasMore');
-        } catch (error) {
-          console.error('Error cleaning up storage:', error);
-        }
-      };
-
-      cleanUp();
-    };
   }, []);
 
   // Handle infinite scrolling
   const handleScroll = ({nativeEvent}) => {
     const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-    setIsScrollAtTop(contentOffset.y <= 0);
 
     const isCloseToBottom =
       layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
@@ -253,12 +229,12 @@ const MyFeeds = () => {
           setReactionDisabled(false);
         }
       } catch (err) {
-        dispatch(
-          setError({
-            open: true,
-            custom_message: err || 'Something went wrong',
-          }),
-        );
+        // dispatch(
+        //   setError({
+        //     open: true,
+        //     custom_message: err || 'Something went wrong',
+        //   }),
+        // );
         setReactionDisabled(false);
       }
     } else {
@@ -293,6 +269,8 @@ const MyFeeds = () => {
     setIsPageRefresh(false);
     setPageNumber(0);
     await fetchTreckScapeFeeds(0, true, true);
+    await AsyncStorage.setItem('pageNumber', JSON.stringify(0));
+    await AsyncStorage.setItem('feedScrollPos', (0).toString());
   };
 
   useEffect(() => {
@@ -347,18 +325,6 @@ const MyFeeds = () => {
   };
 
   useEffect(() => {
-    if (!isCalled.current) {
-      isCalled.current = true;
-      // Since service workers aren't available in React Native, we'd need to use a different mechanism
-      // For example, we could use React Native's AppState or a messaging service
-    }
-
-    return () => {
-      isCalled.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
     if (isScroll) {
       if (feedContainerRef.current) {
         feedContainerRef.current.scrollTo({
@@ -367,7 +333,7 @@ const MyFeeds = () => {
         });
         setTimeout(() => {
           handleRefresh();
-        }, 1000);
+        }, 500);
       }
       dispatch(updateScroll(false));
     }

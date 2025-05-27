@@ -8,19 +8,18 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {useDispatch, useSelector} from 'react-redux';
 import {setError} from '../../redux/Slices/errorPopup';
 import {
-  convertToThreeFourRatio,
   convertToThreeFourRatioRN,
   getLocation,
 } from '../../components/Helpers/fileUploadHelper';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckInTopBar from '../../components/Common/CheckInTopBar';
-import {Swiper} from 'react-native-swiper';
 import 'react-native-get-random-values';
 import {v4 as uuidv4} from 'uuid';
 import {launchImageLibrary} from 'react-native-image-picker';
@@ -39,13 +38,14 @@ import {
 } from '../../utils/draftManager';
 import {publishDraft} from '../../utils/BackgroundTaskService';
 
+const {width, height} = Dimensions.get('window');
+
 const TrailpointCheckIn = () => {
   const dispatch = useDispatch();
   const route = useRoute();
   const {id, trailpointId} = route.params;
   const [successCheckin, setSuccessCheckin] = useState(null);
   const [failureCheckin, setFailureCheckin] = useState(null);
-  const [loading, setLoading] = useState(false);
   const {getSingleTrailpoint} = useAuth();
   const {navigate} = useNavigation();
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -59,14 +59,11 @@ const TrailpointCheckIn = () => {
   const [showSingleFile, setShowSingleFile] = useState({});
   const [croppedImages, setCroppedImages] = useState({});
   const [isCropOpen, setIsCropOpen] = useState(false);
-  const inputRef = useRef(null);
   const isTriggered = useRef(false);
   const [isLoaded, setIsLoaded] = useState({});
-  const [showSelectedDateTime, setShowSelectedDateTime] = useState(false); // Added missing state
 
   const handleCheckInTreckScape = async () => {
     try {
-      setLoading(true);
       // Using AsyncStorage instead of localStorage
       await AsyncStorage.removeItem('checkinDraft');
 
@@ -78,23 +75,6 @@ const TrailpointCheckIn = () => {
         long: currentLocation?.longitude || 0,
         review: reviewText,
       };
-
-      // const updatedFiles = await Promise.all(
-      //   selectedFiles.map(async file => {
-      //     const croppedImage = croppedImages[file.id];
-      //     if (croppedImage) {
-      //       const blob = await fetch(croppedImage).then(res => res.blob());
-      //       return new File(
-      //         [blob],
-      //         `cropped_${file.file?.name || 'image'}.jpg`,
-      //         {
-      //           type: 'image/jpeg',
-      //         },
-      //       );
-      //     }
-      //     return await convertToThreeFourRatio(file.file);
-      //   }),
-      // );
 
       const threeFourFiles = await Promise.all(
         selectedFiles.map(async f => {
@@ -145,23 +125,18 @@ const TrailpointCheckIn = () => {
         }),
       );
       console.log(error, 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fetchTrailpointDetail = useCallback(async () => {
-    setLoading(true);
     try {
       const response = await getSingleTrailpoint(id);
 
       if (response) {
         setTrailPointDetail(response);
-        setLoading(false);
       }
     } catch (error) {
       console.log('Error:', error);
-      setLoading(false);
     } finally {
       setLocationloader(false);
     }
@@ -199,13 +174,14 @@ const TrailpointCheckIn = () => {
     loadSavedCrops();
   }, []);
 
-  const handleCropDone = (originalImage, croppedImage) => {
-    setCroppedImages(prev => {
-      const updatedCrops = {...prev, [originalImage]: croppedImage};
-      // Using AsyncStorage instead of sessionStorage
-      AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
-      return updatedCrops;
-    });
+  const handleCropDone = async (fileId, croppedDataUrl) => {
+    try {
+      const updatedCrops = {...croppedImages, [fileId]: croppedDataUrl};
+      setCroppedImages(updatedCrops);
+      await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
+    } catch (error) {
+      console.error('Error saving cropped images:', error);
+    }
   };
 
   useEffect(() => {
@@ -500,7 +476,6 @@ const TrailpointCheckIn = () => {
             <CheckInTopBar
               disable={disable}
               handleCheckInTreckScape={handleCheckInTreckScape}
-              setShowSelectedDateTime={setShowSelectedDateTime}
               trigger={'Next'}
               setStep={setStep}
               isCropOpen={isCropOpen}
@@ -549,7 +524,7 @@ const TrailpointCheckIn = () => {
                     <View style={styles.imageContainer}>
                       <Image
                         source={{
-                          uri: 'https://ik.imagekit.io/8u2famo7gp/prod/5ab9e2e49445d4bdf1454b78585f9125.svg?tr=w-97,q-10',
+                          uri: 'https://ik.imagekit.io/8u2famo7gp/prod/90e0c362d1ee4bd482fd9eda023862db.jpg',
                         }}
                         style={styles.earnTvtorImage}
                       />
@@ -641,6 +616,18 @@ const TrailpointCheckIn = () => {
                         })}
                       </ScrollView>
                     )}
+                  </View>
+                )}
+
+                {selectedFiles?.length !== 0 && isCropOpen && (
+                  <View style={styles.cropperContainer}>
+                    <ImageCropper
+                      imageUri={
+                        showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri
+                      }
+                      fileId={showSingleFile?.id || selectedFiles[0]?.id}
+                      onCropComplete={handleCropDone}
+                    />
                   </View>
                 )}
 
@@ -741,7 +728,8 @@ const styles = StyleSheet.create({
   },
   earnTvtorImage: {
     minHeight: 95,
-    width: 97,
+    width: '100%',
+    resizeMode: 'cover',
   },
   uploadInfoBox: {
     width: '100%',
@@ -874,7 +862,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: '70%',
+    height: height * 0.7,
     alignItems: 'center',
   },
   addPhotoContainer: {

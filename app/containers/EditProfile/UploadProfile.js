@@ -1,72 +1,70 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useDispatch, useSelector} from 'react-redux';
 import Toast from 'react-native-toast-message';
 import useAuth from '../../hooks/useAuth';
-import Constant from '../../utils/constant';
+import {AuthContext} from '../../context/AuthContext';
+import {getUser} from '../../redux/Slices/userSlice';
 
 const UploadProfile = () => {
-  const dispatch = useDispatch();
   const user = useSelector(state => state?.user);
   const {uploadImage, uploadProfile} = useAuth();
-  const {requestStoragePermission} = Constant();
+  const dispatch = useDispatch();
+  const {isLoggedIn} = useContext(AuthContext);
 
   const handlePickImage = async () => {
-    // const hasPermission = await requestStoragePermission();
-    // if (!hasPermission) {
-    //   return;
-    // }
+    const options = {
+      mediaType: 'photo',
+      selectionLimit: 1,
+      quality: 0.8,
+      includeBase64: false,
+    };
 
-    await launchImageLibrary(
-      {
-        mediaType: 'photo',
-        quality: 0.8,
-        selectionLimit: 1,
-        includeBase64: false,
-      },
-      async response => {
-        console.log(response, 'response');
-        if (response.didCancel) {
-          return;
-        }
+    const result = await launchImageLibrary(options);
+    console.log(result, 'result');
+    if (result.didCancel) {
+      return;
+    }
 
-        if (response.errorCode) {
-          Toast.show({
-            type: 'error',
-            text1: response.errorMessage || 'Image picker error',
-          });
-          return;
-        }
+    if (result.errorCode) {
+      Toast.show({
+        type: 'error',
+        text1: result.errorMessage || 'Image picker error',
+      });
+      return;
+    }
 
-        const asset = response.assets?.[0];
-        if (asset?.fileSize > 15728640) {
-          Toast.show({
-            type: 'error',
-            text1: 'File size should not exceed 15MB',
-          });
-          return;
-        }
+    const asset = result.assets?.[0];
+    if (asset?.fileSize > 15728640) {
+      Toast.show({
+        type: 'error',
+        text1: 'File size should not exceed 15MB',
+      });
+      return;
+    }
 
-        const formData = new FormData();
-        formData.append('file', {
-          uri: asset.uri,
-          type: asset.type,
-          name: asset.fileName || 'profile-image.jpg',
+    console.log(asset, 'asset');
+
+    const formData = new FormData();
+    formData.append('file', {
+      uri: asset.uri,
+      type: asset.type,
+      name: asset.fileName || 'profile-image.jpg',
+    });
+
+    try {
+      const res = await uploadImage(formData);
+      console.log(res, 'res');
+      if (res && res?.url !== '') {
+        await uploadProfile({
+          profileImage: res?.meta?.filename,
         });
-
-        try {
-          const res = await uploadImage(formData);
-          if (res && res[0]?.url !== '') {
-            await uploadProfile({
-              profileImage: res[0]?.meta?.filename,
-            });
-          }
-        } catch (err) {
-          console.log(err);
-        }
-      },
-    );
+        dispatch(getUser(isLoggedIn));
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (

@@ -53,7 +53,7 @@ const Footer = () => {
       navigate('Home');
     } else if (item?.title === 'Login') {
       setIsLoginOpen(true);
-    } else if (item?.title === 'MyFeeds' && route.name === 'MyFeeds') {
+    } else if (item?.title === 'My Feeds' && route.name === 'MyFeeds') {
       dispatch(updateScroll(true));
     } else {
       navigate(item?.path);
@@ -101,23 +101,6 @@ const Footer = () => {
             <TouchableOpacity
               key={index}
               onPress={() => handleSignIn(item)}
-              // onPress={() => {
-              //   if (item?.title === 'Log In') {
-              //     handleSignIn();
-              //   } else if (item?.title === 'Menu') {
-              //     setIsOpen(true);
-              //   } else if (item?.title == 'Profile' && user?.id) {
-              //     navigate(`/${user?.type?.toLowerCase()}/profile/${user?.id}`);
-              //   } else {
-              //     if (
-              //       item?.title == 'My Feeds' &&
-              //       location.pathname === '/my-feed'
-              //     ) {
-              //       dispatch(updateScroll(true));
-              //     }
-              //     navigate(item?.path);
-              //   }
-              // }}
               style={styles.menuItem}>
               <View style={{position: 'relative'}}>
                 {item.title === 'CheckIn' ? (

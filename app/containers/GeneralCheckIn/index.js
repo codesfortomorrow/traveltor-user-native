@@ -83,23 +83,6 @@ const GeneralCheckIn = () => {
         payload.trekscapeId = trailPoint.id;
       }
 
-      // const updatedFiles = await Promise.all(
-      //   selectedFiles.map(async file => {
-      //     const croppedImage = croppedImages[file.id];
-      //     if (croppedImage) {
-      //       const blob = await fetch(croppedImage).then(res => res.blob());
-      //       return new File(
-      //         [blob],
-      //         `cropped_${file.file?.name || 'image'}.jpg`,
-      //         {
-      //           type: 'image/jpeg',
-      //         },
-      //       );
-      //     }
-      //     return await convertToThreeFourRatio(file.file);
-      //   }),
-      // );
-
       const threeFourFiles = await Promise.all(
         selectedFiles.map(async f => {
           try {
@@ -161,8 +144,8 @@ const GeneralCheckIn = () => {
     setLocationloader(true);
     try {
       const response = await getValidatedCheckInPoint({
-        latitude: '22.7590909',
-        longitude: '75.867182',
+        latitude: '22.7590774', // '22.7590909',
+        longitude: '75.8650035', // '75.867182',
       });
       if (response) {
         setCurrentTrekscapes(response);
@@ -211,8 +194,6 @@ const GeneralCheckIn = () => {
   }, []);
 
   const handleCropDone = async (fileId, croppedDataUrl) => {
-    console.log({fileId, croppedDataUrl}, 'handlecropdone');
-
     try {
       const updatedCrops = {...croppedImages, [fileId]: croppedDataUrl};
       setCroppedImages(updatedCrops);
@@ -565,7 +546,6 @@ const GeneralCheckIn = () => {
         <View style={styles.uploadInstructionsContainer}>
           <View style={styles.selfCenter}>
             <Image
-              // source={require('../../../public/images/CheckInTvtor.jpg')}
               source={{
                 uri: 'https://ik.imagekit.io/8u2famo7gp/prod/90e0c362d1ee4bd482fd9eda023862db.jpg',
               }}
@@ -659,14 +639,6 @@ const GeneralCheckIn = () => {
 
       {selectedFiles?.length !== 0 && isCropOpen && (
         <View style={styles.cropperContainer}>
-          {/* <ImageCropper
-            fileId={showSingleFile?.id || selectedFiles[0]?.id}
-            originalFile={
-              showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri
-            }
-            imageSrc={showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri}
-            onCropDone={handleCropDone}
-          /> */}
           <ImageCropper
             imageUri={showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri}
             fileId={showSingleFile?.id || selectedFiles[0]?.id}

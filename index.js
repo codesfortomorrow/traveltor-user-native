@@ -9,7 +9,7 @@ import {Provider} from 'react-redux';
 import {store} from './app/redux/store';
 import {AuthProvider} from './app/context/AuthContext';
 import {setBackgroundHandler} from './app/notifications/BackgroundHandler';
-import {initBackgroundTask} from './app/utils/BackgroundTaskService';
+// import {initBackgroundTask} from './app/utils/BackgroundTaskService';
 import 'react-native-gesture-handler';
 // import {syncDrafts} from './app/utils/draftManager';
 
@@ -25,9 +25,9 @@ const ReduxWrappedApp = () => (
 
 AppRegistry.registerComponent(appName, () => ReduxWrappedApp);
 
-initBackgroundTask().catch(error =>
-  console.error('Failed to initialize background task:', error),
-);
+// initBackgroundTask().catch(error =>
+//   console.error('Failed to initialize background task:', error),
+// );
 
 // AppRegistry.registerHeadlessTask('com.traveltor.sync', () => async () => {
 //   try {

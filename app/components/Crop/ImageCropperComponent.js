@@ -83,17 +83,18 @@ const ImageCropper = ({
   // Initialize crop data for new files
   useEffect(() => {
     if (imageUri && fileId && !cropData[fileId]) {
-      setCropData(prev => ({
-        ...prev,
-        [fileId]: {
-          crop: {x: 0, y: 0},
-          zoom: 1,
-          minZoom: 1,
-          translateX: 0,
-          translateY: 0,
-          scale: 1,
-        },
-      }));
+      // setCropData(prev => ({
+      //   ...prev,
+      //   [fileId]: {
+      //     crop: {x: 0, y: 0},
+      //     zoom: 1,
+      //     minZoom: 1,
+      //     translateX: 0,
+      //     translateY: 0,
+      //     scale: 1,
+      //   },
+      // }));
+      resetTransform();
     }
   }, [fileId, imageUri, cropData]);
 

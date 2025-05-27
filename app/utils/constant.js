@@ -74,7 +74,7 @@ const Constant = () => {
     {
       icon: <Feeds name="file-text-o" color="#000" size={25} />,
       activeIcon: <Feeds name="file-text-o" color="#e93c00" size={25} />,
-      title: 'MyFeeds',
+      title: 'My Feeds',
       path: 'MyFeeds',
     },
     {
@@ -629,6 +629,24 @@ const Constant = () => {
     }
   };
 
+  const optimizeImageKitUrl = (url, width, height, options = {}) => {
+    if (!url.includes('imagekit.io')) return url;
+
+    const {quality, lowQuality} = options;
+    console.log({quality, lowQuality});
+    let transformation = width ? `tr:w-${width},h-${height}` : `tr:h-${height}`;
+
+    if (lowQuality) transformation += ',lo-true';
+    if (quality) transformation += `,q-${quality}`;
+
+    const parts = url.split('/');
+    const lastPart = parts.pop();
+    parts.push(transformation);
+    parts.push(lastPart);
+
+    return parts.join('/');
+  };
+
   return {
     heroSlider,
     loginItems,
@@ -642,6 +660,7 @@ const Constant = () => {
     generateMonths,
     generateYears,
     requestStoragePermission,
+    optimizeImageKitUrl,
   };
 };
 
