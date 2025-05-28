@@ -630,7 +630,6 @@ const Constant = () => {
   };
 
   const optimizeImageKitUrl = (url, width, height, options = {}) => {
-    console.log({url, width, height, options});
     if (!url?.includes('imagekit.io')) return url;
 
     const {quality, lowQuality} = options;

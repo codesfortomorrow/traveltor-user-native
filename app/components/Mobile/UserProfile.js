@@ -12,7 +12,7 @@ import {
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
-import {useRoute} from '@react-navigation/native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import Login from '../Modal/Login';
 import Signup from '../Signup';
 import Backheading from './Backheading';
@@ -21,6 +21,7 @@ import FeedLoader from '../Common/FeedLoader';
 import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
 import DeleteConfirmation from '../Modal/DeleteConfirmation';
+import Constant from '../../utils/constant';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -45,6 +46,8 @@ const UserProfile = () => {
   const [hasMore, setHasMore] = useState(true);
   const loader = useRef(null);
   const [isFollowDisable, setIsFollowDisable] = useState(false);
+  const {optimizeImageKitUrl} = Constant();
+  const {navigate} = useNavigation();
   const {getUserDetails, getUserFeeds, reactionOnFeed, userFollowUnFollow} =
     useAuth();
 
@@ -270,7 +273,14 @@ const UserProfile = () => {
           <Image
             source={
               trailblazer?.profileImage
-                ? {uri: `${trailblazer.profileImage}?tr=w-200,h-200,q-100`}
+                ? {
+                    uri: `${optimizeImageKitUrl(
+                      trailblazer.profileImage,
+                      200,
+                      200,
+                      {quality: 100},
+                    )}`,
+                  }
                 : require('../../../public/images/dpPlaceholder.png')
             }
             style={styles.profileImage}
@@ -344,12 +354,19 @@ const UserProfile = () => {
               <View style={styles.trekscapeItem} key={index}>
                 <TouchableOpacity
                   onPress={() => {
-                    /* Navigation to trekscape detail would go here */
+                    navigate('TrekscapeDetail', {slug: item?.slug});
                   }}>
                   <Image
                     source={
                       item?.previewMedia[0]
-                        ? {uri: `${item.previewMedia[0]}?tr=w-200,h-200,q-100`}
+                        ? {
+                            uri: `${optimizeImageKitUrl(
+                              item.previewMedia[0],
+                              200,
+                              200,
+                              {quality: 100},
+                            )}`,
+                          }
                         : require('../../../public/images/au1.png')
                     }
                     style={styles.trekscapeImage}

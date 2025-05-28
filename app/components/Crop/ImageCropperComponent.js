@@ -27,7 +27,7 @@ const ImageCropper = ({
   imageUri,
   fileId,
   onCropComplete,
-  containerWidth = screenWidth * 0.9,
+  containerWidth = screenWidth * 0.8,
 }) => {
   // Calculate container dimensions with 3:4 ratio
   const cropWidth = containerWidth;
@@ -43,6 +43,10 @@ const ImageCropper = ({
   const translateY = useSharedValue(0);
   const savedTranslateX = useSharedValue(0);
   const savedTranslateY = useSharedValue(0);
+
+  // Shared values for scale limits (accessible on UI thread)
+  const minScale = useSharedValue(0.5);
+  const maxScale = useSharedValue(5);
 
   // Image dimensions state
   const [imageDimensions, setImageDimensions] = useState({width: 0, height: 0});
@@ -83,18 +87,17 @@ const ImageCropper = ({
   // Initialize crop data for new files
   useEffect(() => {
     if (imageUri && fileId && !cropData[fileId]) {
-      // setCropData(prev => ({
-      //   ...prev,
-      //   [fileId]: {
-      //     crop: {x: 0, y: 0},
-      //     zoom: 1,
-      //     minZoom: 1,
-      //     translateX: 0,
-      //     translateY: 0,
-      //     scale: 1,
-      //   },
-      // }));
-      resetTransform();
+      setCropData(prev => ({
+        ...prev,
+        [fileId]: {
+          crop: {x: 0, y: 0},
+          zoom: 0,
+          minZoom: 0,
+          translateX: 0,
+          translateY: 0,
+          scale: 0,
+        },
+      }));
     }
   }, [fileId, imageUri, cropData]);
 
@@ -106,25 +109,46 @@ const ImageCropper = ({
     }
   }, [imageUri, fileId]);
 
+  // Calculate initial scale to fill crop container (no empty space)
+  const calculateInitialScale = useCallback(() => {
+    if (!imageDimensions.width || !imageDimensions.height) return 1;
+
+    const scaleX = cropWidth / imageDimensions.width;
+    const scaleY = cropHeight / imageDimensions.height;
+
+    // Use Math.max to fill the container completely (no empty space)
+    return Math.max(scaleX, scaleY);
+  }, [cropWidth, cropHeight, imageDimensions]);
+
   // Function to apply saved crop state
   const applySavedCropState = useCallback(() => {
     if (cropData[fileId] && imageDimensions.width && imageDimensions.height) {
       const savedCropState = cropData[fileId];
 
-      // Apply saved values
-      scale.value = savedCropState.scale || 1;
-      savedScale.value = savedCropState.scale || 1;
-      translateX.value = savedCropState.translateX || 0;
-      translateY.value = savedCropState.translateY || 0;
-      savedTranslateX.value = savedCropState.translateX || 0;
-      savedTranslateY.value = savedCropState.translateY || 0;
+      // Only apply saved state if it has valid scale value (not initial 0)
+      if (savedCropState.scale && savedCropState.scale > 0) {
+        scale.value = savedCropState.scale;
+        savedScale.value = savedCropState.scale;
+        translateX.value = savedCropState.translateX || 0;
+        translateY.value = savedCropState.translateY || 0;
+        savedTranslateX.value = savedCropState.translateX || 0;
+        savedTranslateY.value = savedCropState.translateY || 0;
 
-      console.log('Applied saved crop state:', savedCropState);
+        console.log('Applied saved crop state:', savedCropState);
+      } else {
+        // Use initial scale calculation for new images
+        const initialScale = calculateInitialScale();
+
+        scale.value = initialScale;
+        savedScale.value = initialScale;
+        translateX.value = 0;
+        translateY.value = 0;
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      }
     } else {
-      // Calculate initial scale to fit image in container
-      const scaleX = cropWidth / imageDimensions.width;
-      const scaleY = cropHeight / imageDimensions.height;
-      const initialScale = Math.max(scaleX, scaleY);
+      // Calculate initial scale to fit image within container (fully zoomed out)
+      const initialScale = calculateInitialScale();
 
       scale.value = initialScale;
       savedScale.value = initialScale;
@@ -135,7 +159,7 @@ const ImageCropper = ({
     }
 
     setIsInitialized(true);
-  }, [cropData, fileId, imageDimensions, cropWidth, cropHeight]);
+  }, [cropData, fileId, imageDimensions, calculateInitialScale]);
 
   // Get image dimensions when loaded
   const handleImageLoad = useCallback(event => {
@@ -225,7 +249,7 @@ const ImageCropper = ({
       runOnJS(saveCropState)();
     });
 
-  // Pinch gesture
+  // Pinch gesture with minimum scale constraint
   const pinchGesture = Gesture.Pinch()
     .onStart(() => {
       savedScale.value = scale.value;
@@ -233,8 +257,8 @@ const ImageCropper = ({
     .onUpdate(event => {
       const newScale = savedScale.value * event.scale;
 
-      // Limit scale between 0.5x and 5x
-      if (newScale >= 0.5 && newScale <= 5) {
+      // Use shared values for scale limits (accessible on UI thread)
+      if (newScale >= minScale.value && newScale <= maxScale.value) {
         scale.value = newScale;
       }
     })
@@ -310,13 +334,11 @@ const ImageCropper = ({
     }
   }, [imageDimensions, cropWidth, cropHeight, onCropComplete, saveCropState]);
 
-  // Reset function
+  // Reset function - now uses the calculated initial scale
   const resetTransform = useCallback(() => {
     if (!imageDimensions.width || !imageDimensions.height) return;
 
-    const scaleX = cropWidth / imageDimensions.width;
-    const scaleY = cropHeight / imageDimensions.height;
-    const initialScale = Math.max(scaleX, scaleY);
+    const initialScale = calculateInitialScale();
 
     scale.value = withSpring(initialScale);
     savedScale.value = initialScale;
@@ -335,7 +357,15 @@ const ImageCropper = ({
         translateY: 0,
       },
     }));
-  }, [cropWidth, cropHeight, imageDimensions, fileId]);
+  }, [calculateInitialScale, fileId]);
+
+  // Update scale limits when image dimensions change
+  useEffect(() => {
+    if (imageDimensions.width && imageDimensions.height) {
+      const initialScale = calculateInitialScale();
+      minScale.value = initialScale;
+    }
+  }, [imageDimensions, calculateInitialScale, minScale]);
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -345,7 +375,7 @@ const ImageCropper = ({
         {/* Loading indicator */}
         {(isImageLoading || !isInitialized) && (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#e93c00" />
             <Text style={styles.loadingText}>
               {isImageLoading ? 'Loading image...' : 'Initializing...'}
             </Text>
@@ -469,7 +499,7 @@ const styles = {
     borderRadius: 8,
   },
   primaryButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#e93c00',
   },
   disabledButton: {
     backgroundColor: '#cccccc',
