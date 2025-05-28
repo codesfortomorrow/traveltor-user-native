@@ -34,11 +34,8 @@ const windowWidth = Dimensions.get('window').width;
 
 const FeedsContainer = ({
   item,
-  indexed,
   handleLike,
   handleDislike,
-  setIsLoading,
-  commentModal,
   setCommentModal,
   setPostId,
   setFeedUsername,
@@ -56,7 +53,6 @@ const FeedsContainer = ({
   const [reactionData, setReactionData] = useState([]);
   const [type, setType] = useState('');
   const [reactionLoader, setReactionLoader] = useState(false);
-  const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
   const slug = route.params?.slug;
   const [isShoutOut, setIsShoutOut] = useState(false);
@@ -121,12 +117,10 @@ const FeedsContainer = ({
     const tapGap = currentTime - lastTapRef.current;
 
     if (tapGap < 300 && tapGap > 0) {
-      setShowHeart(true);
       if (item?.reaction !== 'Like') {
         handleLike(item?.id, 'Like');
       }
       animateHeart();
-      setTimeout(() => setShowHeart(false), 800);
     }
 
     lastTapRef.current = currentTime;
@@ -143,45 +137,51 @@ const FeedsContainer = ({
 
     return (
       <View style={styles.swiperContainer}>
-        <TouchableWithoutFeedback
-          onPress={handleDoubleTap}
-          delayPressIn={0}
-          delayPressOut={0}
-          style={styles.touchableContainer}>
-          <View style={styles.scrollViewWrapper}>
-            <ScrollView
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              style={styles.scrollView}
-              contentContainerStyle={styles.scrollViewContent}
-              // Better performance props
-              removeClippedSubviews={false}
-              scrollEventThrottle={16}
-              decelerationRate="fast"
-              bounces={true}
-              // Improve touch responsiveness
-              directionalLockEnabled={true}
-              // Add scroll event handler
-              onScroll={handleScroll}>
-              {images?.map((image, index) => (
-                <View key={index} style={styles.scrollSlide}>
-                  <Image
-                    source={{
-                      uri: optimizeImageKitUrl(
-                        image,
-                        windowWidth,
-                        (windowWidth * 4) / 3,
-                        {quality: 100},
-                      ),
-                    }}
-                    style={styles.slideImage}
-                  />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableWithoutFeedback>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+          // Performance props
+          removeClippedSubviews={false}
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          bounces={false} // Changed from true to false for better control
+          // Touch responsiveness - CRITICAL FIXES
+          directionalLockEnabled={true}
+          alwaysBounceHorizontal={false}
+          keyboardShouldPersistTaps="handled"
+          // Additional props to fix touch issues
+          nestedScrollEnabled={true}
+          // Scroll event handler
+          onScroll={handleScroll}
+          scrollEnabled={true} // Explicitly enable scrolling
+        >
+          {images?.map((image, index) => (
+            <TouchableWithoutFeedback
+              key={index}
+              onPress={handleDoubleTap}
+              delayPressIn={0}
+              delayPressOut={0}>
+              <View style={styles.scrollSlide}>
+                <Image
+                  source={{
+                    uri: optimizeImageKitUrl(
+                      image,
+                      windowWidth,
+                      (windowWidth * 4) / 3,
+                      {quality: 100},
+                    ),
+                  }}
+                  style={styles.slideImage}
+                  // Add these props to prevent image from interfering with touch
+                  resizeMode="cover"
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          ))}
+        </ScrollView>
 
         {/* Custom Pagination Dots - positioned outside the touchable area */}
         {images?.length > 1 && (

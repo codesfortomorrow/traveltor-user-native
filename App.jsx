@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomePage from './app/containers/HomePage';
@@ -39,6 +39,8 @@ import {setupBackgroundTasks} from './app/utils/Setup';
 import TrailpointCheckIn from './app/containers/TrailpointCheckIn';
 import {initBackgroundTask} from './app/utils/BackgroundTaskService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+import NoInternet from './app/NoInternet';
 import {Buffer} from 'buffer';
 global.Buffer = Buffer;
 
@@ -70,10 +72,23 @@ const clearSessionKeys = async () => {
 };
 
 function App() {
+  const [isConnected, setIsConnected] = useState(true);
   const {isLoggedIn} = useContext(AuthContext);
   const dispatch = useDispatch();
   useForegroundNotification();
   useNotificationRedirect();
+
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected && state.isInternetReachable);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (!isConnected) {
+    return <NoInternet />;
+  }
 
   useEffect(() => {
     if (isLoggedIn) {

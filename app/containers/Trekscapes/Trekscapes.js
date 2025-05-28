@@ -431,7 +431,7 @@ const Trekscapes = () => {
                       <Text>✕</Text>
                     ) : (
                       <View style={{marginTop: -6, marginRight: -6}}>
-                        <Search name="search" size={30} color="#000" />
+                        <Search name="search" size={30} color="grey" />
                       </View>
                     )}
                   </TouchableOpacity>

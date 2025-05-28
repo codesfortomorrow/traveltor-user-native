@@ -630,10 +630,10 @@ const Constant = () => {
   };
 
   const optimizeImageKitUrl = (url, width, height, options = {}) => {
-    if (!url.includes('imagekit.io')) return url;
+    console.log({url, width, height, options});
+    if (!url?.includes('imagekit.io')) return url;
 
     const {quality, lowQuality} = options;
-    console.log({quality, lowQuality});
     let transformation = width ? `tr:w-${width},h-${height}` : `tr:h-${height}`;
 
     if (lowQuality) transformation += ',lo-true';

@@ -247,23 +247,6 @@ const MyFeeds = () => {
     }
   };
 
-  const checkInViews = async feedId => {
-    const res = await postAuthReq(`/check-ins/users/${feedId}/watch`);
-    if (res?.status) {
-      return;
-    } else {
-      console.log('failed to checkin views');
-    }
-  };
-
-  // Use React Native's IntersectionObserver alternative
-  const handleViewableItemsChanged = useRef(({viewableItems}) => {
-    viewableItems.forEach(viewableItem => {
-      const feedId = viewableItem.item.id;
-      checkInViews(Number(feedId));
-    });
-  }).current;
-
   const handleRefresh = async () => {
     setRefreshing(true);
     setIsPageRefresh(false);

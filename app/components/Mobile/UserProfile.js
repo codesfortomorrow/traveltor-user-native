@@ -24,7 +24,8 @@ import DeleteConfirmation from '../Modal/DeleteConfirmation';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
-  const [isLoading, setIsLoading] = useState(true);
+  const [feedLoading, setFeedLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(true);
   const [pageNumber, setPageNumber] = useState(0);
   const route = useRoute();
   const {userType, id} = route.params || {};
@@ -57,6 +58,7 @@ const UserProfile = () => {
 
   const fetchDetails = useCallback(
     async (id, userId) => {
+      setDetailLoading(true);
       try {
         const response = await getUserDetails(
           Number(id),
@@ -69,7 +71,7 @@ const UserProfile = () => {
       } catch (error) {
         console.log(error);
       } finally {
-        setIsLoading(false);
+        setDetailLoading(false);
       }
     },
     [id, user?.id],
@@ -163,7 +165,7 @@ const UserProfile = () => {
   const fetchFeeds = useCallback(
     async (id, userId, pageNumber) => {
       let response;
-      setLoading(true);
+      pageNumber ? setLoading(true) : setFeedLoading(true);
       try {
         response = await getUserFeeds(Number(id), Number(userId), pageNumber);
         if (response) {
@@ -174,9 +176,8 @@ const UserProfile = () => {
       } catch (error) {
         console.log(error);
       } finally {
-        if (response?.data?.data?.length == 0) {
-          setIsLoading(false);
-        }
+        setFeedLoading(false);
+        setLoading(false);
       }
     },
     [id, pageNumber, user?.id],
@@ -385,9 +386,9 @@ const UserProfile = () => {
             handleEndReached();
           }
         }}>
-        {isLoading ? renderSkeleton() : renderProfile()}
-        {isLoading && <FeedLoader />}
-        <View style={isLoading ? styles.hidden : styles.feedsContainer}>
+        {detailLoading ? renderSkeleton() : renderProfile()}
+        {feedLoading && <FeedLoader />}
+        <View style={feedLoading ? styles.hidden : styles.feedsContainer}>
           {feeds?.map((item, index) => (
             <FeedsContainer
               item={item}
@@ -396,8 +397,6 @@ const UserProfile = () => {
               handleDislike={() =>
                 handleReactionOnFeed(item?.id, index, 'Dislike')
               }
-              commentModal={commentModal}
-              setIsLoading={setIsLoading}
               setCommentModal={setCommentModal}
               setPostId={setPostId}
               setFeedUsername={setFeedUsername}

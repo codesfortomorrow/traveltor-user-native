@@ -206,6 +206,7 @@ const UpdateProfile = () => {
                       dial_code: item.dial_code,
                       name: item.name,
                     })}
+                    style={{fontSize: 14}}
                   />
                 ))}
               </Picker>
@@ -231,7 +232,12 @@ const UpdateProfile = () => {
                 style={styles.datePicker}
                 onValueChange={itemValue => handleDateChange('day', itemValue)}>
                 {generateDays().map(d => (
-                  <Picker.Item key={d} label={d} value={d} />
+                  <Picker.Item
+                    key={d}
+                    label={d}
+                    value={d}
+                    style={{fontSize: 14}}
+                  />
                 ))}
               </Picker>
             </View>
@@ -244,7 +250,12 @@ const UpdateProfile = () => {
                   handleDateChange('month', itemValue)
                 }>
                 {generateMonths().map(m => (
-                  <Picker.Item key={m} label={m} value={m} />
+                  <Picker.Item
+                    key={m}
+                    label={m}
+                    value={m}
+                    style={{fontSize: 14}}
+                  />
                 ))}
               </Picker>
             </View>
@@ -257,7 +268,12 @@ const UpdateProfile = () => {
                   handleDateChange('year', itemValue)
                 }>
                 {generateYears().map(y => (
-                  <Picker.Item key={y} label={y} value={y} />
+                  <Picker.Item
+                    key={y}
+                    label={y}
+                    value={y}
+                    style={{fontSize: 14}}
+                  />
                 ))}
               </Picker>
             </View>

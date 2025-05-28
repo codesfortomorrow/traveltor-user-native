@@ -51,10 +51,10 @@ const Setting = () => {
   const navigate = path => {
     if (path === '/notification') {
       navigation.navigate('Notification');
-    } else if (path.includes('/profile/')) {
+    } else if (path.includes('profile')) {
       navigation.navigate('Profile', {
-        userId: user?.id,
-        userType: user?.type.toLowerCase(),
+        id: user?.id,
+        userType: user?.type,
       });
     } else {
       const screenName = path.split('/').pop();
@@ -63,7 +63,10 @@ const Setting = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{paddingBottom: 20}}
+      showsVerticalScrollIndicator={false}>
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigate('/notification')}>
@@ -76,10 +79,7 @@ const Setting = () => {
       <View style={styles.profileSection}>
         <TouchableOpacity
           style={styles.profileImageContainer}
-          // onPress={() =>
-          //   navigate(`/${user?.type.toLowerCase()}/profile/${user?.id}`)
-          // }
-        >
+          onPress={() => navigate('profile')}>
           <Image
             source={
               user?.profileImage
