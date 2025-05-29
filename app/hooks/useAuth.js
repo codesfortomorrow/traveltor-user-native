@@ -58,6 +58,7 @@ const useAuth = () => {
           console.log('Error deleting FCM token:', tokenError);
         }
         setIsLoggedIn(false);
+        navigate('Home');
         AsyncStorage.clear();
         dispatch(clearToken());
         //   dispatch(cleanup());

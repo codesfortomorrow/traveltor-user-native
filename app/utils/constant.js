@@ -629,11 +629,21 @@ const Constant = () => {
     }
   };
 
-  const optimizeImageKitUrl = (url, width, height, options = {}) => {
+  const optimizeImageKitUrl = (
+    url,
+    width,
+    height,
+    options = {quality: 100},
+  ) => {
     if (!url?.includes('imagekit.io')) return url;
 
     const {quality, lowQuality} = options;
-    let transformation = width ? `tr:w-${width},h-${height}` : `tr:h-${height}`;
+    let transformation =
+      !width && height
+        ? `tr:h-${height}`
+        : !height && width
+        ? `tr:w-${width}`
+        : `tr:w-${width},h-${height}`;
 
     if (lowQuality) transformation += ',lo-true';
     if (quality) transformation += `,q-${quality}`;

@@ -12,6 +12,7 @@ import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitemarker.svg';
+import Constant from '../../utils/constant';
 
 const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
   const navigation = useNavigation();
@@ -19,6 +20,7 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
   const {slug} = route.params;
   const flatListRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const {optimizeImageKitUrl} = Constant();
 
   const {width} = Dimensions.get('window');
   const ITEM_WIDTH = width * 0.6;
@@ -54,7 +56,12 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
       <TouchableOpacity
         style={styles.slideContent}
         onPress={() => navigation.navigate('CheckIns', {slug: slug})}>
-        <Image source={{uri: item?.media[0]}} style={styles.slideImage} />
+        <Image
+          source={{
+            uri: optimizeImageKitUrl(item?.media[0], 250, 350),
+          }}
+          style={styles.slideImage}
+        />
         <LinearGradient
           colors={['rgba(105, 93, 89, 0.8)', '#B93204']}
           start={{x: 0.035, y: 0}}
@@ -75,7 +82,11 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
                 source={
                   item?.user?.profileImage
                     ? {
-                        uri: item?.user?.profileImage,
+                        uri: optimizeImageKitUrl(
+                          item?.user?.profileImage,
+                          150,
+                          150,
+                        ),
                       }
                     : require('../../../public/images/dpPlaceholder.png')
                 }
@@ -107,7 +118,10 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
     <View
       style={[styles.slide, {width: ITEM_WIDTH, marginRight: ITEM_SPACING}]}>
       <View style={styles.slideContent}>
-        <Image source={{uri: item}} style={styles.slideImage} />
+        <Image
+          source={{uri: optimizeImageKitUrl(item, 250, 350)}}
+          style={styles.slideImage}
+        />
       </View>
     </View>
   );
@@ -201,6 +215,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 350,
     borderRadius: 14,
+    resizeMode: 'cover',
   },
   bottomInfoContainer: {
     position: 'absolute',

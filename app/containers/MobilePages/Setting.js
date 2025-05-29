@@ -15,14 +15,15 @@ import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
 import Constant from '../../utils/constant';
 import {setSuccess} from '../../redux/Slices/successPopup';
 import {setError} from '../../redux/Slices/errorPopup';
+import NotificationWithBadge from '../../components/Comment/NotificationWithBadge';
 
 const Setting = () => {
   const user = useSelector(state => state.user);
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const {logout} = useAuth();
-  const {profileLinks} = Constant();
-  const badgeCount = 0; // Placeholder for badge count
+  const {profileLinks, optimizeImageKitUrl} = Constant();
+  const {badgeCount} = useSelector(state => state.badge);
 
   const handleLogout = async () => {
     try {
@@ -33,10 +34,9 @@ const Setting = () => {
           setSuccess({
             open: true,
             custom_message:
-              ' logged out but we are waiting for you to start sharing your journey again.',
+              'logged out but we are waiting for you to start sharing your journey again.',
           }),
         );
-        navigation.navigate('Home');
       }
     } catch (error) {
       dispatch(
@@ -70,10 +70,7 @@ const Setting = () => {
       <View style={styles.headerContainer}>
         <Text style={styles.headerTitle}>Settings</Text>
         <TouchableOpacity onPress={() => navigate('/notification')}>
-          {/* <Badge visible={badgeCount > 0} size={20} style={styles.badge}>
-            {badgeCount > 99 ? '99+' : badgeCount}
-          </Badge> */}
-          <Notification name="bell-ring-outline" size={28} color="#000" />
+          <NotificationWithBadge badgeCount={Math.min(badgeCount, 999)} />
         </TouchableOpacity>
       </View>
       <View style={styles.profileSection}>
@@ -83,7 +80,7 @@ const Setting = () => {
           <Image
             source={
               user?.profileImage
-                ? {uri: `${user?.profileImage}?tr=w-200,h-200,q-100`}
+                ? {uri: optimizeImageKitUrl(user?.profileImage, 150, 150)}
                 : require('../../../public/images/dpPlaceholder.png')
             }
             style={styles.profileImage}

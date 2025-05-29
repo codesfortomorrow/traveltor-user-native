@@ -278,7 +278,6 @@ const UserProfile = () => {
                       trailblazer.profileImage,
                       200,
                       200,
-                      {quality: 100},
                     )}`,
                   }
                 : require('../../../public/images/dpPlaceholder.png')
@@ -364,7 +363,6 @@ const UserProfile = () => {
                               item.previewMedia[0],
                               200,
                               200,
-                              {quality: 100},
                             )}`,
                           }
                         : require('../../../public/images/au1.png')

@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import {useDispatch} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,6 +8,7 @@ import {setError} from '../../redux/Slices/errorPopup';
 import {isLoggedIn} from '../../utils/tokenStorage';
 import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
 import Filter from 'react-native-vector-icons/AntDesign';
+import NotificationWithBadge from '../Comment/NotificationWithBadge';
 
 const Backheading = ({
   heading,
@@ -24,7 +25,7 @@ const Backheading = ({
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
-  //   const { badgeCount } = useSelector((state) => state.badgeSlice);
+  const {badgeCount} = useSelector(state => state.badge);
 
   const renderSkeleton = (width, height) => {
     return <View style={[styles.skeleton, {width, height}]} />;
@@ -40,7 +41,7 @@ const Backheading = ({
           renderSkeleton(150, 30)
         ) : (
           <Text
-            style={styles.headingText}
+            style={[styles.headingText, {maxWidth: CheckInPoint ? 200 : 260}]}
             numberOfLines={1}
             ellipsizeMode="tail">
             {heading}
@@ -79,10 +80,10 @@ const Backheading = ({
             <TouchableOpacity
               style={styles.notificationIcon}
               onPress={() => navigation.navigate('Notification')}>
-              {/* <Badge count={0} style={styles.badge}>
-                <NotificationsActiveIcon size={30} />
-              </Badge> */}
-              <Notification name="bell-ring-outline" size={26} color="black" />
+              <NotificationWithBadge
+                badgeCount={Math.min(badgeCount, 999)}
+                size={26}
+              />
             </TouchableOpacity>
           )}
         </View>
@@ -91,12 +92,10 @@ const Backheading = ({
       {setting && route.name === 'Profile' && (
         <View style={styles.settingsContainer}>
           <TouchableOpacity onPress={() => navigation.navigate('Notification')}>
-            {/* <Badge
-              count={0}
-              style={styles.badge}>
-              <NotificationsActiveIcon size={30} />
-            </Badge> */}
-            <Notification name="bell-ring-outline" size={28} color="black" />
+            <NotificationWithBadge
+              badgeCount={Math.min(badgeCount, 999)}
+              size={28}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate('Setting')}>
@@ -163,8 +162,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter',
     fontSize: 18,
     textTransform: 'capitalize',
-    maxWidth: 290,
     overflow: 'hidden',
+    flexShrink: 1,
   },
   filterButton: {
     padding: 8,
@@ -227,6 +226,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexShrink: 0,
   },
   checkInCount: {
     fontFamily: 'Jakarta',

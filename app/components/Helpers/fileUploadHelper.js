@@ -1,13 +1,12 @@
 import {setLocation} from '../../redux/Slices/geoLocation';
 import {RESULTS} from 'react-native-permissions';
 import {PermissionsAndroid, Platform} from 'react-native';
-import ImageResizer from 'react-native-image-resizer';
 import {Image} from 'react-native';
+
+import ImageEditor from '@react-native-community/image-editor';
 
 export const convertToThreeFourRatioRN = async file => {
   return new Promise((resolve, reject) => {
-    const uri = file.uri.replace('file://', '');
-
     Image.getSize(
       file.uri,
       async (width, height) => {
@@ -24,31 +23,22 @@ export const convertToThreeFourRatioRN = async file => {
           const offsetX = (width - cropWidth) / 2;
           const offsetY = (height - cropHeight) / 2;
 
-          // Crop and resize using ImageResizer
-          const result = await ImageResizer.createResizedImage(
-            file.uri,
-            cropWidth,
-            cropHeight,
-            'JPEG',
-            80,
-            0,
-            undefined,
-            false,
-            {
-              mode: 'cover',
-              onlyScaleDown: false,
-              offset: {x: offsetX, y: offsetY},
-              size: {width: cropWidth, height: cropHeight},
-            },
-          );
+          const cropData = {
+            offset: {x: offsetX, y: offsetY},
+            size: {width: cropWidth, height: cropHeight},
+            displaySize: {width: cropWidth, height: cropHeight},
+            resizeMode: 'contain',
+          };
+
+          const croppedUri = await ImageEditor.cropImage(file.uri, cropData);
 
           resolve({
-            uri: result.uri,
+            uri: croppedUri?.uri,
             name: `cropped_${file.name || Date.now()}.jpg`,
             type: 'image/jpeg',
           });
         } catch (error) {
-          console.error('Image crop error:', error);
+          console.error('Crop error:', error);
           reject(error);
         }
       },

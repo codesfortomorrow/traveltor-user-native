@@ -77,16 +77,21 @@ const TrailpointCheckIn = () => {
       };
 
       const threeFourFiles = await Promise.all(
-        selectedFiles.map(async f => {
-          try {
-            const converted = await convertToThreeFourRatioRN(f.file);
-            return converted;
-          } catch (e) {
-            console.warn(
-              'Failed to convert ratio, using original:',
-              f.file.name,
-            );
-            return f.file;
+        selectedFiles.map(async file => {
+          const croppedImage = croppedImages[file.id];
+          if (croppedImage) {
+            return {uri: croppedImage};
+          } else {
+            try {
+              const converted = await convertToThreeFourRatioRN(file.file);
+              return converted;
+            } catch (e) {
+              console.warn(
+                'Failed to convert ratio, using original:',
+                file.file.name,
+              );
+              return file.file;
+            }
           }
         }),
       );

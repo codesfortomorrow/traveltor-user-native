@@ -6,12 +6,14 @@ import Toast from 'react-native-toast-message';
 import useAuth from '../../hooks/useAuth';
 import {AuthContext} from '../../context/AuthContext';
 import {getUser} from '../../redux/Slices/userSlice';
+import Constant from '../../utils/constant';
 
 const UploadProfile = () => {
   const user = useSelector(state => state?.user);
   const {uploadImage, uploadProfile} = useAuth();
   const dispatch = useDispatch();
   const {isLoggedIn} = useContext(AuthContext);
+  const {optimizeImageKitUrl} = Constant();
 
   const handlePickImage = async () => {
     const options = {
@@ -73,7 +75,7 @@ const UploadProfile = () => {
         <Image
           source={
             user?.profileImage
-              ? {uri: user?.profileImage}
+              ? {uri: optimizeImageKitUrl(user?.profileImage, 150, 150)}
               : require('../../../public/images/profile.png')
           }
           style={styles.profileImage}

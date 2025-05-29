@@ -99,7 +99,7 @@ export const getAuthReq = async url => {
       withCredentials: true,
     })
     .then(response => {
-      return responseFormatter(true, response.data, null);
+      return responseFormatter(true, response?.data, null);
     })
     .catch(e => {
       if (e?.response?.status === 401) {

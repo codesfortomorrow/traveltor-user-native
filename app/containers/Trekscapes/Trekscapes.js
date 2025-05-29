@@ -23,6 +23,7 @@ import DoubleRight from 'react-native-vector-icons/AntDesign';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import Search from 'react-native-vector-icons/EvilIcons';
 import TrekscapeTopBar from './TrekscapeTopBar';
+import Constant from '../../utils/constant';
 
 const Trekscapes = () => {
   const {navigate} = useNavigation();
@@ -48,6 +49,7 @@ const Trekscapes = () => {
   const [haslive, setHasLive] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingRef = useRef(false);
+  const {optimizeImageKitUrl} = Constant();
 
   useEffect(() => {
     const loadCategoryId = async () => {
@@ -334,7 +336,9 @@ const Trekscapes = () => {
               onPress={() => navigate('TrekscapeDetail', {slug})}>
               <View style={styles.swiperSlide}>
                 <Image
-                  source={{uri: image}}
+                  source={{
+                    uri: optimizeImageKitUrl(image, 300, 300, {quality: 100}),
+                  }}
                   style={styles.swiperImage}
                   resizeMode="cover"
                 />
@@ -659,7 +663,14 @@ const Trekscapes = () => {
                           return (
                             <View key={reviewIndex} style={styles.reviewSlide}>
                               <Image
-                                source={{uri: review.media[0]}}
+                                source={{
+                                  uri: optimizeImageKitUrl(
+                                    review.media[0],
+                                    300,
+                                    300,
+                                    {quality: 100},
+                                  ),
+                                }}
                                 style={styles.reviewImage}
                               />
                               <View style={styles.reviewOverlay}>
@@ -679,7 +690,12 @@ const Trekscapes = () => {
                                     source={
                                       review?.user?.profileImage
                                         ? {
-                                            uri: review?.user?.profileImage,
+                                            uri: optimizeImageKitUrl(
+                                              review?.user?.profileImage,
+                                              200,
+                                              200,
+                                              {quality: 100},
+                                            ),
                                           }
                                         : require('../../../public/images/dpPlaceholder.png')
                                     }
@@ -726,7 +742,11 @@ const Trekscapes = () => {
                         {event?.previewMedia?.map((image, imageIndex) => (
                           <View key={imageIndex} style={styles.previewSlide}>
                             <Image
-                              source={{uri: image}}
+                              source={{
+                                uri: optimizeImageKitUrl(image, 300, 300, {
+                                  quality: 100,
+                                }),
+                              }}
                               style={styles.previewImage}
                             />
                           </View>

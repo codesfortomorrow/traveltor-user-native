@@ -9,12 +9,14 @@ import {
 } from 'react-native';
 import useAuth from '../hooks/useAuth';
 import {useNavigation} from '@react-navigation/native';
+import Constant from '../utils/constant';
 
 const TrekScapes = () => {
   const [trekScape, setTrekScape] = useState([]);
   const {getTrekscape} = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const {navigate} = useNavigation();
+  const {optimizeImageKitUrl} = Constant();
 
   const fetchTreckScape = useCallback(async () => {
     try {
@@ -77,7 +79,13 @@ const TrekScapes = () => {
                     <Image
                       source={
                         item.previewMedia[0]
-                          ? {uri: item.previewMedia[0]}
+                          ? {
+                              uri: optimizeImageKitUrl(
+                                item.previewMedia[0],
+                                300,
+                                300,
+                              ),
+                            }
                           : require('../../public/images/man.jpg')
                       }
                       style={styles.image}
@@ -135,7 +143,7 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingBottom: 10,
+    paddingBottom: 30,
     alignItems: 'center',
   },
   searchInput: {
@@ -173,7 +181,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   imagePlaceholder: {
-    height: 180,
+    height: 230,
     width: '90%',
     backgroundColor: '#ccc',
     borderRadius: 20,

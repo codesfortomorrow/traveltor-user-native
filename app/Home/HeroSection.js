@@ -143,12 +143,14 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+    zIndex: -2,
   },
   searchContainer: {
     width: '80%',
     alignSelf: 'center',
     position: 'relative',
     marginTop: 20,
+    zIndex: -1,
   },
   searchInput: {
     width: '100%',

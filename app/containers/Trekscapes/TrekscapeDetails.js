@@ -10,13 +10,14 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Share as NativeShare,
+  Dimensions,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
-import SkeletonPlaceholder from 'react-native-skeleton-placeholder';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import TrekscapeHeader from './TrekscapeHeader';
+import TrekscapeDetailsSkeleton from './TrekscapeDetailsSkeleton'; // Import the skeleton component
 import Share from '../../../public/images/mobtrekscape/share.svg';
 import Location from '../../../public/images/mobtrekscape/location.svg';
 import Man from '../../../public/images/mobtrekscape/man.svg';
@@ -28,6 +29,9 @@ import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
 import Login from '../../components/Modal/Login';
 import Signup from '../../components/Signup';
 import {setError} from '../../redux/Slices/errorPopup';
+import Constant from '../../utils/constant';
+
+const windowWidth = Dimensions.get('window').width;
 
 const TrekscapeDetails = () => {
   const user = useSelector(state => state?.user);
@@ -35,18 +39,19 @@ const TrekscapeDetails = () => {
   const route = useRoute();
   const isLogin = isLoggedIn();
   const {slug} = route.params || {};
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Changed to true initially
   const {getSingleTrekscapeData, followOnTrekscape} = useAuth();
   const [treckScapeDetails, setTreckScapeDetails] = useState([]);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isEvent, setIsEvent] = useState(false);
   const [isFollowDisable, setIsFollowDisable] = useState(false);
+  const {optimizeImageKitUrl} = Constant();
   const dispatch = useDispatch();
 
   const fetchTreckScapeDetail = useCallback(async () => {
     try {
-      // setLoading(true);
+      setLoading(true);
       const response = await getSingleTrekscapeData(slug, user?.id);
       if (response) {
         setTreckScapeDetails(response);
@@ -212,303 +217,207 @@ const TrekscapeDetails = () => {
     }
   };
 
+  // Show skeleton loading when data is loading
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <TrekscapeHeader />
+        <TrekscapeDetailsSkeleton />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <TrekscapeHeader />
       <View style={styles.mainContainer}>
         <View style={styles.relative}>
-          {loading ? (
-            <SkeletonPlaceholder>
-              <SkeletonPlaceholder.Item width={393} height={225} />
-            </SkeletonPlaceholder>
-          ) : (
-            <Image
-              source={{
-                uri:
-                  treckScapeDetails?.previewMedia &&
+          <Image
+            source={{
+              uri:
+                treckScapeDetails?.previewMedia &&
+                optimizeImageKitUrl(
                   treckScapeDetails?.previewMedia[0],
-              }}
-              style={styles.coverImage}
-            />
-          )}
+                  windowWidth,
+                  0,
+                  {quality: 100},
+                ),
+            }}
+            style={styles.coverImage}
+          />
           <View style={styles.detailsBox}>
-            {loading ? (
-              <>
-                <View style={styles.headerRow}>
-                  <SkeletonPlaceholder>
-                    <SkeletonPlaceholder.Item height={18} width={60} />
-                  </SkeletonPlaceholder>
-                  <View style={styles.actionButtons}>
-                    <SkeletonPlaceholder>
-                      <SkeletonPlaceholder.Item
-                        height={32}
-                        width={61}
-                        borderRadius={8}
-                      />
-                    </SkeletonPlaceholder>
-                    <SkeletonPlaceholder>
-                      <SkeletonPlaceholder.Item
-                        height={32}
-                        width={32}
-                        borderRadius={8}
-                      />
-                    </SkeletonPlaceholder>
+            <View style={styles.headerRow}>
+              <Text style={styles.titleText}>{treckScapeDetails?.name}</Text>
+              <View style={styles.actionButtons}>
+                <TouchableWithoutFeedback
+                  disabled={isFollowDisable}
+                  onPress={() => {
+                    if (isLogin) {
+                      handleFollowUnFollow(treckScapeDetails?.id);
+                    } else {
+                      setIsLoginOpen(true);
+                    }
+                  }}>
+                  <View style={styles.followButton}>
+                    {isFollowDisable ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : !isLoggedIn() ? (
+                      <Text style={styles.followButtonText}>Follow</Text>
+                    ) : treckScapeDetails?.isFollowed === false ? (
+                      <Text style={styles.followButtonText}>Follow</Text>
+                    ) : (
+                      <Text style={styles.followButtonText}>Unfollow</Text>
+                    )}
                   </View>
-                </View>
-                <View style={styles.statsRow}>
-                  <SkeletonPlaceholder>
-                    <SkeletonPlaceholder.Item width={100} height={20} />
-                  </SkeletonPlaceholder>
-                  <SkeletonPlaceholder>
-                    <SkeletonPlaceholder.Item width={100} height={20} />
-                  </SkeletonPlaceholder>
-                  <SkeletonPlaceholder>
-                    <SkeletonPlaceholder.Item width={70} height={20} />
-                  </SkeletonPlaceholder>
-                </View>
-              </>
-            ) : (
-              <>
-                <View style={styles.headerRow}>
-                  <Text style={styles.titleText}>
-                    {treckScapeDetails?.name}
-                  </Text>
-                  <View style={styles.actionButtons}>
-                    <TouchableWithoutFeedback
-                      disabled={isFollowDisable}
-                      onPress={() => {
-                        if (isLogin) {
-                          handleFollowUnFollow(treckScapeDetails?.id);
-                        } else {
-                          setIsLoginOpen(true);
-                        }
-                      }}>
-                      <View style={styles.followButton}>
-                        {isFollowDisable ? (
-                          <ActivityIndicator size="small" color="#fff" />
-                        ) : !isLoggedIn() ? (
-                          <Text style={styles.followButtonText}>Follow</Text>
-                        ) : treckScapeDetails?.isFollowed === false ? (
-                          <Text style={styles.followButtonText}>Follow</Text>
-                        ) : (
-                          <Text style={styles.followButtonText}>Unfollow</Text>
-                        )}
-                      </View>
-                    </TouchableWithoutFeedback>
-                    <TouchableOpacity onPress={onShare}>
-                      <Share width={20} height={20} />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Location width={15} height={15} />
-                    <Text style={styles.statText}>
-                      {treckScapeDetails?.totalTrailPoints || 0} Trail Point
-                    </Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Man width={15} height={15} />
-                    <Text style={styles.statText}>
-                      {treckScapeDetails?.treksters || '0'} Treksters
-                    </Text>
-                  </View>
-                  <View style={styles.statItem}>
-                    <Award width={15} height={15} />
-                    <Text style={styles.statText}>
-                      {treckScapeDetails?.level?.name}
-                    </Text>
-                  </View>
-                </View>
-              </>
-            )}
+                </TouchableWithoutFeedback>
+                <TouchableOpacity onPress={onShare}>
+                  <Share width={20} height={20} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Location width={15} height={15} />
+                <Text style={styles.statText}>
+                  {treckScapeDetails?.totalTrailPoints || 0} Trail Point
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Man width={15} height={15} />
+                <Text style={styles.statText}>
+                  {treckScapeDetails?.treksters || '0'} Treksters
+                </Text>
+              </View>
+              <View style={styles.statItem}>
+                <Award width={15} height={15} />
+                <Text style={styles.statText}>
+                  {treckScapeDetails?.level?.name}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
         <ScrollView
           style={styles.trailPointsContainer}
           showsVerticalScrollIndicator={false}>
-          {loading ? (
-            <>
-              {Array.from({length: 4}).map((_, index) => (
-                <View key={index} style={styles.trailPointCard}>
+          {treckScapeDetails?.trailPoints?.length > 0 &&
+            treckScapeDetails?.trailPoints?.map((item, index) => (
+              <View key={index} style={styles.trailPointCard}>
+                <TouchableOpacity onPress={() => handleTrailPoint(item)}>
+                  <Image
+                    style={styles.trailPointImage}
+                    source={{
+                      uri:
+                        item?.previewMedia &&
+                        optimizeImageKitUrl(item?.previewMedia[0], 90, 94, {
+                          quality: 100,
+                        }),
+                    }}
+                  />
+                </TouchableOpacity>
+                <View style={styles.trailPointContent}>
                   <View>
-                    <SkeletonPlaceholder>
-                      <SkeletonPlaceholder.Item
-                        width={90}
-                        height={94}
-                        borderRadius={10}
-                      />
-                    </SkeletonPlaceholder>
-                  </View>
-                  <View style={styles.trailPointContent}>
-                    <View>
-                      <SkeletonPlaceholder>
-                        <SkeletonPlaceholder.Item
-                          width={100}
-                          height={20}
-                          marginBottom={12}
-                        />
-                      </SkeletonPlaceholder>
-                      <View style={[styles.statItem, styles.mb12]}>
-                        <SkeletonPlaceholder>
-                          <SkeletonPlaceholder.Item width={20} height={20} />
-                        </SkeletonPlaceholder>
-                        <SkeletonPlaceholder>
-                          <SkeletonPlaceholder.Item width={80} height={15} />
-                        </SkeletonPlaceholder>
-                      </View>
-                      <View style={[styles.statItem, styles.mb12]}>
-                        <SkeletonPlaceholder>
-                          <SkeletonPlaceholder.Item width={20} height={20} />
-                        </SkeletonPlaceholder>
-                        <SkeletonPlaceholder>
-                          <SkeletonPlaceholder.Item width={80} height={15} />
-                        </SkeletonPlaceholder>
-                      </View>
-                    </View>
-                    <View style={styles.actionContainer}>
-                      <SkeletonPlaceholder>
-                        <SkeletonPlaceholder.Item
-                          width={28}
-                          height={28}
-                          borderRadius={8}
-                        />
-                      </SkeletonPlaceholder>
-                      <SkeletonPlaceholder>
-                        <SkeletonPlaceholder.Item width={50} height={10} />
-                      </SkeletonPlaceholder>
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </>
-          ) : (
-            <>
-              {treckScapeDetails?.trailPoints?.length > 0 &&
-                treckScapeDetails?.trailPoints?.map((item, index) => (
-                  <View key={index} style={styles.trailPointCard}>
                     <TouchableOpacity onPress={() => handleTrailPoint(item)}>
-                      <Image
-                        style={styles.trailPointImage}
-                        source={{
-                          uri: item?.previewMedia && item?.previewMedia[0],
-                        }}
-                      />
+                      <Text style={styles.trailPointTitle}>{item?.name}</Text>
                     </TouchableOpacity>
-                    <View style={styles.trailPointContent}>
-                      <View>
-                        <TouchableOpacity
-                          onPress={() =>
-                            navigation.navigate('TrailPoint', {
-                              slug: item?.slug,
-                              state: item?.previewMedia,
-                            })
-                          }>
-                          <Text style={styles.trailPointTitle}>
-                            {item?.name}
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[styles.statItem, styles.mb12]}
-                          onPress={() => handleRedirect(item)}>
-                          <Marker width={20} height={20} />
-                          <Text style={styles.linkText}>See on Map</Text>
-                        </TouchableOpacity>
-                        {isEvent ? (
-                          <TouchableOpacity
-                            style={[styles.statItem, styles.mb12]}>
-                            <Man width={20} height={20} />
-                            <Text style={styles.linkText}>
-                              {isCurrentTimeInRange(
-                                item?.trailPointMeta?.startTime,
-                                item?.trailPointMeta?.endTime,
-                              )
-                                ? `LIVE | ${item?.reviews || 0} Attending`
-                                : notLiveTimeRange(
-                                    item?.trailPointMeta?.startTime,
-                                    item?.trailPointMeta?.endTime,
-                                  )}
-                            </Text>
-                          </TouchableOpacity>
-                        ) : (
-                          <TouchableOpacity
-                            style={[styles.statItem, styles.mb12]}
-                            onPress={() =>
-                              navigation.navigate('TrailpointReview', {
-                                slug: item?.slug,
-                              })
-                            }>
-                            <Man width={20} height={20} />
-                            <Text style={styles.linkText}>
-                              {item?.reviews || '0'} Reviews
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                      {isEvent ? (
-                        <>
-                          {!isCurrentTimeInRange(
+                    <TouchableOpacity
+                      style={[styles.statItem, styles.mb12]}
+                      onPress={() => handleRedirect(item)}>
+                      <Marker width={20} height={20} />
+                      <Text style={styles.linkText}>See on Map</Text>
+                    </TouchableOpacity>
+                    {isEvent ? (
+                      <TouchableOpacity style={[styles.statItem, styles.mb12]}>
+                        <Man width={20} height={20} />
+                        <Text style={styles.linkText}>
+                          {isCurrentTimeInRange(
                             item?.trailPointMeta?.startTime,
                             item?.trailPointMeta?.endTime,
-                          ) ? (
-                            <View style={styles.actionContainer}>
-                              <TouchableOpacity
-                                onPress={() => handleInterested(item?.id)}>
-                                {item?.isInterested ? (
-                                  <IsInterested width={28} height={28} />
-                                ) : (
-                                  <EventJoin width={28} height={28} />
-                                )}
-                              </TouchableOpacity>
-                              <Text style={styles.actionText}>
-                                Tap to Join the event
-                              </Text>
-                            </View>
-                          ) : (
-                            <TouchableOpacity
-                              style={styles.actionContainer}
-                              onPress={() => {
-                                if (isLogin) {
-                                  navigation.navigate('CreateCheckin', {
-                                    slug: item?.slug,
-                                    ...item,
-                                  });
-                                } else {
-                                  setIsLoginOpen(true);
-                                }
-                              }}>
-                              <CheckIn width={28} height={28} />
-                              <Text style={styles.actionText}>
-                                {formatTimeRange(
-                                  item?.trailPointMeta?.startTime,
-                                  item?.trailPointMeta?.endTime,
-                                )}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </>
+                          )
+                            ? `LIVE | ${item?.reviews || 0} Attending`
+                            : notLiveTimeRange(
+                                item?.trailPointMeta?.startTime,
+                                item?.trailPointMeta?.endTime,
+                              )}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={[styles.statItem, styles.mb12]}
+                        onPress={() =>
+                          navigation.navigate('TrailpointReview', {
+                            slug: item?.slug,
+                          })
+                        }>
+                        <Man width={20} height={20} />
+                        <Text style={styles.linkText}>
+                          {item?.reviews || '0'} Reviews
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  {isEvent ? (
+                    <>
+                      {!isCurrentTimeInRange(
+                        item?.trailPointMeta?.startTime,
+                        item?.trailPointMeta?.endTime,
+                      ) ? (
+                        <View style={styles.actionContainer}>
+                          <TouchableOpacity
+                            onPress={() => handleInterested(item?.id)}>
+                            {item?.isInterested ? (
+                              <IsInterested width={28} height={28} />
+                            ) : (
+                              <EventJoin width={28} height={28} />
+                            )}
+                          </TouchableOpacity>
+                          <Text style={styles.actionText}>
+                            Tap to Join the event
+                          </Text>
+                        </View>
                       ) : (
                         <TouchableOpacity
                           style={styles.actionContainer}
                           onPress={() => {
                             if (isLogin) {
                               navigation.navigate('TrailpointCheckIn', {
-                                id: item?.slug,
-                                trailpointId: item?.id,
+                                trailpointId: item?.slug,
+                                id: item?.id,
                               });
                             } else {
                               setIsLoginOpen(true);
                             }
                           }}>
                           <CheckIn width={28} height={28} />
-                          <Text style={styles.actionText}>Tap to Check In</Text>
+                          <Text style={styles.actionText}>
+                            {formatTimeRange(
+                              item?.trailPointMeta?.startTime,
+                              item?.trailPointMeta?.endTime,
+                            )}
+                          </Text>
                         </TouchableOpacity>
                       )}
-                    </View>
-                  </View>
-                ))}
-            </>
-          )}
+                    </>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.actionContainer}
+                      onPress={() => {
+                        if (isLogin) {
+                          navigation.navigate('TrailpointCheckIn', {
+                            id: item?.slug,
+                            trailpointId: item?.id,
+                          });
+                        } else {
+                          setIsLoginOpen(true);
+                        }
+                      }}>
+                      <CheckIn width={28} height={28} />
+                      <Text style={styles.actionText}>Tap to Check In</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            ))}
         </ScrollView>
       </View>
       {isLoginOpen && (
@@ -579,6 +488,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     fontFamily: 'Jakarta',
+    width: '70%',
   },
   actionButtons: {
     flexDirection: 'row',
@@ -605,6 +515,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 4,
   },
   statItem: {
     flexDirection: 'row',
@@ -651,6 +562,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   trailPointContent: {
+    position: 'relative',
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -671,6 +583,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   actionContainer: {
+    position: 'absolute',
+    right: 0,
+    top: '30%',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

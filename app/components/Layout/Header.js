@@ -1,90 +1,27 @@
 import React, {useContext, useEffect, useState} from 'react';
-// import {getAuthReq, isLoggedIn} from '@/utils/apiHandlers';
-// import useAuth from '@/hooks/useAuth';
-// import {cleanSuccess, setSuccess} from '@/redux/actions';
-// import {useDispatch} from 'react-redux';
-// import ReactionCounter from '../ReactionCounter';
-// import InstallPWA from '@/utils/InstallPWA';
-// import {setBadge} from '@/redux/slices/badgeCount';
-import {TouchableOpacity, Image, StyleSheet, View} from 'react-native';
-import {useNavigation, useRoute} from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useDispatch, useSelector} from 'react-redux';
+import {TouchableOpacity, Image, StyleSheet, View, Text} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {useDispatch} from 'react-redux';
 import {AuthContext} from '../../context/AuthContext';
 import {getUser} from '../../redux/Slices/userSlice';
+import ReactionCounter from '../Modal/ReactionCounter';
+import {getAuthReq} from '../../utils/apiHandlers';
+import {setBadge} from '../../redux/Slices/badgeCount';
+import NotificationWithBadge from '../Comment/NotificationWithBadge';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const Header = ({handleSignUp, handleSignIn}) => {
-  // const isLogin = isLoggedIn();
+const Header = () => {
   const {navigate} = useNavigation();
-  // const {logout} = useAuth();
   const dispatch = useDispatch();
-  const route = useRoute();
   const [data, setData] = useState({});
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(true);
   const [animateIn, setAnimateIn] = useState(false);
   const [animateOut, setAnimateOut] = useState(false);
-  const user = useSelector(state => state.user);
   const {isLoggedIn} = useContext(AuthContext);
 
   useEffect(() => {
     dispatch(getUser(isLoggedIn));
   }, [isLoggedIn]);
-
-  const hiddenPaths = [
-    '/profile',
-    '/create-checkin',
-    '/create-general-checkin',
-    '/trailpoint',
-    '/mobile',
-    '/referral',
-    '/edit-profile',
-    '/wallet',
-    '/trekscapes',
-    '/trekscape',
-    '/notification',
-    '/schedule-post',
-    '/trailpoint',
-    '/details',
-  ];
-  const isHiddenPath = path => {
-    return hiddenPaths.some(hiddenPath => {
-      const regex = new RegExp(`^${hiddenPath.replace(':search', '.*')}$`);
-      return (
-        regex.test(path) ||
-        path.startsWith('/trekscapes') ||
-        path.startsWith('/trekscape') ||
-        path.startsWith('/trekscape-feed') ||
-        path.startsWith('/trailpoint') ||
-        path.startsWith('/details') ||
-        path.startsWith('/create-checkin') ||
-        path.startsWith('/create-general-checkin')
-      );
-    });
-  };
-
-  const handleLogout = async () => {
-    try {
-      const response = await logout();
-      if (response) {
-        dispatch(cleanSuccess());
-        dispatch(
-          setSuccess({
-            open: true,
-            custom_message:
-              ' logged out but we are waiting for you to start sharing your journey again.',
-          }),
-        );
-        navigate('/');
-      }
-    } catch (error) {
-      toast.error('Error', error);
-    }
-  };
-
-  //   if (isHiddenPath(route.name)) {
-  //     return null;
-  //   }
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -114,30 +51,18 @@ const Header = ({handleSignUp, handleSignIn}) => {
       }
     };
 
-    // fetchCounts();
-  }, [data?.mustGo, data?.comment, data?.newFollower]);
-
-  useEffect(() => {
-    // AsyncStorage.removeItem('cropData');
-    // AsyncStorage.removeItem('croppedImages');
-    AsyncStorage.getAllKeys().then(keys => {
-      AsyncStorage.multiGet(keys).then(result => {
-        console.log('Stored items:', result);
-      });
-    });
+    fetchCounts();
   }, []);
 
-  // const checkIsLoggedIn = async () => {
-  //   try {
-  //     const value = await AsyncStorage.getItem('__users__isLoggedIn');
-  //     console.log('__users__isLoggedIn:', value);
-  //   } catch (error) {
-  //     console.error('Error reading isLoggedIn value:', error);
-  //   }
-  // };
-
   // useEffect(() => {
-  //   checkIsLoggedIn();
+  //   (async () => {
+  //     const keys = await AsyncStorage.getAllKeys();
+  //     console.log({keys});
+  //     await AsyncStorage.removeItem('cropData');
+  //     await AsyncStorage.removeItem('croppedImages');
+  //     await AsyncStorage.removeItem('authDB:randomId');
+  //     await AsyncStorage.removeItem('uploadsDB:drafts');
+  //   })();
   // }, []);
 
   return (
@@ -147,8 +72,23 @@ const Header = ({handleSignUp, handleSignIn}) => {
         source={require('../../../public/images/logo-1.png')}
       />
       {isLoggedIn && (
-        <TouchableOpacity onPress={() => navigate('Notification')}>
-          <Icon name="bell-ring-outline" size={30} color="black" />
+        <TouchableOpacity
+          onPress={() => navigate('Notification')}
+          style={{position: 'relative'}}>
+          <NotificationWithBadge
+            badgeCount={Math.min(
+              data.mustGo + data.comment + data.newFollower,
+              999,
+            )}
+          />
+          {(data?.mustGo || data?.comment || data?.newFollower) &&
+            showTooltip && (
+              <ReactionCounter
+                data={data}
+                animateOut={animateOut}
+                animateIn={animateIn}
+              />
+            )}
         </TouchableOpacity>
       )}
     </View>

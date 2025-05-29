@@ -14,7 +14,6 @@ import useAuth from '../../hooks/useAuth';
 import {useDispatch, useSelector} from 'react-redux';
 import {setError} from '../../redux/Slices/errorPopup';
 import {
-  convertToThreeFourRatio,
   convertToThreeFourRatioRN,
   getLocation,
 } from '../../components/Helpers/fileUploadHelper';
@@ -84,16 +83,21 @@ const GeneralCheckIn = () => {
       }
 
       const threeFourFiles = await Promise.all(
-        selectedFiles.map(async f => {
-          try {
-            const converted = await convertToThreeFourRatioRN(f.file);
-            return converted;
-          } catch (e) {
-            console.warn(
-              'Failed to convert ratio, using original:',
-              f.file.name,
-            );
-            return f.file;
+        selectedFiles.map(async file => {
+          const croppedImage = croppedImages[file.id];
+          if (croppedImage) {
+            return {uri: croppedImage};
+          } else {
+            try {
+              const converted = await convertToThreeFourRatioRN(file.file);
+              return converted;
+            } catch (e) {
+              console.warn(
+                'Failed to convert ratio, using original:',
+                file.file.name,
+              );
+              return file.file;
+            }
           }
         }),
       );
@@ -144,8 +148,8 @@ const GeneralCheckIn = () => {
     setLocationloader(true);
     try {
       const response = await getValidatedCheckInPoint({
-        latitude: '22.7590774', // '22.7590909',
-        longitude: '75.8650035', // '75.867182',
+        latitude: '22.7590774',
+        longitude: '75.8650035',
       });
       if (response) {
         setCurrentTrekscapes(response);

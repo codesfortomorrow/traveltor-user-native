@@ -6,6 +6,7 @@ import successReducer from './Slices/successPopup';
 import errorReducer from './Slices/errorPopup';
 import firebaseReducer from './Slices/firebase';
 import myfeedScrollReducer from './Slices/myfeedScroll';
+import badgeReducer from './Slices/badgeCount';
 
 export const store = configureStore({
   reducer: {
@@ -15,5 +16,6 @@ export const store = configureStore({
     errorModule: errorReducer,
     firebase: firebaseReducer,
     myfeedScroll: myfeedScrollReducer,
+    badge: badgeReducer,
   },
 });

@@ -14,6 +14,7 @@ import {getAuthReq} from '../../utils/apiHandlers';
 import moment from 'moment';
 import Calender from 'react-native-vector-icons/AntDesign';
 import {useNavigation} from '@react-navigation/native';
+import Constant from '../../utils/constant';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
@@ -37,6 +38,7 @@ const MyActivity = () => {
   const [contentLoader, setContentLoader] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const navigation = useNavigation();
+  const {optimizeImageKitUrl} = Constant();
 
   const fetchEvents = useCallback(
     async (page, isRefresh = false) => {
@@ -137,7 +139,7 @@ const MyActivity = () => {
         {event?.media?.map((image, imgIndex) => (
           <Image
             key={imgIndex}
-            source={{uri: image}}
+            source={{uri: optimizeImageKitUrl(image, 100, 100)}}
             style={[styles.mediaImage, {marginLeft: imgIndex > 0 ? -24 : 0}]}
           />
         ))}
