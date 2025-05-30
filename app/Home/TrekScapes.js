@@ -6,10 +6,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
+  Dimensions,
 } from 'react-native';
 import useAuth from '../hooks/useAuth';
 import {useNavigation} from '@react-navigation/native';
 import Constant from '../utils/constant';
+
+const {width: screenWidth} = Dimensions.get('window');
 
 const TrekScapes = () => {
   const [trekScape, setTrekScape] = useState([]);
@@ -17,6 +20,11 @@ const TrekScapes = () => {
   const [isLoading, setIsLoading] = useState(false);
   const {navigate} = useNavigation();
   const {optimizeImageKitUrl} = Constant();
+
+  // Calculate card width to show 1.5 items
+  const cardWidth = screenWidth * 0.8; // 80% of screen width for main card
+  const cardMargin = 0;
+  const snapInterval = cardWidth + cardMargin;
 
   const fetchTreckScape = useCallback(async () => {
     try {
@@ -67,11 +75,17 @@ const TrekScapes = () => {
             data={isLoading ? Array.from({length: 3}) : trekScape}
             horizontal
             showsHorizontalScrollIndicator={false}
-            snapToInterval={250} // width of card + margin
+            snapToInterval={snapInterval}
+            snapToAlignment="start"
             decelerationRate="fast"
+            pagingEnabled={false}
             keyExtractor={(item, index) => item?.slug || index.toString()}
             renderItem={({item, index}) => (
-              <View style={styles.flatListItem}>
+              <View
+                style={[
+                  styles.flatListItem,
+                  {width: cardWidth, marginRight: cardMargin},
+                ]}>
                 {isLoading ? (
                   <View style={styles.imagePlaceholder} />
                 ) : (
@@ -80,11 +94,7 @@ const TrekScapes = () => {
                       source={
                         item.previewMedia[0]
                           ? {
-                              uri: optimizeImageKitUrl(
-                                item.previewMedia[0],
-                                300,
-                                300,
-                              ),
+                              uri: item.previewMedia[0],
                             }
                           : require('../../public/images/man.jpg')
                       }
@@ -125,7 +135,12 @@ const TrekScapes = () => {
                 )}
               </View>
             )}
-            contentContainerStyle={{paddingHorizontal: 16}}
+            contentContainerStyle={{paddingLeft: 16, paddingRight: 16}}
+            getItemLayout={(data, index) => ({
+              length: snapInterval,
+              offset: snapInterval * index,
+              index,
+            })}
           />
         </View>
       </View>
@@ -164,7 +179,6 @@ const styles = StyleSheet.create({
     height: 280,
   },
   flatListItem: {
-    width: 280,
     alignItems: 'center',
     position: 'relative',
   },
@@ -188,7 +202,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    padding: 12,
+    padding: 10,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.1,

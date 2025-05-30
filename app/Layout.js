@@ -1,4 +1,4 @@
-import React, {useContext, useEffect} from 'react';
+import React, {useCallback, useContext, useEffect} from 'react';
 import {SafeAreaView, View} from 'react-native';
 import Header from './components/Layout/Header';
 import Footer from './components/Mobile/Footer';
@@ -24,6 +24,7 @@ const Layout = ({children}) => {
 export const FooterLayout = ({children}) => {
   const dispatch = useDispatch();
   const {isLoggedIn} = useContext(AuthContext);
+  const {fcmToken} = useSelector(state => state?.firebase);
 
   const requestLocationPermission = async () => {
     if (Platform.OS === 'android') {
@@ -37,17 +38,16 @@ export const FooterLayout = ({children}) => {
     }
   };
 
-  const getLocation = async () => {
+  const getLocation = useCallback(async () => {
     const hasPermission = await requestLocationPermission();
     if (!hasPermission) {
-      console.warn('Location permission denied');
       dispatch(
         setLocation({
           latitude: null,
           longitude: null,
           response: {
             code: -1,
-            message: 'Geolocation is not supported in your device',
+            message: 'Geolocation permission denied or unsupported.',
           },
         }),
       );
@@ -80,13 +80,11 @@ export const FooterLayout = ({children}) => {
         forceRequestLocation: true,
       },
     );
-  };
+  }, [dispatch, requestLocationPermission]);
 
   useEffect(() => {
     getLocation();
   }, []);
-
-  const {fcmToken} = useSelector(state => state?.firebase);
 
   const setFirebaseToken = async token => {
     const response = await postAuthReq('/users/notification-token', {token});
@@ -129,13 +127,7 @@ export const FooterLayout = ({children}) => {
             position: 'relative',
             flex: 1,
           }}>
-          <View
-            style={{
-              flex: 1,
-              // paddingBottom: 60,
-            }}>
-            {children}
-          </View>
+          <View style={{flex: 1}}>{children}</View>
           <Footer />
         </View>
       </SafeAreaView>

@@ -169,26 +169,24 @@ const HomePage = () => {
 
   return (
     <View style={styles.container}>
-      <FooterLayout>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          scrollEnabled={!isSearchFocused}
-          onScrollBeginDrag={dismissKeyboard}
-          keyboardShouldPersistTaps="handled">
-          <Layout>
-            <HeroSection
-              search={search}
-              setSearch={setSearch}
-              isSearchFocused={isSearchFocused}
-              onSearchFocus={handleSearchFocus}
-              onSearchBlur={handleSearchBlur}
-            />
-          </Layout>
-          <TrekScapes />
-          <Trailblazers />
-        </ScrollView>
-      </FooterLayout>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        scrollEnabled={!isSearchFocused}
+        onScrollBeginDrag={dismissKeyboard}
+        keyboardShouldPersistTaps="handled">
+        <Layout>
+          <HeroSection
+            search={search}
+            setSearch={setSearch}
+            isSearchFocused={isSearchFocused}
+            onSearchFocus={handleSearchFocus}
+            onSearchBlur={handleSearchBlur}
+          />
+        </Layout>
+        <TrekScapes />
+        <Trailblazers />
+      </ScrollView>
 
       {/* Full Screen Search Overlay */}
       {isSearchFocused && (

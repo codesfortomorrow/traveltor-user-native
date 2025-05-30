@@ -236,12 +236,7 @@ const TrekscapeDetails = () => {
             source={{
               uri:
                 treckScapeDetails?.previewMedia &&
-                optimizeImageKitUrl(
-                  treckScapeDetails?.previewMedia[0],
-                  windowWidth,
-                  0,
-                  {quality: 100},
-                ),
+                treckScapeDetails?.previewMedia[0],
             }}
             style={styles.coverImage}
           />

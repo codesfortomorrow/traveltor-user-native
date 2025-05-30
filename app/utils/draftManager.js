@@ -191,7 +191,6 @@ export const updateProgressStatus = (progress, status, isPending, imgUrl) => {
     status,
     isPending,
     imgUrl,
-    publishedAt: Date.now(),
   });
 };
 
@@ -344,7 +343,7 @@ export const syncDrafts = async () => {
             );
 
             if (publishSuccess) {
-              updateProgressStatus(100, 'Published', false, files[0]);
+              updateProgressStatus(100, 'Published', true, files[0]);
               await deleteRandomId();
 
               EventRegister.emit('uploadComplete');

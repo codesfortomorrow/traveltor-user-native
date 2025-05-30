@@ -23,39 +23,119 @@ function HeroSection({
   const listRef = useRef(null);
   const {heroSlider} = Constant();
   const itemWidth = screenWidth / 5.75;
-  const clonedSlider = [...heroSlider, ...heroSlider];
-  const scrollIndex = useRef(0);
+  const itemSpacing = 16;
+  // Create multiple copies for infinite scroll
+  const clonedSlider = [...heroSlider, ...heroSlider, ...heroSlider];
+  const scrollIndex = useRef(heroSlider.length); // Start from middle section
   const scrollTimer = useRef(null);
+  const isManualScrolling = useRef(false);
+  const resumeTimer = useRef(null);
+
+  // Initialize scroll position to middle section
+  useEffect(() => {
+    if (listRef.current && heroSlider.length > 0) {
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({
+          offset: heroSlider.length * (itemWidth + itemSpacing),
+          animated: false,
+        });
+      }, 100);
+    }
+  }, [heroSlider.length, itemWidth]);
 
   // Auto-scroll functionality
   useEffect(() => {
-    if (!isSearchFocused) {
-      scrollTimer.current = setInterval(() => {
-        scrollIndex.current += 1;
+    const startAutoScroll = () => {
+      if (scrollTimer.current) {
+        clearInterval(scrollTimer.current);
+      }
 
-        if (scrollIndex.current >= clonedSlider.length) {
-          scrollIndex.current = 0;
-          listRef.current?.scrollToOffset({offset: 0, animated: false});
-        } else {
+      scrollTimer.current = setInterval(() => {
+        if (!isManualScrolling.current) {
+          scrollIndex.current += 1;
+
+          const offset = scrollIndex.current * (itemWidth + itemSpacing);
           listRef.current?.scrollToOffset({
-            offset: scrollIndex.current * (itemWidth + 16),
+            offset: offset,
             animated: true,
           });
-        }
 
-        const index = scrollIndex.current % heroSlider.length;
-        setTimeout(() => {
-          setActiveIndex(index);
-        }, 500);
+          const index = scrollIndex.current % heroSlider.length;
+          setTimeout(() => {
+            setActiveIndex(index);
+          }, 300);
+        }
       }, 3000);
+    };
+
+    if (!isSearchFocused) {
+      startAutoScroll();
     }
 
     return () => {
       if (scrollTimer.current) {
         clearInterval(scrollTimer.current);
       }
+      if (resumeTimer.current) {
+        clearTimeout(resumeTimer.current);
+      }
     };
   }, [heroSlider.length, itemWidth, isSearchFocused]);
+
+  // Handle manual scroll start
+  const handleScrollBeginDrag = () => {
+    isManualScrolling.current = true;
+    if (resumeTimer.current) {
+      clearTimeout(resumeTimer.current);
+    }
+  };
+
+  // Handle manual scroll end
+  const handleScrollEndDrag = () => {
+    // Resume auto-scroll after 2 seconds of no manual interaction
+    resumeTimer.current = setTimeout(() => {
+      isManualScrolling.current = false;
+    }, 2000);
+  };
+
+  // Handle scroll position change
+  const handleScroll = event => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollPosition / (itemWidth + itemSpacing));
+
+    // Update scroll index for auto-scroll continuity
+    scrollIndex.current = currentIndex;
+
+    // Calculate actual index for display
+    const actualIndex = currentIndex % heroSlider.length;
+    setActiveIndex(actualIndex);
+  };
+
+  // Handle momentum scroll end for infinite loop
+  const handleMomentumScrollEnd = event => {
+    const scrollPosition = event.nativeEvent.contentOffset.x;
+    const currentIndex = Math.round(scrollPosition / (itemWidth + itemSpacing));
+    const totalItems = clonedSlider.length;
+
+    // Reset to middle section if we're at the beginning or end
+    if (currentIndex <= 0) {
+      // Jump to the end of first section (beginning of middle section)
+      const newIndex = heroSlider.length;
+      scrollIndex.current = newIndex;
+      listRef.current?.scrollToOffset({
+        offset: newIndex * (itemWidth + itemSpacing),
+        animated: false,
+      });
+    } else if (currentIndex >= totalItems - heroSlider.length) {
+      // Jump to the beginning of middle section
+      const newIndex = heroSlider.length;
+      scrollIndex.current = newIndex;
+      listRef.current?.scrollToOffset({
+        offset: newIndex * (itemWidth + itemSpacing),
+        animated: false,
+      });
+    }
+  };
 
   return (
     <>
@@ -109,13 +189,24 @@ function HeroSection({
             horizontal
             pagingEnabled={false}
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={false}
+            scrollEnabled={true}
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onScrollEndDrag={handleScrollEndDrag}
+            onScroll={handleScroll}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            scrollEventThrottle={16}
+            decelerationRate="fast"
+            snapToInterval={itemWidth + itemSpacing}
+            snapToAlignment="start"
+            disableIntervalMomentum={true}
             renderItem={({item, index}) => (
               <View
                 style={[
                   styles.slide,
                   {width: itemWidth},
-                  index !== clonedSlider.length - 1 && {marginRight: 16},
+                  index !== clonedSlider.length - 1 && {
+                    marginRight: itemSpacing,
+                  },
                 ]}>
                 <Image
                   source={item.image}

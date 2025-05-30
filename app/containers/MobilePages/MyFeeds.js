@@ -1,7 +1,7 @@
 import Backheading from '../../components/Mobile/Backheading';
 import {FeedContext} from '../../context/FeedContext';
 import useAuth from '../../hooks/useAuth';
-import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
+import {isLoggedIn} from '../../utils/apiHandlers';
 import React, {
   useCallback,
   useContext,
@@ -21,7 +21,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch, useSelector} from 'react-redux';
-import {IoCheckmarkSharp} from 'react-native-vector-icons/Ionicons';
+import IoCheckmarkSharp from 'react-native-vector-icons/Ionicons';
 import FeedsContainer from '../../components/Mobile/FeedsContainer';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import FeedLoader from '../../components/Common/FeedLoader';
@@ -31,11 +31,8 @@ import {EventRegister} from 'react-native-event-listeners';
 import {updateScroll} from '../../redux/Slices/myfeedScroll';
 
 const MyFeeds = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const {getMyFeed, FeedReactionAction} = useAuth();
   const isLogin = isLoggedIn();
-  const [pageNumber, setPageNumber] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
   const loader = useRef(null);
   const [contentLoader, setContentLoader] = useState(false);
   const [commentModal, setCommentModal] = useState(false);
@@ -45,7 +42,18 @@ const MyFeeds = () => {
   const [isPageRefresh, setIsPageRefresh] = useState(false);
   const [noData, setNoData] = useState(false);
   const feedContainerRef = useRef(null);
-  const {feeds, setFeeds} = useContext(FeedContext);
+  const {
+    feeds,
+    setFeeds,
+    feedLoading,
+    setFeedLoading,
+    pageNumber,
+    setPageNumber,
+    hasMore,
+    setHasMore,
+    scrollPosition,
+  } = useContext(FeedContext);
+
   const isFirstRender = useRef(true);
   const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
@@ -54,13 +62,11 @@ const MyFeeds = () => {
     isPending: false,
     progress: 20,
     status: 'Uploading...',
-    publishedAt: Date.now(),
   });
 
   const {isScroll} = useSelector(state => state?.myfeedScroll);
 
   useEffect(() => {
-    // Listen for upload progress updates
     const progressListener = EventRegister.addEventListener(
       'uploadProgress',
       data => {
@@ -68,57 +74,66 @@ const MyFeeds = () => {
       },
     );
 
-    // Listen for upload completion
     const completeListener = EventRegister.addEventListener(
       'uploadComplete',
       () => {
-        console.log('upload complete');
+        handleRefresh();
+        setTimeout(() => {
+          setProgress(prev => ({
+            ...prev,
+            isPending: false,
+          }));
+        }, 5000);
       },
     );
 
     return () => {
-      // Clean up listeners
       EventRegister.removeEventListener(progressListener);
       EventRegister.removeEventListener(completeListener);
     };
   }, []);
 
-  // Load stored values on component mount
   useEffect(() => {
-    const loadStoredValues = async () => {
+    // Restore scroll position
+    const restoreScrollPosition = async () => {
       try {
-        const storedPageNumber = await AsyncStorage.getItem('pageNumber');
-        const storedHasMore = await AsyncStorage.getItem('hasMore');
-
-        if (storedPageNumber) setPageNumber(JSON.parse(storedPageNumber));
-        if (storedHasMore) setHasMore(storedHasMore === 'true');
+        if (scrollPosition.current && feedContainerRef.current) {
+          feedContainerRef.current.scrollTo({
+            y: parseInt(scrollPosition.current),
+            animated: false,
+          });
+        }
       } catch (error) {
-        console.error('Error loading stored values:', error);
+        console.error('Error restoring scroll position:', error);
       }
     };
 
-    loadStoredValues();
+    restoreScrollPosition();
+
+    if (feeds.length === 0) {
+      const checkAndFetchFeeds = async () => {
+        try {
+          const refresh = await AsyncStorage.getItem('refresh');
+          if (!refresh) {
+            fetchTreckScapeFeeds(pageNumber, true, true);
+          } else {
+            setPageNumber(0);
+            fetchTreckScapeFeeds(0, false, true);
+          }
+        } catch (error) {
+          console.error('Error checking refresh status:', error);
+        }
+      };
+
+      checkAndFetchFeeds();
+    }
   }, []);
 
-  useEffect(() => {
-    const storePageInfo = async () => {
-      try {
-        await AsyncStorage.setItem('pageNumber', JSON.stringify(pageNumber));
-        await AsyncStorage.setItem('hasMore', hasMore.toString());
-      } catch (error) {
-        console.error('Error storing page info:', error);
-      }
-    };
-
-    storePageInfo();
-  }, [pageNumber, hasMore]);
-
   const fetchTreckScapeFeeds = useCallback(
-    async (page = 0, reset = false, refresh = false, loader = true) => {
+    async (page = 0, reset = false, refresh = false) => {
       try {
         await AsyncStorage.setItem('refresh', 'true');
-        !loader && setIsLoading(true);
-        setContentLoader(true);
+        page && setContentLoader(true);
 
         const response = await getMyFeed(page, refresh);
         if (response?.data) {
@@ -134,7 +149,7 @@ const MyFeeds = () => {
         console.error(error);
       } finally {
         setContentLoader(false);
-        setIsLoading(false);
+        setFeedLoading(false);
         setRefreshing(false);
         await AsyncStorage.setItem('refresh', 'true');
       }
@@ -252,53 +267,16 @@ const MyFeeds = () => {
     setIsPageRefresh(false);
     setPageNumber(0);
     await fetchTreckScapeFeeds(0, true, true);
-    await AsyncStorage.setItem('pageNumber', JSON.stringify(0));
-    await AsyncStorage.setItem('feedScrollPos', (0).toString());
+    setPageNumber(0);
+    scrollPosition.current = 0;
   };
-
-  useEffect(() => {
-    // Restore scroll position
-    const restoreScrollPosition = async () => {
-      try {
-        const savedScrollPos = await AsyncStorage.getItem('feedScrollPos');
-        if (savedScrollPos && feedContainerRef.current) {
-          feedContainerRef.current.scrollTo({
-            y: parseInt(savedScrollPos),
-            animated: false,
-          });
-        }
-      } catch (error) {
-        console.error('Error restoring scroll position:', error);
-      }
-    };
-
-    restoreScrollPosition();
-
-    if (feeds.length === 0) {
-      const checkAndFetchFeeds = async () => {
-        try {
-          const refresh = await AsyncStorage.getItem('refresh');
-          if (!refresh) {
-            fetchTreckScapeFeeds(pageNumber, true, true, false);
-          } else {
-            setPageNumber(0);
-            fetchTreckScapeFeeds(0, false, true, false);
-          }
-        } catch (error) {
-          console.error('Error checking refresh status:', error);
-        }
-      };
-
-      checkAndFetchFeeds();
-    }
-  }, []);
 
   // Handle scroll position tracking
   const handleScrollEnd = ({nativeEvent}) => {
     const saveScrollPosition = async () => {
       try {
         const scrollPos = nativeEvent.contentOffset.y;
-        await AsyncStorage.setItem('feedScrollPos', scrollPos.toString());
+        scrollPosition.current = scrollPos.toString();
       } catch (error) {
         console.error('Error saving scroll position:', error);
       }
@@ -338,8 +316,8 @@ const MyFeeds = () => {
         }>
         {progress?.isPending && <PublishStatus publishStatus={progress} />}
         <View style={styles.feedContainer}>
-          {isLoading && <FeedLoader />}
-          {!isLoading && feeds?.length > 0
+          {feedLoading && <FeedLoader />}
+          {!feedLoading && feeds?.length > 0
             ? feeds?.map((item, index) => (
                 <View key={index} style={styles.feedItem}>
                   <FeedsContainer
@@ -351,8 +329,6 @@ const MyFeeds = () => {
                     handleDislike={() =>
                       handleLikeDislike(item?.id, index, 'Dislike')
                     }
-                    commentModal={commentModal}
-                    setIsLoading={setIsLoading}
                     setCommentModal={setCommentModal}
                     setPostId={setPostId}
                     setFeedUsername={setFeedUsername}
@@ -392,11 +368,7 @@ const MyFeeds = () => {
 export default MyFeeds;
 
 const PublishStatus = ({publishStatus}) => {
-  const {imgUrl, isPending, progress, status, publishedAt} = publishStatus;
-  const showStatus =
-    isPending || (publishedAt && Date.now() - publishedAt < 5000);
-
-  if (!showStatus) return null;
+  const {imgUrl, progress, status} = publishStatus;
 
   return (
     <View style={styles.publishStatusContainer}>
@@ -410,7 +382,9 @@ const PublishStatus = ({publishStatus}) => {
           style={styles.publishStatusImage}
         />
         <View style={styles.publishStatusTextContainer}>
-          {status === 'Published' && <IoCheckmarkSharp size={20} />}
+          {status === 'Published' && (
+            <IoCheckmarkSharp name="checkmark-sharp" size={20} color="#000" />
+          )}
           <Text style={styles.publishStatusText}>{status}</Text>
         </View>
       </View>

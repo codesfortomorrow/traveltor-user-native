@@ -52,12 +52,8 @@ const Stack = createNativeStackNavigator();
 const SESSION_KEYS = [
   'categoryScrollPosition',
   'categoryId',
-  'pageNumber',
-  'hasMore',
-  'feedScrollPos',
   'refresh',
   'reloaded',
-  'feedScrollPos',
   'croppedImages',
   'cropData',
 ];
@@ -112,10 +108,12 @@ function App() {
                 <Stack.Navigator initialRouteName="Home">
                   <Stack.Screen
                     name="Home"
-                    component={HomePage}
-                    options={{
-                      headerShown: false,
-                    }}
+                    children={() => (
+                      <FooterLayout>
+                        <HomePage />
+                      </FooterLayout>
+                    )}
+                    options={{headerShown: false}}
                   />
                   <Stack.Screen
                     name="Profile"
