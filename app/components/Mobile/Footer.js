@@ -37,26 +37,33 @@ const Footer = () => {
     }
   }, [isLoggedIn]);
 
-  const isActive = (path, children) => {
-    return false;
-  };
-
   const handleSignIn = async item => {
-    if (item.title === 'Menu') {
-      setIsOpen(true);
-    } else if (item?.title === 'Profile') {
-      navigate('Profile', {
-        userType: user?.type,
-        id: user?.id,
-      });
-    } else if (item?.title === 'Home') {
-      navigate('Home');
-    } else if (item?.title === 'Login') {
-      setIsLoginOpen(true);
-    } else if (item?.title === 'My Feeds' && route.name === 'MyFeeds') {
-      dispatch(updateScroll(true));
-    } else {
-      navigate(item?.path);
+    const {title, path} = item;
+
+    switch (title) {
+      case 'Menu':
+        return setIsOpen(true);
+
+      case 'Profile':
+        return navigate('Profile', {
+          userType: user?.type,
+          id: user?.id,
+        });
+
+      case 'Login':
+        return setIsLoginOpen(true);
+
+      case 'My Feeds':
+        if (route.name === 'MyFeeds') {
+          return dispatch(updateScroll(true));
+        } else {
+          navigate(path);
+        }
+
+      default:
+        if (path) {
+          return navigate(path);
+        }
     }
   };
 
@@ -95,8 +102,6 @@ const Footer = () => {
     <>
       <View style={styles.footerContainer}>
         {menuItems?.map((item, index) => {
-          const active = isActive(item.path, item.children);
-
           return (
             <TouchableOpacity
               key={index}

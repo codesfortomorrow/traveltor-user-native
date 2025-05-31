@@ -1,9 +1,13 @@
 import {setLocation} from '../../redux/Slices/geoLocation';
 import {RESULTS} from 'react-native-permissions';
-import {PermissionsAndroid, Platform} from 'react-native';
+import {Alert, PermissionsAndroid, Platform} from 'react-native';
 import {Image} from 'react-native';
-
 import ImageEditor from '@react-native-community/image-editor';
+import {setError} from '../../redux/Slices/errorPopup';
+import ImageResizer from 'react-native-image-resizer';
+import {launchImageLibrary} from 'react-native-image-picker';
+import RNFS from 'react-native-fs';
+import {v4 as uuidv4} from 'uuid';
 
 export const convertToThreeFourRatioRN = async file => {
   return new Promise((resolve, reject) => {
@@ -108,136 +112,259 @@ export const getLocation = async (setGetLocationLoader, dispatch) => {
   );
 };
 
-// export const handleFileChange = async (
-//   event,
-//   setSelectedFiles,
-//   setIsLoaded,
-// ) => {
-//   const files = Array.from(event.target.files);
-//   if (!files.length) return;
+const copyToCache = async (sourceUri, fileName) => {
+  const destPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
+  try {
+    await RNFS.copyFile(sourceUri, destPath);
+    return destPath;
+  } catch (err) {
+    console.error('Failed to copy file to cache:', err);
+    throw err;
+  }
+};
 
-//   const allowedTypes = [
-//     'image/png',
-//     'image/jpeg',
-//     'image/jpg',
-//     'image/webp',
-//     'image/svg+xml',
-//     'image/heic',
-//     'image/heif',
-//     'image/HEIC',
-//     'image/SVG',
-//     'image/JPG',
-//   ];
+export const pickImage = async (setSelectedFiles, setIsLoaded, dispatch) => {
+  try {
+    const options = {
+      mediaType: 'photo',
+      selectionLimit: 0,
+      includeBase64: false,
+      includeExtra: true,
+    };
 
-//   const tempFiles = files.map(file => ({
-//     id: crypto.randomUUID(),
-//     file,
-//     url: URL.createObjectURL(file),
-//     status: 'ready',
-//   }));
+    const result = await launchImageLibrary(options);
 
-//   setSelectedFiles(prevFiles => [...prevFiles, ...tempFiles]);
+    if (result.didCancel) return;
 
-//   let failedIndexes = new Set();
+    if (result.errorCode) {
+      Alert.alert('Error', result.errorMessage || 'Unknown error occurred');
+      return;
+    }
 
-//   await Promise.all(
-//     tempFiles.map(async tempFile => {
-//       setIsLoaded(prev => ({
-//         ...prev,
-//         [tempFile.id]: false,
-//       }));
+    const allowedTypes = [
+      'image/png',
+      'image/jpeg',
+      'image/jpg',
+      'image/webp',
+      'image/svg+xml',
+      'image/heic',
+      'image/heif',
+    ].map(type => type.toLowerCase());
 
-//       try {
-//         let processedFile = tempFile.file;
+    const tempFiles = result.assets.map(asset => ({
+      id: uuidv4(),
+      file: asset,
+      url: asset.uri,
+      status: 'ready',
+    }));
 
-//         if (!allowedTypes.includes(processedFile.type)) {
-//           toast.error(`Unsupported file type: ${processedFile.type}`);
-//           failedIndexes.add(tempFile.id);
-//           return;
-//         }
+    setSelectedFiles(prevFiles => [...prevFiles, ...tempFiles]);
 
-//         if (
-//           processedFile.type === 'image/heic' ||
-//           processedFile.name.endsWith('.heic')
-//         ) {
-//           try {
-//             const convertedBlob = await heic2any({
-//               blob: processedFile,
-//               toType: 'image/jpeg',
-//             });
+    const failedIndexes = new Set();
 
-//             const finalBlob = Array.isArray(convertedBlob)
-//               ? convertedBlob[0]
-//               : convertedBlob;
+    await Promise.all(
+      tempFiles.map(async tempFile => {
+        setIsLoaded(prev => ({
+          ...prev,
+          [tempFile.id]: false,
+        }));
 
-//             processedFile = new File(
-//               [finalBlob],
-//               processedFile.name.replace(/\.heic$/i, '.jpg'),
-//               {
-//                 type: 'image/jpeg',
-//               },
-//             );
+        try {
+          let processedFile = tempFile.file;
+          const fileTypeMatch = processedFile.uri.match(/\.([^.]+)$/);
+          const fileExtension = fileTypeMatch
+            ? fileTypeMatch[1].toLowerCase()
+            : '';
+          const mimeType = processedFile.type
+            ? processedFile.type.toLowerCase()
+            : '';
 
-//             const newPreviewUrl = URL.createObjectURL(processedFile);
+          const isAllowedType =
+            allowedTypes.includes(mimeType) ||
+            allowedTypes.includes(`image/${fileExtension}`);
 
-//             setSelectedFiles(prevFiles =>
-//               prevFiles.map(fileObj =>
-//                 fileObj.id === tempFile.id
-//                   ? {
-//                       ...fileObj,
-//                       file: processedFile,
-//                       status: 'ready',
-//                       url: newPreviewUrl,
-//                     }
-//                   : fileObj,
-//               ),
-//             );
-//           } catch (error) {
-//             console.error('HEIC conversion failed:', error);
-//             toast.error(`Failed to convert HEIC file: ${processedFile.name}`);
-//             failedIndexes.add(tempFile.id);
-//             setSelectedFiles(prevFiles =>
-//               prevFiles.filter(fileObj => !failedIndexes.has(fileObj.id)),
-//             );
-//             return;
-//           }
-//         }
+          if (!isAllowedType) {
+            dispatch(
+              setError({
+                open: true,
+                custom_message: `Unsupported file type: ${
+                  processedFile.type || fileExtension
+                }`,
+              }),
+            );
+            failedIndexes.add(tempFile.id);
+            return;
+          }
 
-//         if (
-//           ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
-//             processedFile.type,
-//           )
-//         ) {
-//           const options = {
-//             maxSizeMB: 2,
-//             maxWidthOrHeight: 1920,
-//             useWebWorker: true,
-//             initialQuality: 0.8,
-//             alwaysKeepResolution: false,
-//           };
+          // HEIC/HEIF Conversion
+          if (
+            mimeType.includes('heic') ||
+            fileExtension === 'heic' ||
+            fileExtension === 'heif'
+          ) {
+            try {
+              const fileName = `converted_${Date.now()}.jpg`;
+              const outputPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
 
-//           const compressedBlob = await imageCompression(processedFile, options);
-//           processedFile = new File([compressedBlob], processedFile.name, {
-//             type: 'image/webp',
-//           });
-//         }
+              const resizeResult = await ImageResizer.createResizedImage(
+                processedFile.uri,
+                2048,
+                2048,
+                'JPEG',
+                80,
+                0,
+                outputPath,
+              );
 
-//         setSelectedFiles(prevFiles =>
-//           prevFiles.map(fileObj =>
-//             fileObj.id === tempFile.id
-//               ? {...fileObj, status: 'ready', file: processedFile}
-//               : fileObj,
-//           ),
-//         );
-//       } catch (error) {
-//         failedIndexes.add(tempFile.id);
-//       }
-//     }),
-//   );
+              const newFileName = processedFile.name.replace(
+                /\.(heic|heif)$/i,
+                '.jpg',
+              );
+              processedFile = {
+                uri: resizeResult.uri,
+                name: newFileName,
+                type: 'image/jpeg',
+              };
 
-//   if (failedIndexes.size > 0) {
-//     setSelectedFiles(prevFiles =>
-//       prevFiles.filter(fileObj => !failedIndexes.has(fileObj.id)),
-//     );
-//   }
-// };
+              setSelectedFiles(prevFiles =>
+                prevFiles.map(fileObj =>
+                  fileObj.id === tempFile.id
+                    ? {
+                        ...fileObj,
+                        file: processedFile,
+                        status: 'ready',
+                        url: resizeResult.uri,
+                      }
+                    : fileObj,
+                ),
+              );
+            } catch (error) {
+              console.error('HEIC/HEIF conversion failed:', error);
+              dispatch(
+                setError({
+                  open: true,
+                  custom_message: `Failed to convert HEIC/HEIF file: ${processedFile.name}`,
+                }),
+              );
+              failedIndexes.add(tempFile.id);
+              return;
+            }
+          }
+
+          // Compression
+          if (
+            ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
+              mimeType,
+            ) ||
+            ['jpeg', 'jpg', 'png', 'webp'].includes(fileExtension)
+          ) {
+            try {
+              const fileStats = await RNFS.stat(
+                processedFile.uri.replace('file://', ''),
+              );
+              const fileSizeInMB = fileStats.size / (1024 * 1024);
+
+              if (fileSizeInMB > 2 || true) {
+                const copiedPath = await copyToCache(
+                  processedFile.uri.replace('file://', ''),
+                  `temp_${Date.now()}.jpg`,
+                );
+
+                let resizeResult = null;
+                try {
+                  resizeResult = await ImageResizer.createResizedImage(
+                    copiedPath,
+                    2048,
+                    2048,
+                    'JPEG',
+                    80,
+                    0,
+                  );
+                } catch (error) {
+                  console.error(
+                    'ImageResizer.createResizedImage failed:',
+                    error,
+                    processedFile.uri,
+                  );
+                }
+
+                if (resizeResult) {
+                  const resizedStats = await RNFS.stat(resizeResult.uri);
+                  const resizedSizeInMB = resizedStats.size / (1024 * 1024);
+
+                  if (resizedSizeInMB > 2) {
+                    const furtherCompressedPath = `${
+                      RNFS.CachesDirectoryPath
+                    }/further_${Date.now()}.jpg`;
+                    const furtherCompressed =
+                      await ImageResizer.createResizedImage(
+                        resizeResult.uri,
+                        1280,
+                        1280,
+                        'JPEG',
+                        60,
+                        0,
+                        furtherCompressedPath,
+                      );
+
+                    processedFile = {
+                      uri: furtherCompressed.uri,
+                      name: processedFile.name,
+                      type: 'image/jpeg',
+                    };
+
+                    RNFS.unlink(resizeResult.uri).catch(err =>
+                      console.warn('Error removing temporary file:', err),
+                    );
+                  } else {
+                    processedFile = {
+                      uri: resizeResult.uri,
+                      name: processedFile.name,
+                      type: 'image/jpeg',
+                    };
+                  }
+                } else {
+                  console.warn(
+                    'resizeResult was null, skipping compression step',
+                  );
+                }
+              }
+            } catch (error) {
+              console.error('Image compression failed:', error);
+            }
+          }
+
+          setSelectedFiles(prevFiles =>
+            prevFiles.map(fileObj =>
+              fileObj.id === tempFile.id
+                ? {...fileObj, status: 'ready', file: processedFile}
+                : fileObj,
+            ),
+          );
+
+          setIsLoaded(prev => ({
+            ...prev,
+            [tempFile.id]: true,
+          }));
+        } catch (error) {
+          console.error('Error processing image:', error);
+          failedIndexes.add(tempFile.id);
+        }
+      }),
+    );
+
+    if (failedIndexes.size > 0) {
+      setSelectedFiles(prevFiles =>
+        prevFiles.filter(fileObj => !failedIndexes.has(fileObj.id)),
+      );
+    }
+  } catch (error) {
+    console.error('Error picking image:', error);
+    dispatch(
+      setError({
+        open: true,
+        custom_message: 'Error selecting images. Please try again.',
+      }),
+    );
+  }
+};

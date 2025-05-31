@@ -65,39 +65,6 @@ const TrekscapeTopBar = ({
 
   const itemMinWidth = category?.length <= 5 ? width * 0.2 : width * 0.18;
 
-  // const ColoredSvg = ({uri}) => {
-  //   console.log({uri});
-  //   const [svgXml, setSvgXml] = useState(null);
-
-  //   useEffect(() => {
-  //     const loadSvg = async () => {
-  //       try {
-  //         const res = await fetch(uri);
-  //         let svgText = await res.text();
-
-  //         const targetColor = '#F53E0D';
-
-  //         // Replace stroke colors
-  //         svgText = svgText.replace(
-  //           /stroke="[^"]*"/g,
-  //           `stroke="${targetColor}"`,
-  //         );
-
-  //         // Optionally clear fills to keep outline-only effect
-  //         // svgText = svgText.replace(/fill="[^"]*"/g, 'fill="none"');
-
-  //         setSvgXml(svgText);
-  //       } catch (err) {
-  //         console.error('Error loading SVG:', err);
-  //       }
-  //     };
-
-  //     loadSvg();
-  //   }, [uri]);
-
-  //   return svgXml ? <SvgXml xml={svgXml} width={20} height={20} /> : null;
-  // };
-
   const ColoredSvg = ({uri}) => {
     const [svgXml, setSvgXml] = useState(null);
     const [isLoading, setIsLoading] = useState(true);

@@ -117,13 +117,6 @@ const Setting = () => {
             <View>
               {item.children?.map((link, i) => (
                 <TouchableOpacity
-                  // onPress={() =>
-                  //   link.name === 'Logout'
-                  //     ? handleLogout()
-                  //     : link.name === 'Blogs'
-                  //     ? Linking.openURL('https://blog.traveltor.io')
-                  //     : navigation.navigate(link.path)
-                  // }
                   onPress={() => {
                     link?.name === 'Logout'
                       ? handleLogout()

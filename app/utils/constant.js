@@ -58,14 +58,6 @@ const Constant = () => {
       activeIcon: <Icon name="search-outline" color="#e93c00" size={25} />,
       title: 'Explore',
       path: 'Trekscapes',
-      children: [
-        {
-          path: 'Trekscapes',
-        },
-        {
-          path: 'Trekscapes',
-        },
-      ],
     },
     {
       title: 'CheckIn',
@@ -97,11 +89,6 @@ const Constant = () => {
       activeIcon: <Icon name="search-outline" color="#e93c00" size={25} />,
       title: 'Explore',
       path: 'Trekscapes',
-      children: [
-        {
-          path: 'Trekscapes',
-        },
-      ],
     },
     {
       icon: <Icon name="home-outline" color="#000" size={25} />,

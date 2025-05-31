@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   ScrollView,
   Dimensions,
 } from 'react-native';
@@ -16,15 +15,12 @@ import {setError} from '../../redux/Slices/errorPopup';
 import {
   convertToThreeFourRatioRN,
   getLocation,
+  pickImage,
 } from '../../components/Helpers/fileUploadHelper';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CheckInTopBar from '../../components/Common/CheckInTopBar';
 import 'react-native-get-random-values';
-import {v4 as uuidv4} from 'uuid';
-import {launchImageLibrary} from 'react-native-image-picker';
-import ImageResizer from 'react-native-image-resizer';
-import RNFS from 'react-native-fs';
 import ImageCropper from '../../components/Crop/ImageCropperComponent';
 import SadIcon from '../../../public/images/sadIcon.svg';
 import UploadImageMic from '../../../public/images/uploadImageMic.svg';
@@ -59,7 +55,6 @@ const TrailpointCheckIn = () => {
   const [showSingleFile, setShowSingleFile] = useState({});
   const [croppedImages, setCroppedImages] = useState({});
   const [isCropOpen, setIsCropOpen] = useState(false);
-  const isTriggered = useRef(false);
   const [isLoaded, setIsLoaded] = useState({});
 
   const handleCheckInTreckScape = async () => {
@@ -186,277 +181,6 @@ const TrailpointCheckIn = () => {
       await AsyncStorage.setItem('croppedImages', JSON.stringify(updatedCrops));
     } catch (error) {
       console.error('Error saving cropped images:', error);
-    }
-  };
-
-  useEffect(() => {
-    const triggerFileInput = () => {
-      if (!isTriggered.current) {
-        isTriggered.current = true;
-        setTimeout(() => {
-          pickImage();
-        }, 0);
-      }
-    };
-    if (step === 2) {
-      // triggerFileInput();
-    }
-  }, [step]);
-
-  const copyToCache = async (sourceUri, fileName) => {
-    const destPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
-    try {
-      await RNFS.copyFile(sourceUri, destPath);
-      return destPath;
-    } catch (err) {
-      console.error('Failed to copy file to cache:', err);
-      throw err;
-    }
-  };
-
-  const pickImage = async () => {
-    try {
-      const options = {
-        mediaType: 'photo',
-        selectionLimit: 0,
-        includeBase64: false,
-        includeExtra: true,
-      };
-
-      const result = await launchImageLibrary(options);
-
-      if (result.didCancel) return;
-
-      if (result.errorCode) {
-        Alert.alert('Error', result.errorMessage || 'Unknown error occurred');
-        return;
-      }
-
-      const allowedTypes = [
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-        'image/webp',
-        'image/svg+xml',
-        'image/heic',
-        'image/heif',
-      ].map(type => type.toLowerCase());
-
-      const tempFiles = result.assets.map(asset => ({
-        id: uuidv4(),
-        file: asset,
-        url: asset.uri,
-        status: 'ready',
-      }));
-
-      setSelectedFiles(prevFiles => [...prevFiles, ...tempFiles]);
-
-      const failedIndexes = new Set();
-
-      await Promise.all(
-        tempFiles.map(async tempFile => {
-          setIsLoaded(prev => ({
-            ...prev,
-            [tempFile.id]: false,
-          }));
-
-          try {
-            let processedFile = tempFile.file;
-            const fileTypeMatch = processedFile.uri.match(/\.([^.]+)$/);
-            const fileExtension = fileTypeMatch
-              ? fileTypeMatch[1].toLowerCase()
-              : '';
-            const mimeType = processedFile.type
-              ? processedFile.type.toLowerCase()
-              : '';
-
-            const isAllowedType =
-              allowedTypes.includes(mimeType) ||
-              allowedTypes.includes(`image/${fileExtension}`);
-
-            if (!isAllowedType) {
-              dispatch(
-                setError({
-                  open: true,
-                  custom_message: `Unsupported file type: ${
-                    processedFile.type || fileExtension
-                  }`,
-                }),
-              );
-              failedIndexes.add(tempFile.id);
-              return;
-            }
-
-            // HEIC/HEIF Conversion
-            if (
-              mimeType.includes('heic') ||
-              fileExtension === 'heic' ||
-              fileExtension === 'heif'
-            ) {
-              try {
-                const fileName = `converted_${Date.now()}.jpg`;
-                const outputPath = `${RNFS.CachesDirectoryPath}/${fileName}`;
-
-                const resizeResult = await ImageResizer.createResizedImage(
-                  processedFile.uri,
-                  2048,
-                  2048,
-                  'JPEG',
-                  80,
-                  0,
-                  outputPath,
-                );
-
-                const newFileName = processedFile.name.replace(
-                  /\.(heic|heif)$/i,
-                  '.jpg',
-                );
-                processedFile = {
-                  uri: resizeResult.uri,
-                  name: newFileName,
-                  type: 'image/jpeg',
-                };
-
-                setSelectedFiles(prevFiles =>
-                  prevFiles.map(fileObj =>
-                    fileObj.id === tempFile.id
-                      ? {
-                          ...fileObj,
-                          file: processedFile,
-                          status: 'ready',
-                          url: resizeResult.uri,
-                        }
-                      : fileObj,
-                  ),
-                );
-              } catch (error) {
-                console.error('HEIC/HEIF conversion failed:', error);
-                dispatch(
-                  setError({
-                    open: true,
-                    custom_message: `Failed to convert HEIC/HEIF file: ${processedFile.name}`,
-                  }),
-                );
-                failedIndexes.add(tempFile.id);
-                return;
-              }
-            }
-
-            // Compression
-            if (
-              ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(
-                mimeType,
-              ) ||
-              ['jpeg', 'jpg', 'png', 'webp'].includes(fileExtension)
-            ) {
-              try {
-                const fileStats = await RNFS.stat(
-                  processedFile.uri.replace('file://', ''),
-                );
-                const fileSizeInMB = fileStats.size / (1024 * 1024);
-
-                if (fileSizeInMB > 2 || true) {
-                  const copiedPath = await copyToCache(
-                    processedFile.uri.replace('file://', ''),
-                    `temp_${Date.now()}.jpg`,
-                  );
-
-                  let resizeResult = null;
-                  try {
-                    resizeResult = await ImageResizer.createResizedImage(
-                      copiedPath,
-                      2048,
-                      2048,
-                      'JPEG',
-                      80,
-                      0,
-                    );
-                  } catch (error) {
-                    console.error(
-                      'ImageResizer.createResizedImage failed:',
-                      error,
-                      processedFile.uri,
-                    );
-                  }
-
-                  if (resizeResult) {
-                    const resizedStats = await RNFS.stat(resizeResult.uri);
-                    const resizedSizeInMB = resizedStats.size / (1024 * 1024);
-
-                    if (resizedSizeInMB > 2) {
-                      const furtherCompressedPath = `${
-                        RNFS.CachesDirectoryPath
-                      }/further_${Date.now()}.jpg`;
-                      const furtherCompressed =
-                        await ImageResizer.createResizedImage(
-                          resizeResult.uri,
-                          1280,
-                          1280,
-                          'JPEG',
-                          60,
-                          0,
-                          furtherCompressedPath,
-                        );
-
-                      processedFile = {
-                        uri: furtherCompressed.uri,
-                        name: processedFile.name,
-                        type: 'image/jpeg',
-                      };
-
-                      RNFS.unlink(resizeResult.uri).catch(err =>
-                        console.warn('Error removing temporary file:', err),
-                      );
-                    } else {
-                      processedFile = {
-                        uri: resizeResult.uri,
-                        name: processedFile.name,
-                        type: 'image/jpeg',
-                      };
-                    }
-                  } else {
-                    console.warn(
-                      'resizeResult was null, skipping compression step',
-                    );
-                  }
-                }
-              } catch (error) {
-                console.error('Image compression failed:', error);
-              }
-            }
-
-            setSelectedFiles(prevFiles =>
-              prevFiles.map(fileObj =>
-                fileObj.id === tempFile.id
-                  ? {...fileObj, status: 'ready', file: processedFile}
-                  : fileObj,
-              ),
-            );
-
-            setIsLoaded(prev => ({
-              ...prev,
-              [tempFile.id]: true,
-            }));
-          } catch (error) {
-            console.error('Error processing image:', error);
-            failedIndexes.add(tempFile.id);
-          }
-        }),
-      );
-
-      if (failedIndexes.size > 0) {
-        setSelectedFiles(prevFiles =>
-          prevFiles.filter(fileObj => !failedIndexes.has(fileObj.id)),
-        );
-      }
-    } catch (error) {
-      console.error('Error picking image:', error);
-      dispatch(
-        setError({
-          open: true,
-          custom_message: 'Error selecting images. Please try again.',
-        }),
-      );
     }
   };
 
@@ -639,7 +363,9 @@ const TrailpointCheckIn = () => {
                 {!isCropOpen && (
                   <View style={styles.addPhotoContainer}>
                     <TouchableOpacity
-                      onPress={pickImage}
+                      onPress={() =>
+                        pickImage(setSelectedFiles, setIsLoaded, dispatch)
+                      }
                       style={styles.addPhotoButton}>
                       <CameraIcon width={24} height={24} />
 

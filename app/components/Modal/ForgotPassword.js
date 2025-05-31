@@ -47,14 +47,6 @@ const ForgotPassword = ({
     setIsDisabled(false);
   };
 
-  //   useEffect(() => {
-  //     if (open) {
-  //       hideBGScroll();
-  //     } else {
-  //       openBGScroll();
-  //     }
-  //   }, [open]);
-
   const validateField = async name => {
     try {
       await emailValidation.validateAt(name, {email});

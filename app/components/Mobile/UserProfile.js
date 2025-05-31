@@ -91,11 +91,6 @@ const UserProfile = () => {
       setIsFollowDisable(true);
       const response = await userFollowUnFollow(id);
       if (response?.status) {
-        if (response?.data?.follow) {
-          // Toast.show({type: 'success', text1: 'Successfully Follow'});
-        } else {
-          // Toast.show({type: 'success', text1: 'Successfully UnFollow'});
-        }
         setTrailblazer(prev => ({
           ...prev,
           isFollow: !prev?.isFollow,

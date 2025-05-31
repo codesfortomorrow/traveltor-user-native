@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useState} from 'react';
-import {TouchableOpacity, Image, StyleSheet, View, Text} from 'react-native';
+import {TouchableOpacity, Image, StyleSheet, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useDispatch} from 'react-redux';
 import {AuthContext} from '../../context/AuthContext';
@@ -8,7 +8,6 @@ import ReactionCounter from '../Modal/ReactionCounter';
 import {getAuthReq} from '../../utils/apiHandlers';
 import {setBadge} from '../../redux/Slices/badgeCount';
 import NotificationWithBadge from '../Comment/NotificationWithBadge';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Header = () => {
   const {navigate} = useNavigation();
@@ -53,17 +52,6 @@ const Header = () => {
 
     fetchCounts();
   }, []);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     const keys = await AsyncStorage.getAllKeys();
-  //     console.log({keys});
-  //     await AsyncStorage.removeItem('cropData');
-  //     await AsyncStorage.removeItem('croppedImages');
-  //     await AsyncStorage.removeItem('authDB:randomId');
-  //     await AsyncStorage.removeItem('uploadsDB:drafts');
-  //   })();
-  // }, []);
 
   return (
     <View style={style.container}>

@@ -74,12 +74,6 @@ const TrekscapeDetails = () => {
       try {
         const response = await followOnTrekscape(id);
         if (response?.status) {
-          if (response?.data?.follow) {
-            // toast.success('Successfully Follow');
-            // Use react-native-toast-message or similar
-          } else {
-            // toast.success('Successfully UnFollow');
-          }
           setTreckScapeDetails(prev => ({
             ...prev,
             isFollowed: !prev?.isFollowed,
