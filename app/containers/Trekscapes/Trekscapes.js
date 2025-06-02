@@ -54,6 +54,7 @@ const Trekscapes = () => {
   const currentCategory = category?.find(item => item.id == categoryId);
   const paginationTimeoutRef = useRef(null);
   const lastScrollYRef = useRef(0);
+  const latestRequestIdRef = useRef(0);
   const scrollDirectionRef = useRef('down');
 
   useEffect(() => {
@@ -138,8 +139,6 @@ const Trekscapes = () => {
       setCategory([payload, ...category]);
     }
   }, [hasCategory, haslive]);
-
-  const latestRequestIdRef = useRef(0);
 
   const fetchTrekscape = async (searchTerm, categoryId, page, location) => {
     const requestId = ++latestRequestIdRef.current;
@@ -226,10 +225,6 @@ const Trekscapes = () => {
   }, [searchTerm, categoryId, pageNumber, location]);
 
   const handleEndReached = useCallback(() => {
-    if (paginationTimeoutRef.current) {
-      return;
-    }
-
     if (
       hasMore &&
       !contentLoading &&
@@ -238,46 +233,31 @@ const Trekscapes = () => {
       !isLoading
     ) {
       isLoadingRef.current = true;
-
-      paginationTimeoutRef.current = setTimeout(() => {
-        setPageNumber(prev => {
-          return prev + 1;
-        });
-        paginationTimeoutRef.current = null;
-      }, 100);
+      setContentLoading(true);
+      setPageNumber(prev => prev + 1);
     }
   }, [hasMore, contentLoading, isLoadingMore, isLoading]);
 
   const handleScroll = useCallback(
-    debounce(({nativeEvent}) => {
-      const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-      const currentScrollY = contentOffset.y;
+    event => {
+      const {layoutMeasurement, contentOffset, contentSize} = event.nativeEvent;
 
-      if (currentScrollY > lastScrollYRef.current) {
-        scrollDirectionRef.current = 'down';
-      } else {
-        scrollDirectionRef.current = 'up';
+      if (contentSize.height <= layoutMeasurement.height) {
+        return;
       }
-      lastScrollYRef.current = currentScrollY;
 
-      if (scrollDirectionRef.current === 'down') {
-        const paddingToBottom = 150;
-        const isNearBottom =
-          layoutMeasurement.height + contentOffset.y >=
-          contentSize.height - paddingToBottom;
+      const paddingToBottom = 50;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom;
 
-        const scrollPercentage =
-          contentOffset.y / (contentSize.height - layoutMeasurement.height);
-        const isScrolledToBottom = scrollPercentage > 0.8;
-
-        if (
-          (isNearBottom || isScrolledToBottom) &&
-          contentSize.height > layoutMeasurement.height
-        ) {
-          handleEndReached();
-        }
+      const scrollPercentage =
+        contentOffset.y / (contentSize.height - layoutMeasurement.height);
+      const isNearEnd = scrollPercentage >= 0.95;
+      if (isCloseToBottom || isNearEnd) {
+        handleEndReached();
       }
-    }, 150),
+    },
     [handleEndReached],
   );
 
@@ -290,11 +270,6 @@ const Trekscapes = () => {
     setIsLoading(true);
     setHasMore(true);
     isLoadingRef.current = false;
-
-    if (paginationTimeoutRef.current) {
-      clearTimeout(paginationTimeoutRef.current);
-      paginationTimeoutRef.current = null;
-    }
 
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({x: 0, y: 0, animated: true});
@@ -473,19 +448,8 @@ const Trekscapes = () => {
           ref={scrollContainerRef}
           style={styles.scrollContainer}
           showsVerticalScrollIndicator={false}
-          onScroll={({nativeEvent}) => {
-            // Check if reached end for pagination
-            const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-            const paddingToBottom = 50; // Increased from 20 to 50 for earlier loading
-            if (
-              layoutMeasurement.height + contentOffset.y >=
-              contentSize.height - paddingToBottom
-            ) {
-              handleEndReached();
-            }
-          }}
-          scrollEventThrottle={100} // Reduced from 400 to 100 for more responsive scrolling
-        >
+          onScroll={handleScroll}
+          scrollEventThrottle={100}>
           {isLoading ? (
             <View style={styles.searchContainer}>
               <Skeleton height={40} width="100%" />

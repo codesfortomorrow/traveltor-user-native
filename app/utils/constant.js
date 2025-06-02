@@ -639,8 +639,6 @@ const Constant = () => {
     const filename = parts.pop();
     parts.push(transformation, filename);
 
-    console.log(parts.join('/'));
-
     return parts.join('/');
   };
 
