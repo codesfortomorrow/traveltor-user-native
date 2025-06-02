@@ -67,6 +67,59 @@ const clearSessionKeys = async () => {
   }
 };
 
+// Screens that should NOT have footer (if any)
+const SCREENS_WITHOUT_FOOTER = [
+  // Add screen names here if you want to exclude them from having footer
+  // Example: 'SomeModalScreen', 'FullScreenView'
+];
+
+// Higher-order component to wrap screens with FooterLayout conditionally
+const withFooterLayout = (Component, screenName) => {
+  const WrappedComponent = React.memo(props => {
+    const shouldShowFooter = !SCREENS_WITHOUT_FOOTER.includes(screenName);
+
+    if (shouldShowFooter) {
+      return (
+        <FooterLayout>
+          <Component {...props} />
+        </FooterLayout>
+      );
+    }
+
+    return <Component {...props} />;
+  });
+
+  WrappedComponent.displayName = `withFooterLayout(${
+    Component.displayName || Component.name || 'Component'
+  })`;
+  return WrappedComponent;
+};
+
+// Wrapped components with FooterLayout
+const WrappedComponents = {
+  HomePage: withFooterLayout(HomePage, 'Home'),
+  UserProfile: withFooterLayout(UserProfile, 'Profile'),
+  Setting: withFooterLayout(Setting, 'Setting'),
+  EditProfile: withFooterLayout(EditProfile, 'EditProfile'),
+  Wallet: withFooterLayout(Wallet, 'Wallet'),
+  ComingSoon: withFooterLayout(ComingSoon, 'ComingSoon'),
+  MyActivity: withFooterLayout(MyActivity, 'MyActivity'),
+  Referral: withFooterLayout(Referral, 'Referral'),
+  Community: withFooterLayout(Community, 'Community'),
+  HowItWorks: withFooterLayout(HowItWorks, 'HowItWorks'),
+  AlpinistProgram: withFooterLayout(AlpinistProgram, 'AlpinistProgram'),
+  MyFeeds: withFooterLayout(MyFeeds, 'MyFeeds'),
+  Trekscapes: withFooterLayout(Trekscapes, 'Trekscapes'),
+  Notification: withFooterLayout(Notification, 'Notification'),
+  TrekscapeDetails: withFooterLayout(TrekscapeDetails, 'TrekscapeDetail'),
+  TrekscapeFeed: withFooterLayout(TrekscapeFeed, 'TrekscapeFeed'),
+  TrailpointDetails: withFooterLayout(TrailpointDetails, 'TrailpointDetails'),
+  TrailpointReview: withFooterLayout(TrailpointReview, 'TrailpointReview'),
+  SingleCheckIn: withFooterLayout(SingleCheckIn, 'SingleCheckIn'),
+  GeneralCheckIn: withFooterLayout(GeneralCheckIn, 'GeneralCheckIn'),
+  TrailpointCheckIn: withFooterLayout(TrailpointCheckIn, 'TrailpointCheckIn'),
+};
+
 function App() {
   const [isConnected, setIsConnected] = useState(true);
   const {isLoggedIn} = useContext(AuthContext);
@@ -82,10 +135,6 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  if (!isConnected) {
-    return <NoInternet />;
-  }
-
   useEffect(() => {
     if (isLoggedIn) {
       initBackgroundTask();
@@ -98,6 +147,10 @@ function App() {
     clearSessionKeys();
   }, []);
 
+  if (!isConnected) {
+    return <NoInternet />;
+  }
+
   return (
     <GestureHandlerRootView style={{flex: 1}}>
       <FeedProvider>
@@ -105,195 +158,94 @@ function App() {
           <SafeAreaView style={{flex: 1, backgroundColor: '#e5e7eb'}}>
             <PaperProvider>
               <NavigationContainer>
-                <Stack.Navigator initialRouteName="Home">
+                <Stack.Navigator
+                  initialRouteName="Home"
+                  screenOptions={{
+                    headerShown: false,
+                  }}>
                   <Stack.Screen
                     name="Home"
-                    children={() => (
-                      <FooterLayout>
-                        <HomePage />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.HomePage}
                   />
                   <Stack.Screen
                     name="Profile"
-                    children={() => (
-                      <FooterLayout>
-                        <UserProfile />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.UserProfile}
                   />
                   <Stack.Screen
                     name="Setting"
-                    children={() => (
-                      <FooterLayout>
-                        <Setting />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Setting}
                   />
                   <Stack.Screen
                     name="EditProfile"
-                    children={() => (
-                      <FooterLayout>
-                        <EditProfile />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.EditProfile}
                   />
                   <Stack.Screen
                     name="Wallet"
-                    children={() => (
-                      <FooterLayout>
-                        <Wallet />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Wallet}
                   />
                   <Stack.Screen
                     name="ComingSoon"
-                    children={() => (
-                      <FooterLayout>
-                        <ComingSoon />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.ComingSoon}
                   />
                   <Stack.Screen
                     name="MyActivity"
-                    children={() => (
-                      <FooterLayout>
-                        <MyActivity />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.MyActivity}
                   />
                   <Stack.Screen
                     name="Referral"
-                    children={() => (
-                      <FooterLayout>
-                        <Referral />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Referral}
                   />
                   <Stack.Screen
                     name="Community"
-                    children={() => (
-                      <FooterLayout>
-                        <Community />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Community}
                   />
                   <Stack.Screen
                     name="HowItWorks"
-                    children={() => (
-                      <FooterLayout>
-                        <HowItWorks />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.HowItWorks}
                   />
                   <Stack.Screen
                     name="AlpinistProgram"
-                    children={() => (
-                      <FooterLayout>
-                        <AlpinistProgram />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.AlpinistProgram}
                   />
                   <Stack.Screen
                     name="MyFeeds"
-                    children={() => (
-                      <FooterLayout>
-                        <MyFeeds />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.MyFeeds}
                   />
                   <Stack.Screen
                     name="Trekscapes"
-                    children={() => (
-                      <FooterLayout>
-                        <Trekscapes />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Trekscapes}
                   />
                   <Stack.Screen
                     name="Notification"
-                    children={() => (
-                      <FooterLayout>
-                        <Notification />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.Notification}
                   />
                   <Stack.Screen
                     name="TrekscapeDetail"
-                    children={() => (
-                      <FooterLayout>
-                        <TrekscapeDetails />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.TrekscapeDetails}
                   />
                   <Stack.Screen
                     name="TrekscapeFeed"
-                    children={() => (
-                      <FooterLayout>
-                        <TrekscapeFeed />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.TrekscapeFeed}
                   />
                   <Stack.Screen
                     name="TrailpointDetails"
-                    children={() => (
-                      <FooterLayout>
-                        <TrailpointDetails />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.TrailpointDetails}
                   />
                   <Stack.Screen
                     name="TrailpointReview"
-                    children={() => (
-                      <FooterLayout>
-                        <TrailpointReview />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.TrailpointReview}
                   />
                   <Stack.Screen
                     name="SingleCheckIn"
-                    children={() => (
-                      <FooterLayout>
-                        <SingleCheckIn />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.SingleCheckIn}
                   />
                   <Stack.Screen
                     name="GeneralCheckIn"
-                    children={() => (
-                      <FooterLayout>
-                        <GeneralCheckIn />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.GeneralCheckIn}
                   />
                   <Stack.Screen
                     name="TrailpointCheckIn"
-                    children={() => (
-                      <FooterLayout>
-                        <TrailpointCheckIn />
-                      </FooterLayout>
-                    )}
-                    options={{headerShown: false}}
+                    component={WrappedComponents.TrailpointCheckIn}
                   />
                 </Stack.Navigator>
               </NavigationContainer>

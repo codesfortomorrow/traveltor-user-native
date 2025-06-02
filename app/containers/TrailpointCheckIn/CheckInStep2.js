@@ -101,7 +101,7 @@ const CheckInStep2 = ({
                 <Picker
                   selectedValue={seletedValue}
                   onValueChange={itemValue => {
-                    handleSelectChange({target: {value: itemValue}});
+                    handleSelectChange(itemValue);
                   }}
                   style={styles.picker}>
                   <Picker.Item label="Must Visit" value="MustVisit" />

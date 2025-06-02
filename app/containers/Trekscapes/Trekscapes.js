@@ -24,6 +24,7 @@ import SadIcon from '../../../public/images/sadIcon.svg';
 import Search from 'react-native-vector-icons/EvilIcons';
 import TrekscapeTopBar from './TrekscapeTopBar';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const Trekscapes = () => {
   const {navigate} = useNavigation();
@@ -50,6 +51,10 @@ const Trekscapes = () => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const isLoadingRef = useRef(false);
   const {optimizeImageKitUrl} = Constant();
+  const currentCategory = category?.find(item => item.id == categoryId);
+  const paginationTimeoutRef = useRef(null);
+  const lastScrollYRef = useRef(0);
+  const scrollDirectionRef = useRef('down');
 
   useEffect(() => {
     const loadCategoryId = async () => {
@@ -186,6 +191,11 @@ const Trekscapes = () => {
         setContentLoading(false);
         setIsLoadingMore(false);
         isLoadingRef.current = false;
+
+        if (paginationTimeoutRef.current) {
+          clearTimeout(paginationTimeoutRef.current);
+          paginationTimeoutRef.current = null;
+        }
       }
     }
   };
@@ -215,14 +225,61 @@ const Trekscapes = () => {
     return () => debouncedFetchTrekscape.cancel();
   }, [searchTerm, categoryId, pageNumber, location]);
 
-  // Improved end reached handler with better loading state management
-  const handleEndReached = () => {
-    // Prevent multiple concurrent load more requests
-    if (hasMore && !contentLoading && !isLoadingMore && !isLoadingRef.current) {
-      isLoadingRef.current = true;
-      setPageNumber(prev => prev + 1);
+  const handleEndReached = useCallback(() => {
+    if (paginationTimeoutRef.current) {
+      return;
     }
-  };
+
+    if (
+      hasMore &&
+      !contentLoading &&
+      !isLoadingMore &&
+      !isLoadingRef.current &&
+      !isLoading
+    ) {
+      isLoadingRef.current = true;
+
+      paginationTimeoutRef.current = setTimeout(() => {
+        setPageNumber(prev => {
+          return prev + 1;
+        });
+        paginationTimeoutRef.current = null;
+      }, 100);
+    }
+  }, [hasMore, contentLoading, isLoadingMore, isLoading]);
+
+  const handleScroll = useCallback(
+    debounce(({nativeEvent}) => {
+      const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
+      const currentScrollY = contentOffset.y;
+
+      if (currentScrollY > lastScrollYRef.current) {
+        scrollDirectionRef.current = 'down';
+      } else {
+        scrollDirectionRef.current = 'up';
+      }
+      lastScrollYRef.current = currentScrollY;
+
+      if (scrollDirectionRef.current === 'down') {
+        const paddingToBottom = 150;
+        const isNearBottom =
+          layoutMeasurement.height + contentOffset.y >=
+          contentSize.height - paddingToBottom;
+
+        const scrollPercentage =
+          contentOffset.y / (contentSize.height - layoutMeasurement.height);
+        const isScrolledToBottom = scrollPercentage > 0.8;
+
+        if (
+          (isNearBottom || isScrolledToBottom) &&
+          contentSize.height > layoutMeasurement.height
+        ) {
+          handleEndReached();
+        }
+      }
+    }, 150),
+    [handleEndReached],
+  );
 
   useEffect(() => {
     setSearchTerm('');
@@ -233,6 +290,11 @@ const Trekscapes = () => {
     setIsLoading(true);
     setHasMore(true);
     isLoadingRef.current = false;
+
+    if (paginationTimeoutRef.current) {
+      clearTimeout(paginationTimeoutRef.current);
+      paginationTimeoutRef.current = null;
+    }
 
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({x: 0, y: 0, animated: true});
@@ -337,9 +399,11 @@ const Trekscapes = () => {
               <View style={styles.swiperSlide}>
                 <Image
                   source={{
-                    uri: optimizeImageKitUrl(image, 300, 300, {quality: 100}),
+                    uri: optimizeImageKitUrl(image, 0, 0),
+                    // priority: FastImage.priority.normal,
                   }}
                   style={styles.swiperImage}
+                  // resizeMode={FastImage.resizeMode.cover}
                   resizeMode="cover"
                 />
               </View>
@@ -375,7 +439,7 @@ const Trekscapes = () => {
 
   // Render loader at the bottom for better visibility
   const renderFooterLoader = () => {
-    if (!contentLoading) return null;
+    if (!isLoadingMore && !contentLoading) return null;
 
     return (
       <View style={styles.footerLoader}>
@@ -383,6 +447,15 @@ const Trekscapes = () => {
       </View>
     );
   };
+
+  useEffect(() => {
+    return () => {
+      if (paginationTimeoutRef.current) {
+        clearTimeout(paginationTimeoutRef.current);
+      }
+      debouncedFetchTrekscape.cancel();
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -423,8 +496,7 @@ const Trekscapes = () => {
                 <View style={styles.searchContainer}>
                   <TextInput
                     style={styles.searchInput}
-                    // placeholder={`Search for ${currentCategory?.name?.trim()} Trekscapes`}
-                    placeholder="Search by name"
+                    placeholder={`Search by ${currentCategory?.name?.trim()} Trekscapes`}
                     value={searchTerm}
                     onChangeText={handleSearchChange}
                   />
@@ -544,17 +616,8 @@ const Trekscapes = () => {
         <ScrollView
           ref={scrollContainerRef}
           style={styles.scrollContainer}
-          onScroll={({nativeEvent}) => {
-            const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-            const paddingToBottom = 50; // Increased from 20 to 50
-            if (
-              layoutMeasurement.height + contentOffset.y >=
-              contentSize.height - paddingToBottom
-            ) {
-              handleEndReached();
-            }
-          }}
-          scrollEventThrottle={100}>
+          onScroll={handleScroll}
+          scrollEventThrottle={16}>
           {' '}
           {/* Reduced from 400 to 100 */}
           <View style={styles.liveEventsContainer}>
@@ -668,7 +731,6 @@ const Trekscapes = () => {
                                     review.media[0],
                                     300,
                                     300,
-                                    {quality: 100},
                                   ),
                                 }}
                                 style={styles.reviewImage}
@@ -694,7 +756,6 @@ const Trekscapes = () => {
                                               review?.user?.profileImage,
                                               200,
                                               200,
-                                              {quality: 100},
                                             ),
                                           }
                                         : require('../../../public/images/dpPlaceholder.png')
@@ -741,13 +802,13 @@ const Trekscapes = () => {
                         loop={false}>
                         {event?.previewMedia?.map((image, imageIndex) => (
                           <View key={imageIndex} style={styles.previewSlide}>
-                            <Image
+                            <FastImage
                               source={{
-                                uri: optimizeImageKitUrl(image, 300, 300, {
-                                  quality: 100,
-                                }),
+                                uri: optimizeImageKitUrl(image, 0, 0),
+                                priority: FastImage.priority.normal,
                               }}
                               style={styles.previewImage}
+                              resizeMode={FastImage.resizeMode.cover}
                             />
                           </View>
                         ))}
@@ -838,7 +899,6 @@ const styles = StyleSheet.create({
   swiperImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   swiperDot: {
     backgroundColor: '#fff',
@@ -1137,6 +1197,12 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
     borderRadius: 14,
+  },
+  footerLoader: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
   endSpace: {
     height: 110,

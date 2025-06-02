@@ -1,4 +1,11 @@
-import React, {memo, useRef, useState} from 'react';
+import React, {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   View,
   Text,
@@ -7,7 +14,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableWithoutFeedback,
-  ScrollView,
+  FlatList,
 } from 'react-native';
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
@@ -29,6 +36,7 @@ import FeedReactionList from '../Modal/FeedReactionList';
 import FeedMenuBar from '../Modal/FeedMenuBar';
 import ShoutOut from '../Modal/ShoutOut';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -59,6 +67,7 @@ const FeedsContainer = ({
   const [shoutOutFeed, setShoutOutFeed] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const {optimizeImageKitUrl} = Constant();
+  const heartScale = useSharedValue(0);
 
   const isTrekscapeNameShow =
     route.name === 'MyFeeds' ||
@@ -96,8 +105,6 @@ const FeedsContainer = ({
     });
   };
 
-  const heartScale = useSharedValue(0);
-
   const heartAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{scale: heartScale.value}],
@@ -126,6 +133,15 @@ const FeedsContainer = ({
     lastTapRef.current = currentTime;
   };
 
+  useEffect(() => {
+    return () => {
+      // Clear FastImage cache when component unmounts
+      FastImage.clearMemoryCache();
+    };
+  }, []);
+
+  const imageData = useMemo(() => item?.media || [], [item?.media]);
+
   const renderScrollViewSlider = images => {
     const handleScroll = event => {
       const slideWidth = windowWidth;
@@ -135,55 +151,73 @@ const FeedsContainer = ({
       setCurrentIndex(currentIndex);
     };
 
+    const renderItem = useCallback(
+      ({item: image, index}) => (
+        <TouchableWithoutFeedback
+          key={index}
+          onPress={handleDoubleTap}
+          delayPressIn={0}
+          delayPressOut={0}>
+          <View style={styles.scrollSlide}>
+            <FastImage
+              source={{
+                uri: optimizeImageKitUrl(image, 0, 0),
+                priority:
+                  index === 0
+                    ? FastImage.priority.high
+                    : FastImage.priority.normal,
+              }}
+              style={styles.slideImage}
+              resizeMode={FastImage.resizeMode.contain}
+              onLoadEnd={() => {
+                if (index > 2) {
+                  FastImage.clearMemoryCache();
+                }
+              }}
+            />
+          </View>
+        </TouchableWithoutFeedback>
+      ),
+      [handleDoubleTap, optimizeImageKitUrl],
+    );
+
+    const getImageItemLayout = useCallback(
+      (data, index) => ({
+        length: windowWidth,
+        offset: windowWidth * index,
+        index,
+      }),
+      [],
+    );
+
+    const keyExtractor = useCallback((item, index) => `image-${index}`, []);
+
     return (
       <View style={styles.swiperContainer}>
-        <ScrollView
+        <FlatList
+          data={images}
+          renderItem={renderItem}
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          // Performance props
-          removeClippedSubviews={false}
+          removeClippedSubviews={true}
+          initialNumToRender={1}
+          maxToRenderPerBatch={2}
+          windowSize={3}
+          updateCellsBatchingPeriod={100}
           scrollEventThrottle={16}
           decelerationRate="fast"
-          bounces={false} // Changed from true to false for better control
-          // Touch responsiveness - CRITICAL FIXES
+          bounces={false}
           directionalLockEnabled={true}
-          alwaysBounceHorizontal={false}
-          keyboardShouldPersistTaps="handled"
-          // Additional props to fix touch issues
-          nestedScrollEnabled={true}
-          // Scroll event handler
           onScroll={handleScroll}
-          scrollEnabled={true} // Explicitly enable scrolling
-        >
-          {images?.map((image, index) => (
-            <TouchableWithoutFeedback
-              key={index}
-              onPress={handleDoubleTap}
-              delayPressIn={0}
-              delayPressOut={0}>
-              <View style={styles.scrollSlide}>
-                <Image
-                  source={{
-                    uri: optimizeImageKitUrl(
-                      image,
-                      windowWidth,
-                      (windowWidth * 4) / 3,
-                      {quality: 100},
-                    ),
-                  }}
-                  style={styles.slideImage}
-                  // Add these props to prevent image from interfering with touch
-                  resizeMode="cover"
-                />
-              </View>
-            </TouchableWithoutFeedback>
-          ))}
-        </ScrollView>
+          getItemLayout={getImageItemLayout}
+          keyExtractor={keyExtractor}
+          viewabilityConfig={{
+            itemVisiblePercentThreshold: 50,
+            minimumViewTime: 100,
+          }}
+        />
 
-        {/* Custom Pagination Dots - positioned outside the touchable area */}
         {images?.length > 1 && (
           <View style={styles.paginationContainer} pointerEvents="none">
             {images?.map((_, index) => (
@@ -270,7 +304,7 @@ const FeedsContainer = ({
 
       {/* Image Carousel Container */}
       <View style={{position: 'relative'}}>
-        {item?.media?.length > 0 && renderScrollViewSlider(item?.media)}
+        {imageData.length > 0 && renderScrollViewSlider(imageData)}
 
         <View style={styles.heartOverlay}>
           <Animated.View style={[heartAnimatedStyle]}>
@@ -617,9 +651,6 @@ const styles = StyleSheet.create({
   noImageText: {
     fontSize: 16,
     color: '#666',
-  },
-  paginationStyle: {
-    bottom: 10,
   },
   // Custom Pagination Dots Styles
   paginationContainer: {

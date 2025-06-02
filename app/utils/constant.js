@@ -620,25 +620,26 @@ const Constant = () => {
     url,
     width,
     height,
-    options = {quality: 100},
+    options = {quality: 90, lowQuality: false},
   ) => {
     if (!url?.includes('imagekit.io')) return url;
 
     const {quality, lowQuality} = options;
-    let transformation =
-      !width && height
-        ? `tr:h-${height}`
-        : !height && width
-        ? `tr:w-${width}`
-        : `tr:w-${width},h-${height}`;
 
-    if (lowQuality) transformation += ',lo-true';
-    if (quality) transformation += `,q-${quality}`;
+    const transforms = [];
+
+    if (width) transforms.push(`w-${width}`);
+    if (height) transforms.push(`h-${height}`);
+    if (!lowQuality) transforms.push('lo-false');
+    if (quality) transforms.push(`q-${quality}`);
+
+    const transformation = `tr:${transforms.join(',')}`;
 
     const parts = url.split('/');
-    const lastPart = parts.pop();
-    parts.push(transformation);
-    parts.push(lastPart);
+    const filename = parts.pop();
+    parts.push(transformation, filename);
+
+    console.log(parts.join('/'));
 
     return parts.join('/');
   };

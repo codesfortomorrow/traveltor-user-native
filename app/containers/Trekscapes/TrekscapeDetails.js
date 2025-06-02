@@ -30,6 +30,7 @@ import Login from '../../components/Modal/Login';
 import Signup from '../../components/Signup';
 import {setError} from '../../redux/Slices/errorPopup';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -293,15 +294,15 @@ const TrekscapeDetails = () => {
             treckScapeDetails?.trailPoints?.map((item, index) => (
               <View key={index} style={styles.trailPointCard}>
                 <TouchableOpacity onPress={() => handleTrailPoint(item)}>
-                  <Image
+                  <FastImage
                     style={styles.trailPointImage}
                     source={{
                       uri:
                         item?.previewMedia &&
-                        optimizeImageKitUrl(item?.previewMedia[0], 90, 94, {
-                          quality: 100,
-                        }),
+                        optimizeImageKitUrl(item?.previewMedia[0], 0, 0),
+                      priority: FastImage.priority.normal,
                     }}
+                    resizeMode={FastImage.resizeMode.cover}
                   />
                 </TouchableOpacity>
                 <View style={styles.trailPointContent}>

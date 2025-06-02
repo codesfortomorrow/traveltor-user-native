@@ -36,7 +36,9 @@ const TrekscapeFeed = () => {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const scrollViewRef = useRef(null);
-  const onEndReachedCalledDuringMomentum = useRef(false);
+  const loadingRef = useRef(false); // Prevent multiple simultaneous loads
+  const lastScrollY = useRef(0);
+  const scrollTimer = useRef(null);
 
   useEffect(() => {
     // Load stored session data
@@ -85,39 +87,111 @@ const TrekscapeFeed = () => {
 
   const fetchTreckScapeFeeds = useCallback(
     async page => {
-      let response;
+      if (loadingRef.current) return; // Prevent multiple simultaneous requests
+
+      loadingRef.current = true;
       setLoading(true);
+
       try {
-        response = await getTrackScapeFeeds(slug, user?.id, page);
-        if (response) {
-          setTrackScapeFeeds(prev => [...prev, ...response?.data?.data]);
-          setHasMore(response?.data?.data?.length === 5);
-        }
+        const response = await getTrackScapeFeeds(slug, user?.id, page);
+
         if (response?.data?.data) {
+          if (page === 0) {
+            // Initial load or refresh
+            setTrackScapeFeeds(response.data.data);
+          } else {
+            // Pagination load
+            setTrackScapeFeeds(prev => [...prev, ...response.data.data]);
+          }
+
+          // Check if there are more items to load
+          setHasMore(response.data.data.length === 5);
           setIsLoading(false);
+        } else {
+          setHasMore(false);
+          if (page === 0) {
+            setIsLoading(false);
+          }
         }
-        setLoading(false);
       } catch (error) {
-        return error;
-      } finally {
-        if (response?.data?.data?.length == 0) {
+        console.error('Error fetching feeds:', error);
+        setHasMore(false);
+        if (page === 0) {
           setIsLoading(false);
         }
+      } finally {
+        setLoading(false);
+        loadingRef.current = false;
       }
     },
-    [slug, user?.id],
+    [slug, user?.id, getTrackScapeFeeds],
   );
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimer.current) {
+        clearTimeout(scrollTimer.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     fetchTreckScapeFeeds(pageNumber);
-  }, [pageNumber]);
+  }, [pageNumber, fetchTreckScapeFeeds]);
 
-  const handleEndReached = () => {
-    if (!onEndReachedCalledDuringMomentum.current && hasMore && !loading) {
-      setPageNumber(prev => prev + 1);
-      onEndReachedCalledDuringMomentum.current = true;
+  // Handle scroll events for pagination with debouncing
+  const handleScroll = event => {
+    const {layoutMeasurement, contentOffset, contentSize} = event.nativeEvent;
+    const currentScrollY = contentOffset.y;
+
+    // Only check if user is scrolling down
+    if (currentScrollY <= lastScrollY.current) {
+      lastScrollY.current = currentScrollY;
+      return;
     }
+
+    lastScrollY.current = currentScrollY;
+
+    // Clear existing timer
+    if (scrollTimer.current) {
+      clearTimeout(scrollTimer.current);
+    }
+
+    // Debounce the scroll check
+    scrollTimer.current = setTimeout(() => {
+      const paddingToBottom = 300; // Trigger pagination when user is 300px from bottom
+
+      // Calculate how close we are to the bottom
+      const isCloseToBottom =
+        layoutMeasurement.height + currentScrollY >=
+        contentSize.height - paddingToBottom;
+
+      // Also check percentage scrolled (trigger at 75% scrolled)
+      const scrollPercentage =
+        (currentScrollY + layoutMeasurement.height) / contentSize.height;
+
+      if (
+        (isCloseToBottom || scrollPercentage >= 0.75) &&
+        hasMore &&
+        !loading &&
+        !loadingRef.current
+      ) {
+        console.log(
+          'Scroll pagination triggered at:',
+          scrollPercentage.toFixed(2),
+        ); // Debug log
+        loadMoreData();
+      }
+    }, 100); // 100ms debounce
   };
+
+  const loadMoreData = useCallback(() => {
+    if (hasMore && !loading && !loadingRef.current) {
+      console.log('Loading more data, current page:', pageNumber); // Debug log
+      setPageNumber(prev => prev + 1);
+    }
+  }, [hasMore, loading, pageNumber]);
 
   const handleLikeDislike = async (id, index, type) => {
     if (isLogin) {
@@ -169,6 +243,13 @@ const TrekscapeFeed = () => {
     }
   };
 
+  // Refresh function for pull-to-refresh
+  const handleRefresh = useCallback(() => {
+    setPageNumber(0);
+    setHasMore(true);
+    setIsLoading(true);
+  }, []);
+
   return (
     <View style={styles.container}>
       <TrekscapeHeader />
@@ -180,16 +261,14 @@ const TrekscapeFeed = () => {
             style={styles.scrollView}
             contentContainerStyle={styles.scrollViewContent}
             showsVerticalScrollIndicator={false}
-            onEndReached={handleEndReached}
-            onEndReachedThreshold={0.5}
-            onMomentumScrollBegin={() => {
-              onEndReachedCalledDuringMomentum.current = false;
-            }}>
+            onScroll={handleScroll}
+            scrollEventThrottle={16} // Smooth scrolling (60fps)
+          >
             {trackScapeFeeds?.length > 0 ? (
               trackScapeFeeds?.map((item, index) => (
                 <FeedsContainer
                   item={item}
-                  key={index}
+                  key={`${item?.id}-${index}`} // Better key using item id
                   handleLike={() => handleLikeDislike(item?.id, index, 'Like')}
                   handleDislike={() =>
                     handleLikeDislike(item?.id, index, 'Dislike')
@@ -211,11 +290,12 @@ const TrekscapeFeed = () => {
               </View>
             )}
 
-            {loading && (
+            {loading && hasMore && (
               <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#0000ff" />
+                <ActivityIndicator size="large" color="#e93c00" />
               </View>
             )}
+
             <View style={styles.endSpacer} />
           </ScrollView>
         </View>
@@ -281,6 +361,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+  },
+  loadingText: {
+    marginTop: 8,
+    color: '#666',
+    fontSize: 14,
+  },
+  endContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  endText: {
+    color: '#999',
+    fontSize: 14,
+    fontStyle: 'italic',
   },
   endSpacer: {
     height: 50,

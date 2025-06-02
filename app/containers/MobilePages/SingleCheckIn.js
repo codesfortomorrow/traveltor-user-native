@@ -18,8 +18,6 @@ import {setError} from '../../redux/Slices/errorPopup';
 import useAuth from '../../hooks/useAuth';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Skeleton from 'react-native-skeleton-placeholder';
-import Swiper from 'react-native-swiper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import ReactionIcon from 'react-native-vector-icons/AntDesign';
 import CheckIcon from '../../../public/images/icons/check.svg';
 import Marker from '../../../public/images/icons/marker.svg';
@@ -27,6 +25,15 @@ import FaRegComment from 'react-native-vector-icons/FontAwesome';
 import FeedReactionList from '../../components/Modal/FeedReactionList';
 import FeedMenuBar from '../../components/Modal/FeedMenuBar';
 import ShoutOut from '../../components/Modal/ShoutOut';
+import Constant from '../../utils/constant';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import {Heart} from 'react-native-feather';
 
 const SingleCheckIn = () => {
   const [feed, setFeed] = useState([]);
@@ -50,8 +57,10 @@ const SingleCheckIn = () => {
   const [reactionData, setReactionData] = useState([]);
   const [type, setType] = useState('');
   const [reactionLoader, setReactionLoader] = useState(false);
-  const [showHeart, setShowHeart] = useState(false);
   const lastTapRef = useRef(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const {optimizeImageKitUrl} = Constant();
+  const heartScale = useSharedValue(0);
 
   const toggleReview = () => {
     setExpanded(prevState => !prevState);
@@ -130,52 +139,6 @@ const SingleCheckIn = () => {
     }
   };
 
-  const onDoubleTap = (
-    e,
-    feed,
-    handleLikeDislike,
-    setShowHeart,
-    lastTapRef,
-    doubleclick,
-  ) => {
-    if (
-      e.nativeEvent &&
-      e.nativeEvent.touches &&
-      e.nativeEvent.touches.length > 1
-    )
-      return;
-
-    const currentTime = new Date().getTime();
-    const tapGap = currentTime - lastTapRef.current;
-
-    if (e.type === 'touchstart') {
-      const startY = e.nativeEvent.touches[0].clientY;
-
-      const touchMoveHandler = moveEvent => {
-        const moveY = moveEvent.nativeEvent.touches[0].clientY;
-        if (Math.abs(moveY - startY) > 10) {
-          // In React Native we would use different event handling
-          return;
-        }
-      };
-
-      // In React Native we would use different event handling
-      setTimeout(() => {
-        // Cleanup
-      }, 300);
-    }
-
-    if (doubleclick || (tapGap < 300 && tapGap > 0)) {
-      setShowHeart(true);
-      if (feed?.reaction !== 'Like') {
-        handleLikeDislike(feed?.id, 'Like');
-      }
-      setTimeout(() => setShowHeart(false), 500);
-    }
-
-    lastTapRef.current = currentTime;
-  };
-
   const navigateToProfile = () => {
     navigation.navigate('Profile', {
       userType: feed?.user?.type,
@@ -183,24 +146,101 @@ const SingleCheckIn = () => {
     });
   };
 
-  const renderSwiperSlider = images => {
+  const heartAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{scale: heartScale.value}],
+      opacity: heartScale.value,
+    };
+  });
+
+  const animateHeart = () => {
+    heartScale.value = withSequence(
+      withTiming(1.5, {duration: 200}),
+      withDelay(300, withTiming(0, {duration: 200})),
+    );
+  };
+
+  const handleDoubleTap = event => {
+    const currentTime = new Date().getTime();
+    const tapGap = currentTime - lastTapRef.current;
+
+    if (tapGap < 300 && tapGap > 0) {
+      if (feed?.reaction !== 'Like') {
+        handleLikeDislike(feed?.id, 'Like');
+      }
+      animateHeart();
+    }
+
+    lastTapRef.current = currentTime;
+  };
+
+  const renderScrollViewSlider = images => {
+    const handleScroll = event => {
+      const slideWidth = windowWidth;
+      const currentIndex = Math.round(
+        event.nativeEvent.contentOffset.x / slideWidth,
+      );
+      setCurrentIndex(currentIndex);
+    };
+
     return (
-      <TouchableWithoutFeedback>
-        <View style={styles.swiperContainer}>
-          <Swiper
-            style={styles.swiper}
-            showsPagination={true}
-            loop={false}
-            dotStyle={styles.swiperDot}
-            activeDotStyle={styles.swiperActiveDot}>
-            {images?.map((image, index) => (
-              <View key={index} style={styles.swiperSlide}>
-                <Image source={{uri: image}} style={styles.slideImage} />
+      <View style={styles.swiperContainer}>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContent}
+          removeClippedSubviews={false}
+          scrollEventThrottle={16}
+          decelerationRate="fast"
+          bounces={false}
+          directionalLockEnabled={true}
+          alwaysBounceHorizontal={false}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+          onScroll={handleScroll}
+          scrollEnabled={true}>
+          {images?.map((image, index) => (
+            <TouchableWithoutFeedback
+              key={index}
+              onPress={handleDoubleTap}
+              delayPressIn={0}
+              delayPressOut={0}>
+              <View style={styles.scrollSlide}>
+                <Image
+                  source={{
+                    uri: optimizeImageKitUrl(
+                      image,
+                      windowWidth,
+                      (windowWidth * 4) / 3,
+                      {quality: 100},
+                    ),
+                  }}
+                  style={styles.slideImage}
+                  resizeMode="cover"
+                />
               </View>
+            </TouchableWithoutFeedback>
+          ))}
+        </ScrollView>
+
+        {images?.length > 1 && (
+          <View style={styles.paginationContainer} pointerEvents="none">
+            {images?.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  currentIndex === index
+                    ? styles.paginationActiveDot
+                    : styles.paginationInactiveDot,
+                ]}
+              />
             ))}
-          </Swiper>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        )}
+      </View>
     );
   };
 
@@ -315,7 +355,21 @@ const SingleCheckIn = () => {
                 </View>
 
                 {/* Image Carousel Container */}
-                {feed?.media?.length > 0 && renderSwiperSlider(feed?.media)}
+                <View style={{position: 'relative'}}>
+                  {feed?.media?.length > 0 &&
+                    renderScrollViewSlider(feed?.media)}
+
+                  <View style={styles.heartOverlay}>
+                    <Animated.View style={[heartAnimatedStyle]}>
+                      <Heart
+                        width={56}
+                        height={56}
+                        fill="white"
+                        stroke="white"
+                      />
+                    </Animated.View>
+                  </View>
+                </View>
 
                 {feed?.review && (
                   <View style={styles.reviewContainer}>
@@ -635,25 +689,62 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     margin: 3,
   },
+  scrollSlide: {
+    width: windowWidth,
+    height: (windowWidth * 4) / 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   slideImage: {
     width: windowWidth,
     height: (windowWidth * 4) / 3,
     minHeight: 523,
     resizeMode: 'cover',
   },
+  paginationContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    zIndex: 1,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3, // For Android shadow
+  },
+  paginationActiveDot: {
+    backgroundColor: '#E93C00',
+  },
+  paginationInactiveDot: {
+    backgroundColor: '#fff',
+  },
   feedImage: {
     width: '100%',
     minHeight: 524,
   },
-  heartContainer: {
+  heartOverlay: {
     position: 'absolute',
     top: 0,
-    left: 0,
-    right: 0,
     bottom: 0,
-    justifyContent: 'center',
+    left: '60%',
+    transform: [{translateX: -60}],
     alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 100,
+    pointerEvents: 'none',
   },
   reviewContainer: {
     marginTop: 12,

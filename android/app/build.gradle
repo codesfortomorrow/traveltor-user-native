@@ -103,6 +103,12 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            applicationVariants.all { variant ->
+                variant.outputs.all { output ->
+                    def newName = "traveltor.apk"
+                    outputFileName = newName
+                }
+            }
         }
     }
 }

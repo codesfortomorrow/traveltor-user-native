@@ -12,12 +12,12 @@ import React, {
 import {
   View,
   Text,
-  ScrollView,
   Image,
   StyleSheet,
   Dimensions,
   ActivityIndicator,
   RefreshControl,
+  FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useDispatch, useSelector} from 'react-redux';
@@ -30,31 +30,33 @@ import FeedComment from '../../components/Modal/FeedComment';
 import {EventRegister} from 'react-native-event-listeners';
 import {updateScroll} from '../../redux/Slices/myfeedScroll';
 
+const ITEMS_PER_PAGE = 5;
+
 const MyFeeds = () => {
   const {getMyFeed, FeedReactionAction} = useAuth();
   const isLogin = isLoggedIn();
-  const loader = useRef(null);
   const [contentLoader, setContentLoader] = useState(false);
   const [commentModal, setCommentModal] = useState(false);
   const [postId, setPostId] = useState('');
   const [feedUsername, setFeedUsername] = useState('');
   const [reactionDisabled, setReactionDisabled] = useState(false);
-  const [isPageRefresh, setIsPageRefresh] = useState(false);
   const [noData, setNoData] = useState(false);
   const feedContainerRef = useRef(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const isInitialLoad = useRef(true);
+
   const {
     feeds,
     setFeeds,
     feedLoading,
     setFeedLoading,
-    pageNumber,
     setPageNumber,
     hasMore,
     setHasMore,
     scrollPosition,
   } = useContext(FeedContext);
 
-  const isFirstRender = useRef(true);
   const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
   const [progress, setProgress] = useState({
@@ -94,94 +96,114 @@ const MyFeeds = () => {
   }, []);
 
   useEffect(() => {
-    // Restore scroll position
     const restoreScrollPosition = async () => {
-      try {
-        if (scrollPosition.current && feedContainerRef.current) {
-          feedContainerRef.current.scrollTo({
-            y: parseInt(scrollPosition.current),
-            animated: false,
-          });
-        }
-      } catch (error) {
-        console.error('Error restoring scroll position:', error);
+      if (scrollPosition.current && feedContainerRef.current) {
+        feedContainerRef.current.scrollTo({
+          y: parseInt(scrollPosition.current),
+          animated: false,
+        });
       }
     };
 
     restoreScrollPosition();
+  }, []);
 
-    if (feeds.length === 0) {
-      const checkAndFetchFeeds = async () => {
-        try {
-          const refresh = await AsyncStorage.getItem('refresh');
-          if (!refresh) {
-            fetchTreckScapeFeeds(pageNumber, true, true);
-          } else {
-            setPageNumber(0);
-            fetchTreckScapeFeeds(0, false, true);
-          }
-        } catch (error) {
-          console.error('Error checking refresh status:', error);
-        }
-      };
-
-      checkAndFetchFeeds();
+  useEffect(() => {
+    if (isInitialLoad.current && feeds.length === 0) {
+      isInitialLoad.current = false;
+      initializeFeeds();
     }
   }, []);
+
+  const initializeFeeds = async () => {
+    try {
+      const refresh = await AsyncStorage.getItem('refresh');
+      if (!refresh) {
+        fetchTreckScapeFeeds(0, true, true);
+      } else {
+        setCurrentPage(0);
+        setPageNumber(0);
+        fetchTreckScapeFeeds(0, false, true);
+      }
+    } catch (error) {
+      console.error('Error initializing feeds:', error);
+    }
+  };
 
   const fetchTreckScapeFeeds = useCallback(
     async (page = 0, reset = false, refresh = false) => {
       try {
-        await AsyncStorage.setItem('refresh', 'true');
-        page && setContentLoader(true);
+        if (isLoadingMore && !reset && !refresh) {
+          return;
+        }
+
+        if (page < 0) {
+          return;
+        }
+
+        setIsLoadingMore(true);
+
+        if (page > 0 && !reset) {
+          setContentLoader(true);
+        }
 
         const response = await getMyFeed(page, refresh);
+
         if (response?.data) {
-          setFeeds(prev =>
-            reset ? response?.data?.data : [...prev, ...response?.data?.data],
-          );
-          setHasMore(response?.data?.data?.length === 5);
-          if (!response?.data?.data) {
+          const newData = response?.data?.data || [];
+          setFeeds(prev => {
+            if (reset) {
+              return newData;
+            } else {
+              const existingIds = new Set(prev.map(item => item.id));
+              const filteredNewData = newData.filter(
+                item => !existingIds.has(item.id),
+              );
+              return [...prev, ...filteredNewData];
+            }
+          });
+
+          const hasMoreData = newData.length === ITEMS_PER_PAGE;
+          setHasMore(hasMoreData);
+
+          if (!reset) {
+            setCurrentPage(page);
+            setPageNumber(page);
+          } else {
+            setCurrentPage(0);
+            setPageNumber(0);
+          }
+
+          if (newData.length === 0 && page === 0) {
             setNoData(true);
+          } else {
+            setNoData(false);
           }
         }
+
+        await AsyncStorage.setItem('refresh', 'true');
       } catch (error) {
-        console.error(error);
+        console.error('Error fetching feeds:', error);
+        dispatch(
+          setError({
+            open: true,
+            custom_message: 'Failed to load feeds. Please try again.',
+          }),
+        );
       } finally {
         setContentLoader(false);
         setFeedLoading(false);
         setRefreshing(false);
-        await AsyncStorage.setItem('refresh', 'true');
+        setIsLoadingMore(false);
       }
     },
-    [getMyFeed],
+    [getMyFeed, isLoadingMore, dispatch],
   );
-
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-
-    const checkRefresh = async () => {
-      if (isPageRefresh && !isFirstRender.current) {
-        const refresh = await AsyncStorage.getItem('refresh');
-        if (!refresh) {
-          fetchTreckScapeFeeds(pageNumber, true, true);
-        } else if (pageNumber) {
-          fetchTreckScapeFeeds(pageNumber, false, false);
-        }
-      }
-    };
-
-    checkRefresh();
-  }, [pageNumber]);
 
   useEffect(() => {
     const checkReload = async () => {
       try {
         const isReload = await AsyncStorage.getItem('reloaded');
-
         if (!isReload) {
           await AsyncStorage.setItem('reloaded', 'true');
         }
@@ -192,24 +214,6 @@ const MyFeeds = () => {
 
     checkReload();
   }, []);
-
-  // Handle infinite scrolling
-  const handleScroll = ({nativeEvent}) => {
-    const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
-
-    const isCloseToBottom =
-      layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
-
-    if (
-      isCloseToBottom &&
-      hasMore &&
-      !contentLoader &&
-      !isFirstRender.current
-    ) {
-      setPageNumber(prev => prev + 1);
-      setIsPageRefresh(true);
-    }
-  };
 
   const handleLikeDislike = async (id, index, type) => {
     if (isLogin) {
@@ -244,12 +248,6 @@ const MyFeeds = () => {
           setReactionDisabled(false);
         }
       } catch (err) {
-        // dispatch(
-        //   setError({
-        //     open: true,
-        //     custom_message: err || 'Something went wrong',
-        //   }),
-        // );
         setReactionDisabled(false);
       }
     } else {
@@ -264,14 +262,14 @@ const MyFeeds = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    setIsPageRefresh(false);
+    setCurrentPage(0);
     setPageNumber(0);
-    await fetchTreckScapeFeeds(0, true, true);
-    setPageNumber(0);
+    setHasMore(true);
+    setNoData(false);
     scrollPosition.current = 0;
+    await fetchTreckScapeFeeds(0, true, true);
   };
 
-  // Handle scroll position tracking
   const handleScrollEnd = ({nativeEvent}) => {
     const saveScrollPosition = async () => {
       try {
@@ -288,8 +286,8 @@ const MyFeeds = () => {
   useEffect(() => {
     if (isScroll) {
       if (feedContainerRef.current) {
-        feedContainerRef.current.scrollTo({
-          y: 0,
+        feedContainerRef.current.scrollToOffset({
+          offset: 0,
           animated: true,
         });
         setTimeout(() => {
@@ -300,60 +298,92 @@ const MyFeeds = () => {
     }
   }, [isScroll]);
 
+  const handleEndReached = useCallback(() => {
+    if (!hasMore || isLoadingMore || contentLoader || refreshing) {
+      return;
+    }
+
+    const nextPage = currentPage + 1;
+    fetchTreckScapeFeeds(nextPage, false, false);
+  }, [
+    hasMore,
+    isLoadingMore,
+    contentLoader,
+    refreshing,
+    currentPage,
+    fetchTreckScapeFeeds,
+  ]);
+
+  const renderFeedItem = ({item, index}) => (
+    <View style={styles.feedItem}>
+      <FeedsContainer
+        item={item}
+        indexed={index}
+        handleLike={() => handleLikeDislike(item?.id, index, 'Like')}
+        handleDislike={() => handleLikeDislike(item?.id, index, 'Dislike')}
+        setCommentModal={setCommentModal}
+        setPostId={setPostId}
+        setFeedUsername={setFeedUsername}
+        reactionDisabled={reactionDisabled}
+      />
+    </View>
+  );
+
+  const keyExtractor = (item, index) => `${item.id}-${index}`;
+
+  const renderFooter = () => {
+    if (contentLoader && hasMore) {
+      return (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#e93c00" />
+        </View>
+      );
+    }
+
+    return <View style={{height: 20}} />;
+  };
+
   return (
     <View style={styles.container}>
       <Backheading heading={'My Feeds'} notifyIcon={true} nextTrip={false} />
-      <ScrollView
+      {feedLoading && <FeedLoader />}
+      <FlatList
         ref={feedContainerRef}
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollViewContent}
+        data={feeds}
+        renderItem={!feedLoading ? renderFeedItem : null}
+        contentContainerStyle={{paddingBottom: 100}}
+        keyExtractor={keyExtractor}
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
         onScrollEndDrag={handleScrollEnd}
         scrollEventThrottle={16}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={3}
+        updateCellsBatchingPeriod={50}
+        initialNumToRender={5}
+        windowSize={5}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.1}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }>
-        {progress?.isPending && <PublishStatus publishStatus={progress} />}
-        <View style={styles.feedContainer}>
-          {feedLoading && <FeedLoader />}
-          {!feedLoading && feeds?.length > 0
-            ? feeds?.map((item, index) => (
-                <View key={index} style={styles.feedItem}>
-                  <FeedsContainer
-                    item={item}
-                    indexed={index}
-                    handleLike={() =>
-                      handleLikeDislike(item?.id, index, 'Like')
-                    }
-                    handleDislike={() =>
-                      handleLikeDislike(item?.id, index, 'Dislike')
-                    }
-                    setCommentModal={setCommentModal}
-                    setPostId={setPostId}
-                    setFeedUsername={setFeedUsername}
-                    reactionDisabled={reactionDisabled}
-                  />
-                </View>
-              ))
-            : noData && (
-                <View style={styles.noDataContainer}>
-                  <View style={styles.noDataImage}>
-                    <SadIcon width={30} height={30} />
-                  </View>
-                  <Text style={styles.noDataText}>
-                    Oops! No feeds available at this moment
-                  </Text>
-                </View>
-              )}
-          {contentLoader && (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="large" color="#e93c00" />
+        }
+        ListHeaderComponent={() =>
+          progress?.isPending && <PublishStatus publishStatus={progress} />
+        }
+        ListFooterComponent={renderFooter}
+        ListEmptyComponent={() =>
+          noData &&
+          !feedLoading && (
+            <View style={styles.noDataContainer}>
+              <View style={styles.noDataImage}>
+                <SadIcon width={30} height={30} />
+              </View>
+              <Text style={styles.noDataText}>
+                Oops! No feeds available at this moment
+              </Text>
             </View>
-          )}
-          <View style={styles.endLoader} ref={loader} />
-        </View>
-      </ScrollView>
+          )
+        }
+      />
       <FeedComment
         isVisible={commentModal}
         onClose={() => setCommentModal(false)}
@@ -442,10 +472,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-  },
-  endLoader: {
-    height: 60,
+    padding: 20,
+    backgroundColor: '#fff',
   },
   publishStatusContainer: {
     flexDirection: 'column',

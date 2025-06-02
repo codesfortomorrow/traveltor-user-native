@@ -13,15 +13,6 @@ import {AuthContext} from './context/AuthContext';
 import {postAuthReq} from './utils/apiHandlers';
 
 const Layout = ({children}) => {
-  return (
-    <View>
-      <Header />
-      <View>{children}</View>
-    </View>
-  );
-};
-
-export const FooterLayout = ({children}) => {
   const dispatch = useDispatch();
   const {isLoggedIn} = useContext(AuthContext);
   const {fcmToken} = useSelector(state => state?.firebase);
@@ -119,6 +110,15 @@ export const FooterLayout = ({children}) => {
     syncFCMToken();
   }, [fcmToken, isLoggedIn]);
 
+  return (
+    <View>
+      <Header />
+      <View>{children}</View>
+    </View>
+  );
+};
+
+export const FooterLayout = ({children}) => {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={{flex: 1}}>
