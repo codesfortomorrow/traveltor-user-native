@@ -2,7 +2,6 @@ import React, {useEffect, useRef, useState} from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
@@ -14,6 +13,8 @@ import {deleteApiReq, postAuthReq} from '../../utils/apiHandlers';
 import {useNavigation} from '@react-navigation/native';
 import {useSelector} from 'react-redux';
 import Heart from 'react-native-vector-icons/MaterialCommunityIcons';
+import FastImage from 'react-native-fast-image';
+import Constant from '../../utils/constant';
 
 // Component for the comment text with @ mention parsing
 const CommentTextContent = ({text}) => {
@@ -48,6 +49,7 @@ const CommentItem = ({
   menuVisible,
   menuCommentId,
 }) => {
+  const {optimizeImageKitUrl} = Constant();
   return (
     <TouchableWithoutFeedback
       onLongPress={e =>
@@ -66,10 +68,16 @@ const CommentItem = ({
           <TouchableOpacity
             onPress={() => handleNavigate(comment?.user)}
             style={styles.profileImageContainer}>
-            <Image
+            <FastImage
               source={
                 comment?.user?.profileImage
-                  ? {uri: comment?.user?.profileImage}
+                  ? {
+                      uri: optimizeImageKitUrl(
+                        comment?.user?.profileImage,
+                        200,
+                        200,
+                      ),
+                    }
                   : require('../../../public/images/dpPlaceholder.png')
               }
               style={styles.profileImage}
@@ -160,10 +168,16 @@ const ReplyItem = ({
           <TouchableOpacity
             onPress={() => handleNavigate(reply?.user)}
             style={styles.replyProfileImageContainer}>
-            <Image
+            <FastImage
               source={
                 reply?.user?.profileImage
-                  ? {uri: reply?.user?.profileImage}
+                  ? {
+                      uri: optimizeImageKitUrl(
+                        reply?.user?.profileImage,
+                        200,
+                        200,
+                      ),
+                    }
                   : require('../../../public/images/dpPlaceholder.png')
               }
               style={styles.profileImage}

@@ -10,8 +10,11 @@ import {store} from './app/redux/store';
 import {AuthProvider} from './app/context/AuthContext';
 import {setBackgroundHandler} from './app/notifications/BackgroundHandler';
 import 'react-native-gesture-handler';
+import notifee from '@notifee/react-native';
+import {onBackgroundEventHandler} from './app/notifications/notificationBackgroundEventHandler';
 
 setBackgroundHandler();
+notifee.onBackgroundEvent(onBackgroundEventHandler);
 
 const ReduxWrappedApp = () => (
   <Provider store={store}>

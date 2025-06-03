@@ -1,7 +1,6 @@
 // BackgroundService.js
 import BackgroundActions from 'react-native-background-actions';
 import NetInfo from '@react-native-community/netinfo';
-import {Platform} from 'react-native';
 import {syncDrafts} from './draftManager';
 
 // Configuration for background tasks

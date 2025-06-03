@@ -30,9 +30,11 @@ import TrailpointReview from './app/containers/Trailpoint/TrailpointReview';
 import SingleCheckIn from './app/containers/MobilePages/SingleCheckIn';
 import GeneralCheckIn from './app/containers/GeneralCheckIn';
 import {Provider as PaperProvider} from 'react-native-paper';
-import {requestUserPermission} from './app/notifications/NotificationService';
+import {
+  requestUserPermission,
+  requestNotificationPermission,
+} from './app/notifications/NotificationService';
 import {useForegroundNotification} from './app/notifications/ForegroundHandler';
-import {useNotificationRedirect} from './app/notifications/NotificationRedirect';
 import ForegroundToast from './app/components/FirebaseToaster/ForegroundToast';
 import {AuthContext} from './app/context/AuthContext';
 import {setupBackgroundTasks} from './app/utils/Setup';
@@ -41,6 +43,7 @@ import {initBackgroundTask} from './app/utils/BackgroundTaskService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternet from './app/NoInternet';
+import {navigationRef} from './app/notifications/RootNavigation';
 import {Buffer} from 'buffer';
 global.Buffer = Buffer;
 
@@ -125,7 +128,6 @@ function App() {
   const {isLoggedIn} = useContext(AuthContext);
   const dispatch = useDispatch();
   useForegroundNotification();
-  useNotificationRedirect();
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
@@ -140,6 +142,7 @@ function App() {
       initBackgroundTask();
       setupBackgroundTasks();
       requestUserPermission(dispatch);
+      requestNotificationPermission();
     }
   }, [isLoggedIn]);
 
@@ -155,9 +158,9 @@ function App() {
     <GestureHandlerRootView style={{flex: 1}}>
       <FeedProvider>
         <SafeAreaProvider>
-          <SafeAreaView style={{flex: 1, backgroundColor: '#e5e7eb'}}>
+          <SafeAreaView style={{flex: 1, backgroundColor: '#fff'}}>
             <PaperProvider>
-              <NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
                 <Stack.Navigator
                   initialRouteName="Home"
                   screenOptions={{

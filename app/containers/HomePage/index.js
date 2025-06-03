@@ -71,12 +71,6 @@ const HomePage = () => {
     setIsSearchFocused(true);
   };
 
-  const handleSearchBlur = () => {
-    setTimeout(() => {
-      setIsSearchFocused(false);
-    }, 200);
-  };
-
   const handleBackPress = () => {
     setIsSearchFocused(false);
     setSearch('');
@@ -179,7 +173,6 @@ const HomePage = () => {
             setSearch={setSearch}
             isSearchFocused={isSearchFocused}
             onSearchFocus={handleSearchFocus}
-            onSearchBlur={handleSearchBlur}
           />
         </Layout>
         <TrekScapes />

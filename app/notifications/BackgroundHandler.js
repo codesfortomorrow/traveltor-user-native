@@ -11,17 +11,20 @@ export const setBackgroundHandler = () => {
       id: 'default',
       name: 'Default Channel',
       importance: AndroidImportance.HIGH,
+      sound: 'default',
     });
 
     // Display the notification manually (especially useful for data-only payloads)
     await notifee.displayNotification({
-      title: remoteMessage.data?.title || 'New Notification',
-      body: remoteMessage.data?.body || 'You have a new message.',
+      title: remoteMessage.data?.title,
+      body: remoteMessage.data?.body,
+      data: remoteMessage.data,
       android: {
         channelId: 'default',
         pressAction: {
           id: 'default',
         },
+        sound: 'default',
       },
     });
   });

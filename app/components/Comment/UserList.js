@@ -2,13 +2,15 @@ import React from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import FastImage from 'react-native-fast-image';
+import Constant from '../../utils/constant';
 
 const UserList = ({users, selectUser, userlistref}) => {
+  const {optimizeImageKitUrl} = Constant();
   return (
     <ScrollView
       ref={userlistref}
@@ -25,10 +27,10 @@ const UserList = ({users, selectUser, userlistref}) => {
             style={styles.userRow}
             onPress={() => selectUser(user?.username)}>
             <View style={styles.profileImageContainer}>
-              <Image
+              <FastImage
                 source={
                   user?.profileImage
-                    ? {uri: user?.profileImage}
+                    ? {uri: optimizeImageKitUrl(user?.profileImage, 200, 200)}
                     : require('../../../public/images/dpPlaceholder.png')
                 }
                 style={styles.profileImage}

@@ -9,6 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import Constant from '../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -140,7 +141,7 @@ function HeroSection({
   return (
     <>
       <View style={styles.container}>
-        <Image
+        <FastImage
           source={
             heroSlider[activeIndex]?.image ||
             require('../../public/images/hero.png')
@@ -208,7 +209,7 @@ function HeroSection({
                     marginRight: itemSpacing,
                   },
                 ]}>
-                <Image
+                <FastImage
                   source={item.image}
                   style={styles.slideImage}
                   resizeMode="cover"
