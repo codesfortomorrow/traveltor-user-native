@@ -7,6 +7,7 @@ import useAuth from '../../hooks/useAuth';
 import {AuthContext} from '../../context/AuthContext';
 import {getUser} from '../../redux/Slices/userSlice';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const UploadProfile = () => {
   const user = useSelector(state => state?.user);
@@ -72,10 +73,10 @@ const UploadProfile = () => {
   return (
     <View style={styles.profileContainer}>
       <View style={styles.profileImageContainer}>
-        <Image
+        <FastImage
           source={
             user?.profileImage
-              ? {uri: optimizeImageKitUrl(user?.profileImage, 150, 150)}
+              ? {uri: optimizeImageKitUrl(user?.profileImage, 200, 200)}
               : require('../../../public/images/profile.png')
           }
           style={styles.profileImage}

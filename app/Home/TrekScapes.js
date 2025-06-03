@@ -11,6 +11,7 @@ import {
 import useAuth from '../hooks/useAuth';
 import {useNavigation} from '@react-navigation/native';
 import Constant from '../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const {width: screenWidth} = Dimensions.get('window');
 
@@ -90,11 +91,15 @@ const TrekScapes = () => {
                   <View style={styles.imagePlaceholder} />
                 ) : (
                   <>
-                    <Image
+                    <FastImage
                       source={
                         item.previewMedia[0]
                           ? {
-                              uri: item.previewMedia[0],
+                              uri: optimizeImageKitUrl(
+                                item.previewMedia[0],
+                                0,
+                                0,
+                              ),
                             }
                           : require('../../public/images/man.jpg')
                       }

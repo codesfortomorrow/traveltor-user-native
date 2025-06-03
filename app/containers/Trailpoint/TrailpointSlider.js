@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
-  Image,
   FlatList,
 } from 'react-native';
 import moment from 'moment';
@@ -13,6 +12,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitemarker.svg';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
   const navigation = useNavigation();
@@ -56,9 +56,10 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
       <TouchableOpacity
         style={styles.slideContent}
         onPress={() => navigation.navigate('CheckIns', {slug: slug})}>
-        <Image
+        <FastImage
           source={{
-            uri: optimizeImageKitUrl(item?.media[0], 250, 350),
+            uri: optimizeImageKitUrl(item?.media[0], 0, 0),
+            priority: FastImage.priority.normal,
           }}
           style={styles.slideImage}
         />
@@ -78,14 +79,14 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
 
           <View style={styles.profileContainer}>
             <View>
-              <Image
+              <FastImage
                 source={
                   item?.user?.profileImage
                     ? {
                         uri: optimizeImageKitUrl(
                           item?.user?.profileImage,
-                          150,
-                          150,
+                          200,
+                          200,
                         ),
                       }
                     : require('../../../public/images/dpPlaceholder.png')
@@ -118,8 +119,11 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
     <View
       style={[styles.slide, {width: ITEM_WIDTH, marginRight: ITEM_SPACING}]}>
       <View style={styles.slideContent}>
-        <Image
-          source={{uri: optimizeImageKitUrl(item, 250, 350)}}
+        <FastImage
+          source={{
+            uri: optimizeImageKitUrl(item, 0, 0),
+            priority: FastImage.priority.normal,
+          }}
           style={styles.slideImage}
         />
       </View>

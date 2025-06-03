@@ -4,7 +4,6 @@ import {
   View,
   StyleSheet,
   TextInput,
-  Image,
   FlatList,
   Text,
   TouchableOpacity,
@@ -15,12 +14,13 @@ import {
 import HeroSection from '../../Home/HeroSection';
 import TrekScapes from '../../Home/TrekScapes';
 import Trailblazers from '../../Home/Trailblazers';
-import Layout, {FooterLayout} from '../../Layout';
+import Layout from '../../Layout';
 import {getAuthReq} from '../../utils/apiHandlers';
 import debounce from 'lodash/debounce';
 import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const HomePage = () => {
   const [search, setSearch] = useState('');
@@ -112,13 +112,11 @@ const HomePage = () => {
       onPress={() => handleUserPress(item)}
       activeOpacity={0.7}>
       <View style={styles.userItemContent}>
-        <Image
+        <FastImage
           source={
             item?.profileImage
               ? {
-                  uri: optimizeImageKitUrl(item?.profileImage, 200, 200, {
-                    quality: 100,
-                  }),
+                  uri: optimizeImageKitUrl(item?.profileImage, 200, 200),
                 }
               : require('../../../public/images/dpPlaceholder.png')
           }

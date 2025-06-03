@@ -5,17 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation} from '@react-navigation/native';
-import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
 import Constant from '../../utils/constant';
 import {setSuccess} from '../../redux/Slices/successPopup';
 import {setError} from '../../redux/Slices/errorPopup';
 import NotificationWithBadge from '../../components/Comment/NotificationWithBadge';
+import FastImage from 'react-native-fast-image';
 
 const Setting = () => {
   const user = useSelector(state => state.user);
@@ -77,10 +76,10 @@ const Setting = () => {
         <TouchableOpacity
           style={styles.profileImageContainer}
           onPress={() => navigate('profile')}>
-          <Image
+          <FastImage
             source={
               user?.profileImage
-                ? {uri: optimizeImageKitUrl(user?.profileImage, 150, 150)}
+                ? {uri: optimizeImageKitUrl(user?.profileImage, 200, 200)}
                 : require('../../../public/images/dpPlaceholder.png')
             }
             style={styles.profileImage}

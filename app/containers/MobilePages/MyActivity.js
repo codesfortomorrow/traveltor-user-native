@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Image,
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
@@ -15,6 +14,7 @@ import moment from 'moment';
 import Calender from 'react-native-vector-icons/AntDesign';
 import {useNavigation} from '@react-navigation/native';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const {width: screenWidth, height: screenHeight} = Dimensions.get('window');
 
@@ -137,9 +137,12 @@ const MyActivity = () => {
       <View
         style={[styles.mediaContainer, index % 2 === 0 && styles.alignRight]}>
         {event?.media?.map((image, imgIndex) => (
-          <Image
+          <FastImage
             key={imgIndex}
-            source={{uri: optimizeImageKitUrl(image, 100, 100)}}
+            source={{
+              uri: optimizeImageKitUrl(image, 100, 100),
+              priority: FastImage.priority.high,
+            }}
             style={[styles.mediaImage, {marginLeft: imgIndex > 0 ? -24 : 0}]}
           />
         ))}

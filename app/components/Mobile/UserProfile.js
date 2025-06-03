@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
@@ -22,6 +21,7 @@ import {setError} from '../../redux/Slices/errorPopup';
 import FeedComment from '../../components/Modal/FeedComment';
 import DeleteConfirmation from '../Modal/DeleteConfirmation';
 import Constant from '../../utils/constant';
+import FastImage from 'react-native-fast-image';
 
 const UserProfile = () => {
   const dispatch = useDispatch();
@@ -265,7 +265,7 @@ const UserProfile = () => {
     <>
       <View style={styles.profileHeaderContainer}>
         <View style={styles.headerLeft}>
-          <Image
+          <FastImage
             source={
               trailblazer?.profileImage
                 ? {
@@ -350,7 +350,7 @@ const UserProfile = () => {
                   onPress={() => {
                     navigate('TrekscapeDetail', {slug: item?.slug});
                   }}>
-                  <Image
+                  <FastImage
                     source={
                       item?.previewMedia[0]
                         ? {

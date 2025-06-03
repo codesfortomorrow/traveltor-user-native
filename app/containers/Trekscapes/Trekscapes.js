@@ -53,9 +53,7 @@ const Trekscapes = () => {
   const {optimizeImageKitUrl} = Constant();
   const currentCategory = category?.find(item => item.id == categoryId);
   const paginationTimeoutRef = useRef(null);
-  const lastScrollYRef = useRef(0);
   const latestRequestIdRef = useRef(0);
-  const scrollDirectionRef = useRef('down');
 
   useEffect(() => {
     const loadCategoryId = async () => {
@@ -689,7 +687,7 @@ const Trekscapes = () => {
                         {reviewsMap[event?.slug]?.map((review, reviewIndex) => {
                           return (
                             <View key={reviewIndex} style={styles.reviewSlide}>
-                              <Image
+                              <FastImage
                                 source={{
                                   uri: optimizeImageKitUrl(
                                     review.media[0],
@@ -712,7 +710,7 @@ const Trekscapes = () => {
                                   </Text>
                                 </View>
                                 <View style={styles.reviewUserInfo}>
-                                  <Image
+                                  <FastImage
                                     source={
                                       review?.user?.profileImage
                                         ? {
