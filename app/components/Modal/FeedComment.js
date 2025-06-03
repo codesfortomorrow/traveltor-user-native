@@ -5,8 +5,6 @@ import {
   TextInput,
   Image,
   TouchableOpacity,
-  Dimensions,
-  Keyboard,
   StyleSheet,
 } from 'react-native';
 import {useSelector} from 'react-redux';
@@ -37,10 +35,6 @@ const FeedComment = ({
   const [isLoading, setIsLoading] = useState(true);
   const commentlistRef = useRef(null);
   const userlistref = useRef(null);
-  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
-  const [contentHeight, setContentHeight] = useState(
-    Dimensions.get('window').height,
-  );
   const [isComment, setIsComment] = useState(false);
   const [edit, setEdit] = useState({
     text: null,

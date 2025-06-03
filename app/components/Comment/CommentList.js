@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {useSelector} from 'react-redux';
 import Heart from 'react-native-vector-icons/MaterialCommunityIcons';
 import FastImage from 'react-native-fast-image';
 import Constant from '../../utils/constant';
+import CommentOptionsDialog from '../Modal/CommentOptionsDialog';
 
 // Component for the comment text with @ mention parsing
 const CommentTextContent = ({text}) => {
@@ -86,7 +87,9 @@ const CommentItem = ({
 
           {/* Username & Comment */}
           <View style={styles.commentTextContainer}>
-            <TouchableOpacity onPress={() => handleNavigate(comment?.user)}>
+            <TouchableOpacity
+              style={{alignSelf: 'flex-start'}}
+              onPress={() => handleNavigate(comment?.user)}>
               <Text style={styles.usernameText}>
                 {comment?.user?.username || comment?.user?.firstname}{' '}
                 <Text style={styles.timeAgoText}>
@@ -149,6 +152,7 @@ const ReplyItem = ({
   menuCommentId,
   parentId,
 }) => {
+  const {optimizeImageKitUrl} = Constant();
   return (
     <TouchableWithoutFeedback
       key={reply?.id}
@@ -186,7 +190,9 @@ const ReplyItem = ({
 
           {/* Username & Comment */}
           <View style={styles.commentTextContainer}>
-            <TouchableOpacity onPress={() => handleNavigate(reply?.user)}>
+            <TouchableOpacity
+              style={{alignSelf: 'flex-start'}}
+              onPress={() => handleNavigate(reply?.user)}>
               <Text style={styles.usernameText}>
                 {reply?.user?.username || reply?.user?.firstname}{' '}
                 <Text style={styles.timeAgoText}>
@@ -336,21 +342,9 @@ const CommentList = ({
     clearTimeout(longPressTimeout.current);
   };
 
-  // Handle outside click to close menu
-  useEffect(() => {
-    const handleClickOutside = event => {
-      if (menuRef.current && menu.visible) {
-        setMenu({...menu, visible: false});
-      }
-    };
-
-    if (menu.visible) {
-      // In RN, we'd use the TouchableWithoutFeedback outside the menu to detect taps
-      return () => {
-        // Cleanup if needed
-      };
-    }
-  }, [menu]);
+  const handleCloseMenu = () => {
+    setMenu({...menu, visible: false});
+  };
 
   // Handle Delete comment
   const handleDelete = async () => {
@@ -376,7 +370,7 @@ const CommentList = ({
             prev?.filter(com => com?.id !== menu?.commentId),
           );
         }
-        setMenu({...menu, visible: false});
+        handleCloseMenu();
 
         const singlePost = postComment.filter(
           post => post?.id === menu?.commentId,
@@ -569,15 +563,16 @@ const CommentList = ({
           </ScrollView>
 
           {/* Comment Options Dialog */}
-          {/* {menu.visible && (
+          {menu.visible && (
             <CommentOptionsDialog
               menuRef={menuRef}
               menu={menu}
               handleDelete={handleDelete}
               isDelete={isDelete}
               handleEdit={handleEdit}
+              onClose={handleCloseMenu}
             />
-          )} */}
+          )}
 
           {/* Replying indicator */}
           {replyUsername && (
@@ -689,6 +684,7 @@ const styles = StyleSheet.create({
   commentContent: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignSelf: 'flex-start',
   },
   commentText: {
     fontWeight: '500',
@@ -701,6 +697,7 @@ const styles = StyleSheet.create({
   },
   replyButton: {
     marginTop: 3,
+    alignSelf: 'flex-start',
   },
   replyText: {
     fontSize: 12,
@@ -709,6 +706,8 @@ const styles = StyleSheet.create({
   likeContainer: {
     flexDirection: 'column',
     alignItems: 'center',
+    paddingRight: 5,
+    paddingLeft: 2,
   },
   likedIcon: {
     width: 16,
