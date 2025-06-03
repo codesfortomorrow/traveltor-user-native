@@ -1,10 +1,11 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';
@@ -23,9 +24,11 @@ const Setting = () => {
   const {logout} = useAuth();
   const {profileLinks, optimizeImageKitUrl} = Constant();
   const {badgeCount} = useSelector(state => state.badge);
+  const [isLogoutDisable, setIsLogoutDisable] = useState(false);
 
   const handleLogout = async () => {
     try {
+      setIsLogoutDisable(true);
       const response = await logout();
       if (response) {
         // dispatch(cleanSuccess());
@@ -44,6 +47,8 @@ const Setting = () => {
           custom_message: error,
         }),
       );
+    } finally {
+      setIsLogoutDisable(false);
     }
   };
 
@@ -123,7 +128,14 @@ const Setting = () => {
                   }}
                   key={i}
                   style={styles.linkButton}>
-                  {link?.icon}
+                  <View
+                    style={{height: 25, width: 25, justifyContent: 'center'}}>
+                    {link?.name === 'Logout' && isLogoutDisable ? (
+                      <ActivityIndicator size="small" color="#e93c00" />
+                    ) : (
+                      link?.icon
+                    )}
+                  </View>
                   <Text style={styles.linkText}>{link.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -235,7 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   iconText: {
     fontSize: 25,

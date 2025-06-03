@@ -6,6 +6,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import Constant from '../../utils/constant';
 import EyeIcon from 'react-native-vector-icons/FontAwesome5';
@@ -188,7 +189,13 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                 style={styles.submitButton}
                 disabled={isDisabled}
                 onPress={handleSubmit}>
-                <Text style={styles.submitButtonText}>Continue</Text>
+                <Text style={styles.submitButtonText}>
+                  {isDisabled ? (
+                    <ActivityIndicator size="small" color="#e93c00" />
+                  ) : (
+                    'Continue'
+                  )}
+                </Text>
               </TouchableOpacity>
 
               <Text style={styles.signupPrompt}>
