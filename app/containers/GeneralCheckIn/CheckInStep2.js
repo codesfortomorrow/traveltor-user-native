@@ -68,106 +68,102 @@ const CheckInStep2 = ({
 
   return (
     <>
-      <TouchableWithoutFeedback
-        onPress={() => handledropdown && setHandledropdown(false)}>
-        <View style={styles.container}>
-          <CheckInTopBar
-            disable={disable}
-            handleCheckInTreckScape={handleCheckInTreckScape}
-            text={'Back'}
-            setStep={setStep}
-          />
-          <ScrollView
-            style={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}>
-            <View style={styles.imageGalleryContainer}>
-              <FlatList
-                data={selectedFiles}
-                renderItem={renderImageItem}
-                keyExtractor={(item, index) => index.toString()}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.flatListContent}
-                nestedScrollEnabled={true}
-                scrollEnabled={true}
-                pagingEnabled={false}
-                decelerationRate="fast"
-              />
-            </View>
+      <View style={styles.container}>
+        <CheckInTopBar
+          disable={disable}
+          handleCheckInTreckScape={handleCheckInTreckScape}
+          text={'Back'}
+          setStep={setStep}
+        />
+        <ScrollView
+          style={styles.scrollContainer}
+          showsVerticalScrollIndicator={false}
+          nestedScrollEnabled={true}>
+          <View style={styles.imageGalleryContainer}>
+            <FlatList
+              data={selectedFiles}
+              renderItem={renderImageItem}
+              keyExtractor={(item, index) => index.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.flatListContent}
+              nestedScrollEnabled={true}
+              scrollEnabled={true}
+            />
+          </View>
 
-            <ReviewCheckIn setReviewText={setReviewText} />
+          <ReviewCheckIn setReviewText={setReviewText} />
 
-            <View style={styles.locationContainer}>
-              <View style={styles.locationWrapper}>
-                {locationloader ? (
-                  <View style={styles.loaderContainer}>
-                    <View style={styles.loader} />
+          <View style={styles.locationContainer}>
+            <View style={styles.locationWrapper}>
+              {locationloader ? (
+                <View style={styles.loaderContainer}>
+                  <View style={styles.loader} />
+                </View>
+              ) : (
+                <TouchableWithoutFeedback
+                  ref={buttonRef}
+                  onPress={() => setHandledropdown(!handledropdown)}>
+                  <View
+                    style={[
+                      styles.locationButton,
+                      handledropdown && styles.locationButtonOpen,
+                    ]}>
+                    <View style={styles.locationButtonContent}>
+                      {handledropdown ? (
+                        <SearchIcon name="search" size={20} color="#000" />
+                      ) : (
+                        <LocationIcon
+                          name="location-pin"
+                          size={20}
+                          color="#000"
+                        />
+                      )}
+                      <Text style={styles.locationText}>{handleName}</Text>
+                      {currentTrekscapes?.length > 1 && (
+                        <ChevronRight
+                          name="chevron-small-right"
+                          size={24}
+                          style={handledropdown && styles.chevronRotated}
+                          color="#000"
+                        />
+                      )}
+                    </View>
                   </View>
-                ) : (
-                  <TouchableWithoutFeedback
-                    ref={buttonRef}
-                    onPress={() => setHandledropdown(!handledropdown)}>
-                    <View
-                      style={[
-                        styles.locationButton,
-                        handledropdown && styles.locationButtonOpen,
-                      ]}>
-                      <View style={styles.locationButtonContent}>
-                        {handledropdown ? (
-                          <SearchIcon name="search" size={20} color="#000" />
-                        ) : (
+                </TouchableWithoutFeedback>
+              )}
+              {handledropdown && (
+                <View ref={dropdownRef} style={styles.dropdownContainer}>
+                  <ScrollView
+                    style={styles.dropdownScroll}
+                    showsVerticalScrollIndicator={false}>
+                    {currentTrekscapes
+                      ?.filter(trek => trek?.name !== handleName)
+                      ?.map((detail, index) => (
+                        <TouchableOpacity
+                          style={styles.dropdownItem}
+                          key={index}
+                          onPress={() => {
+                            handleLocationChange(detail?.slug);
+                            setHandleName(detail?.name);
+                          }}>
                           <LocationIcon
                             name="location-pin"
                             size={20}
                             color="#000"
                           />
-                        )}
-                        <Text style={styles.locationText}>{handleName}</Text>
-                        {currentTrekscapes?.length > 1 && (
-                          <ChevronRight
-                            name="chevron-small-right"
-                            size={24}
-                            style={handledropdown && styles.chevronRotated}
-                            color="#000"
-                          />
-                        )}
-                      </View>
-                    </View>
-                  </TouchableWithoutFeedback>
-                )}
-                {handledropdown && (
-                  <View ref={dropdownRef} style={styles.dropdownContainer}>
-                    <ScrollView
-                      style={styles.dropdownScroll}
-                      showsVerticalScrollIndicator={false}>
-                      {currentTrekscapes
-                        ?.filter(trek => trek?.name !== handleName)
-                        ?.map((detail, index) => (
-                          <TouchableOpacity
-                            style={styles.dropdownItem}
-                            key={index}
-                            onPress={() => {
-                              handleLocationChange(detail?.slug);
-                              setHandleName(detail?.name);
-                            }}>
-                            <LocationIcon
-                              name="location-pin"
-                              size={20}
-                              color="#000"
-                            />
-                            <Text style={styles.locationText}>
-                              {detail?.name}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                  </View>
-                )}
-              </View>
+                          <Text style={styles.locationText}>
+                            {detail?.name}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                  </ScrollView>
+                </View>
+              )}
             </View>
-          </ScrollView>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        </ScrollView>
+      </View>
       {successCheckin?.status && (
         <CheckInSuccessPopup
           open={successCheckin?.status}

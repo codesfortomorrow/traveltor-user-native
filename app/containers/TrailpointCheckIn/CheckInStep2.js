@@ -55,7 +55,8 @@ const CheckInStep2 = ({
 
       <ScrollView
         style={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}>
         <View style={styles.imagesGallery}>
           <FlatList
             data={selectedFiles}
@@ -66,8 +67,6 @@ const CheckInStep2 = ({
             contentContainerStyle={styles.flatListContent}
             nestedScrollEnabled={true}
             scrollEnabled={true}
-            pagingEnabled={false}
-            decelerationRate="fast"
             ItemSeparatorComponent={() => (
               <View style={styles.imageSeparator} />
             )}
