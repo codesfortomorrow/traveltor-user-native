@@ -13,6 +13,7 @@ const CheckInTopBar = ({
   isCropOpen = false,
   setIsCropOpen,
   type,
+  setShowSingleFile,
   selectedFiles,
   nextTrip = false,
 }) => {
@@ -25,6 +26,7 @@ const CheckInTopBar = ({
           onPress={() => {
             if (isCropOpen) {
               setIsCropOpen(false);
+              setShowSingleFile('');
             } else if (text === 'Back' && type === 'trailpoint') {
               setStep(2);
             } else if (text === 'Back') {
@@ -55,6 +57,7 @@ const CheckInTopBar = ({
           onPress={() => {
             if (isCropOpen) {
               setIsCropOpen(false);
+              setShowSingleFile('');
             } else if (trigger === 'Next' && type === 'trailpoint') {
               setStep(3);
             } else if (trigger === 'Next') {

@@ -102,7 +102,6 @@ const TrekscapeTopBar = ({
 
           // Strategy 1: Handle currentColor first (most reliable)
           if (hasCurrentColor) {
-            console.log('Using currentColor strategy');
             svgText = svgText.replace(/currentColor/gi, targetColor);
           }
           // Strategy 2: Filled icons

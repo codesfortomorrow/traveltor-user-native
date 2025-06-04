@@ -55,7 +55,7 @@ const TrailpointCheckIn = () => {
   const [locationloader, setLocationloader] = useState(true);
   const currentLocation = useSelector(state => state?.location);
   const [getLocationLoader, setGetLocationLoader] = useState(false);
-  const [showSingleFile, setShowSingleFile] = useState({});
+  const [showSingleFile, setShowSingleFile] = useState('');
   const [croppedImages, setCroppedImages] = useState({});
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState({});
@@ -194,25 +194,20 @@ const TrailpointCheckIn = () => {
     const newFiles = selectedFiles.filter(fileObj => fileObj.id !== fileId);
     setSelectedFiles(newFiles);
 
-    // If removing the last slide and there are remaining slides
     if (currentIndex === selectedFiles.length - 1 && newFiles.length > 0) {
-      // Calculate new scroll position to show the previous slide
       const newScrollPosition = Math.max(
         0,
         (newFiles.length - 1) * (slideWidth + 10),
       );
       setScrollPosition(newScrollPosition);
 
-      // Scroll to the new position after state update
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({
           x: newScrollPosition,
           animated: true,
         });
       }, 100);
-    }
-    // If removing a slide in the middle, adjust scroll position
-    else if (currentIndex < selectedFiles.length - 1 && newFiles.length > 0) {
+    } else if (currentIndex < selectedFiles.length - 1 && newFiles.length > 0) {
       const currentScrollPosition = currentIndex * (slideWidth + 10);
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({
@@ -223,30 +218,25 @@ const TrailpointCheckIn = () => {
     }
   };
 
-  // Function to handle image press (going to crop)
   const handleImagePress = file => {
-    // Store current scroll position before going to crop
     setScrollPosition(scrollPosition);
     setShouldRestorePosition(true);
-    setShowSingleFile(file);
+    setShowSingleFile(file?.id);
     setIsCropOpen(true);
   };
 
-  // Effect to restore scroll position when coming back from crop
   useEffect(() => {
     if (shouldRestorePosition && !isCropOpen && scrollViewRef.current) {
-      // Restore scroll position after crop is closed
       setTimeout(() => {
         scrollViewRef.current?.scrollTo({
           x: scrollPosition,
-          animated: false, // Use false for instant positioning
+          animated: false,
         });
         setShouldRestorePosition(false);
       }, 100);
     }
   }, [isCropOpen, shouldRestorePosition, scrollPosition]);
 
-  // Function to track scroll position
   const handleScroll = event => {
     const currentScrollX = event.nativeEvent.contentOffset.x;
     setScrollPosition(currentScrollX);
@@ -279,6 +269,7 @@ const TrailpointCheckIn = () => {
               setIsCropOpen={setIsCropOpen}
               step={step}
               type={'trailpoint'}
+              setShowSingleFile={setShowSingleFile}
               selectedFiles={selectedFiles}
               nextTrip={true}
             />
@@ -425,8 +416,14 @@ const TrailpointCheckIn = () => {
                 {selectedFiles?.length !== 0 && isCropOpen && (
                   <View style={styles.cropperContainer}>
                     <ImageCropper
-                      imageUri={showSingleFile?.file?.uri}
-                      fileId={showSingleFile?.id}
+                      imageUri={
+                        selectedFiles.find(file => file.id === showSingleFile)
+                          .url
+                      }
+                      fileId={
+                        selectedFiles.find(file => file.id === showSingleFile)
+                          .id
+                      }
                       onCropComplete={handleCropDone}
                     />
                   </View>

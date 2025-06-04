@@ -12,8 +12,6 @@ export const setupBackgroundTasks = async () => {
 
   // Initialize background actions for both platforms
   await initBackgroundTask();
-
-  console.log('Background tasks initialized');
 };
 
 // Export other necessary functions from our new implementation

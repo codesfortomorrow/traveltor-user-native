@@ -88,6 +88,10 @@ const CheckInStep2 = ({
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.flatListContent}
+                nestedScrollEnabled={true}
+                scrollEnabled={true}
+                pagingEnabled={false}
+                decelerationRate="fast"
               />
             </View>
 

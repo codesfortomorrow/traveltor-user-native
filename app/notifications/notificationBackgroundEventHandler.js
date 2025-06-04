@@ -3,8 +3,6 @@ import {EventType} from '@notifee/react-native';
 import {navigate} from './RootNavigation';
 
 export async function onBackgroundEventHandler({type, detail}) {
-  console.log('[🔥 Notifee BG Event]', type, detail);
-
   if (type === EventType.PRESS) {
     const data = detail?.notification?.data;
 

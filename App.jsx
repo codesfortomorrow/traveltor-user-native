@@ -64,7 +64,6 @@ const SESSION_KEYS = [
 const clearSessionKeys = async () => {
   try {
     await AsyncStorage.multiRemove(SESSION_KEYS);
-    console.log('Session keys cleared on app start');
   } catch (e) {
     console.log('Error clearing session keys', e);
   }

@@ -25,7 +25,6 @@ const UploadProfile = () => {
     };
 
     const result = await launchImageLibrary(options);
-    console.log(result, 'result');
     if (result.didCancel) {
       return;
     }
@@ -47,8 +46,6 @@ const UploadProfile = () => {
       return;
     }
 
-    console.log(asset, 'asset');
-
     const formData = new FormData();
     formData.append('file', {
       uri: asset.uri,
@@ -58,7 +55,6 @@ const UploadProfile = () => {
 
     try {
       const res = await uploadImage(formData);
-      console.log(res, 'res');
       if (res && res?.url !== '') {
         await uploadProfile({
           profileImage: res?.meta?.filename,

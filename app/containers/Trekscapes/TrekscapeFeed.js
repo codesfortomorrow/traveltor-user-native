@@ -177,10 +177,6 @@ const TrekscapeFeed = () => {
         !loading &&
         !loadingRef.current
       ) {
-        console.log(
-          'Scroll pagination triggered at:',
-          scrollPercentage.toFixed(2),
-        ); // Debug log
         loadMoreData();
       }
     }, 100); // 100ms debounce
@@ -188,7 +184,6 @@ const TrekscapeFeed = () => {
 
   const loadMoreData = useCallback(() => {
     if (hasMore && !loading && !loadingRef.current) {
-      console.log('Loading more data, current page:', pageNumber); // Debug log
       setPageNumber(prev => prev + 1);
     }
   }, [hasMore, loading, pageNumber]);

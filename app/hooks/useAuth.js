@@ -406,7 +406,6 @@ const useAuth = () => {
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log(response, 'response');
     if (response?.status) {
       return response?.data;
     } else {

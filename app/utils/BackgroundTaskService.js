@@ -65,9 +65,6 @@ export const initBackgroundTask = async () => {
     // Start the background service if it's not already running
     if (!(await BackgroundActions.isRunning())) {
       await BackgroundActions.start(backgroundTask, backgroundTaskOptions);
-      console.log(
-        '[BackgroundActions] Successfully started background service',
-      );
     }
   } catch (error) {
     console.log(
@@ -81,7 +78,6 @@ export const initBackgroundTask = async () => {
 export const stopBackgroundTask = async () => {
   try {
     await BackgroundActions.stop();
-    console.log('[BackgroundActions] Background service stopped');
   } catch (error) {
     console.log(
       '[BackgroundActions] Failed to stop background service:',

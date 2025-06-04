@@ -140,9 +140,9 @@ const ImageCropper = ({
       // Capture the crop container as image
       const uri = await captureRef(cropViewRef.current, {
         format: 'jpg',
-        quality: 0.9,
-        width: cropWidth,
-        height: cropHeight,
+        quality: 1,
+        width: cropWidth * 2,
+        height: cropHeight * 2,
       });
 
       if (onCropComplete) {
@@ -193,8 +193,6 @@ const ImageCropper = ({
         translateY.value = savedCropState.translateY || 0;
         savedTranslateX.value = savedCropState.translateX || 0;
         savedTranslateY.value = savedCropState.translateY || 0;
-
-        console.log('Applied saved crop state:', savedCropState);
       } else {
         // Use initial scale calculation for new images
         const initialScale = calculateInitialScale();
@@ -247,7 +245,12 @@ const ImageCropper = ({
 
   // Auto-generate initial crop when component is ready (only once)
   useEffect(() => {
-    if (isInitialized && !isImageLoading && !hasGeneratedInitialCrop) {
+    if (
+      isInitialized &&
+      !isImageLoading &&
+      !hasGeneratedInitialCrop &&
+      cropData[fileId]?.scale > 0
+    ) {
       // Generate initial crop after a short delay
       setTimeout(() => {
         autoGenerateCroppedImage();
@@ -258,6 +261,8 @@ const ImageCropper = ({
     isInitialized,
     isImageLoading,
     hasGeneratedInitialCrop,
+    cropData,
+    fileId,
     autoGenerateCroppedImage,
   ]);
 
@@ -382,7 +387,13 @@ const ImageCropper = ({
 
     const initialScale = calculateInitialScale();
 
-    scale.value = withSpring(initialScale);
+    // Animate scale and trigger generation only after it's done
+    scale.value = withSpring(initialScale, {}, isFinished => {
+      if (isFinished && hasGeneratedInitialCrop) {
+        runOnJS(scheduleAutoGeneration)();
+      }
+    });
+
     savedScale.value = initialScale;
     translateX.value = withSpring(0);
     translateY.value = withSpring(0);
@@ -399,11 +410,6 @@ const ImageCropper = ({
         translateY: 0,
       },
     }));
-
-    // Auto-generate after reset (only if initial crop was already generated)
-    if (hasGeneratedInitialCrop) {
-      scheduleAutoGeneration();
-    }
   }, [
     calculateInitialScale,
     fileId,

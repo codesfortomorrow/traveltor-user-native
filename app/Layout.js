@@ -79,7 +79,6 @@ const Layout = ({children}) => {
 
   const setFirebaseToken = async token => {
     const response = await postAuthReq('/users/notification-token', {token});
-    console.log(response, 'setFirebase');
     if (!response?.status) {
       console.log(response?.error?.message);
     }

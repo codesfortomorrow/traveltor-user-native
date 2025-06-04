@@ -196,7 +196,6 @@ export const updateProgressStatus = (progress, status, isPending, imgUrl) => {
 
 // Main sync function
 export const syncDrafts = async () => {
-  console.log('Starting draft sync...');
   const randomId = generateRandomString(12);
 
   const token = await getAuthToken();
@@ -210,7 +209,6 @@ export const syncDrafts = async () => {
   const drafts = await getDrafts();
 
   if (!drafts || drafts.length === 0) {
-    console.log('No drafts to sync');
     return;
   }
 
@@ -218,7 +216,6 @@ export const syncDrafts = async () => {
     let uploadedMediaFiles = [];
 
     const {id, files, payload, type, status} = draft;
-    console.log({id, files, payload, type, status});
 
     if (status === 'readyforPublish') {
       // await updateDraftStatus(id, 'Publishing');
@@ -244,8 +241,6 @@ export const syncDrafts = async () => {
           }
         });
 
-        console.log(filesToUpload, 'filesToUpload');
-
         const uploadResponses = await Promise.all(
           filesToUpload?.map(file => {
             return new Promise(async resolve => {
@@ -256,8 +251,6 @@ export const syncDrafts = async () => {
                   name: file.name || 'upload.jpg',
                   type: file.type || 'image/jpeg',
                 });
-
-                console.log('FormData file:', formData);
 
                 const response = await axios({
                   method: 'POST',
@@ -278,12 +271,8 @@ export const syncDrafts = async () => {
                   },
                 });
 
-                console.log('Upload response:', response);
-
                 if (response?.data) {
                   const responseData = response.data;
-
-                  console.log(responseData, 'responseData');
 
                   uploadedFiles += 1;
                   const progress =
@@ -319,8 +308,6 @@ export const syncDrafts = async () => {
           }),
         );
 
-        console.log(uploadResponses, 'uploadResponses');
-
         uploadedMediaFiles = uploadResponses.filter(fileName => fileName);
 
         if (uploadedMediaFiles.length === files.length) {
@@ -331,8 +318,6 @@ export const syncDrafts = async () => {
 
           updateProgressStatus(80, 'Publishing...', true, files[0]);
           const dbRandomId = await getRandomId();
-
-          console.log(finalPayload, 'finalPayload');
 
           if (dbRandomId === randomId) {
             const publishSuccess = await publishDrafts(
