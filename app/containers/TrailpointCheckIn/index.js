@@ -36,6 +36,9 @@ import {publishDraft} from '../../utils/BackgroundTaskService';
 
 const {width, height} = Dimensions.get('window');
 
+const slideWidth = 300;
+const slideHeight = 400;
+
 const TrailpointCheckIn = () => {
   const dispatch = useDispatch();
   const route = useRoute();
@@ -56,6 +59,9 @@ const TrailpointCheckIn = () => {
   const [croppedImages, setCroppedImages] = useState({});
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState({});
+  const scrollViewRef = useRef(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
+  const [shouldRestorePosition, setShouldRestorePosition] = useState(false);
 
   const handleCheckInTreckScape = async () => {
     try {
@@ -184,6 +190,68 @@ const TrailpointCheckIn = () => {
     }
   };
 
+  const handleRemoveSlide = (fileId, currentIndex) => {
+    const newFiles = selectedFiles.filter(fileObj => fileObj.id !== fileId);
+    setSelectedFiles(newFiles);
+
+    // If removing the last slide and there are remaining slides
+    if (currentIndex === selectedFiles.length - 1 && newFiles.length > 0) {
+      // Calculate new scroll position to show the previous slide
+      const newScrollPosition = Math.max(
+        0,
+        (newFiles.length - 1) * (slideWidth + 10),
+      );
+      setScrollPosition(newScrollPosition);
+
+      // Scroll to the new position after state update
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          x: newScrollPosition,
+          animated: true,
+        });
+      }, 100);
+    }
+    // If removing a slide in the middle, adjust scroll position
+    else if (currentIndex < selectedFiles.length - 1 && newFiles.length > 0) {
+      const currentScrollPosition = currentIndex * (slideWidth + 10);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          x: Math.max(0, currentScrollPosition),
+          animated: true,
+        });
+      }, 100);
+    }
+  };
+
+  // Function to handle image press (going to crop)
+  const handleImagePress = file => {
+    // Store current scroll position before going to crop
+    setScrollPosition(scrollPosition);
+    setShouldRestorePosition(true);
+    setShowSingleFile(file);
+    setIsCropOpen(true);
+  };
+
+  // Effect to restore scroll position when coming back from crop
+  useEffect(() => {
+    if (shouldRestorePosition && !isCropOpen && scrollViewRef.current) {
+      // Restore scroll position after crop is closed
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          x: scrollPosition,
+          animated: false, // Use false for instant positioning
+        });
+        setShouldRestorePosition(false);
+      }, 100);
+    }
+  }, [isCropOpen, shouldRestorePosition, scrollPosition]);
+
+  // Function to track scroll position
+  const handleScroll = event => {
+    const currentScrollX = event.nativeEvent.contentOffset.x;
+    setScrollPosition(currentScrollX);
+  };
+
   return (
     <>
       {step == 3 ? (
@@ -286,19 +354,28 @@ const TrailpointCheckIn = () => {
                   <View>
                     {!isCropOpen && (
                       <ScrollView
+                        ref={scrollViewRef}
                         horizontal
                         contentContainerStyle={styles.imageSwiper}
                         showsHorizontalScrollIndicator={false}
-                        pagingEnabled>
-                        {selectedFiles.map(file => {
-                          const imageUrl = croppedImages[file.id] || file.url;
+                        decelerationRate="fast"
+                        snapToInterval={slideWidth}
+                        snapToAlignment="start"
+                        onScroll={handleScroll}
+                        scrollEventThrottle={16}
+                        onMomentumScrollEnd={handleScroll}>
+                        {selectedFiles.map((file, index) => {
+                          const imageUrl = croppedImages[file?.id] || file?.url;
                           return (
                             <View
                               key={file?.id}
                               style={[
                                 styles.imageSwiperSlide,
-                                selectedFiles?.length === 1 &&
-                                  styles.singleImage,
+                                {
+                                  width: slideWidth,
+                                  height: slideHeight,
+                                },
+                                {paddingRight: 10},
                               ]}>
                               {!isLoaded[file?.id] && (
                                 <View style={styles.imageLoader}>
@@ -308,10 +385,7 @@ const TrailpointCheckIn = () => {
                                 </View>
                               )}
                               <TouchableOpacity
-                                onPress={() => {
-                                  setShowSingleFile(file);
-                                  setIsCropOpen(true);
-                                }}
+                                onPress={() => handleImagePress(file)}
                                 activeOpacity={0.8}>
                                 <Image
                                   source={{uri: imageUrl}}
@@ -320,6 +394,10 @@ const TrailpointCheckIn = () => {
                                     isLoaded[file?.id]
                                       ? {opacity: 1}
                                       : {opacity: 0},
+                                    {
+                                      width: slideWidth,
+                                      height: slideHeight,
+                                    },
                                   ]}
                                   onLoad={() =>
                                     setIsLoaded(prev => ({
@@ -332,11 +410,7 @@ const TrailpointCheckIn = () => {
                               <TouchableOpacity
                                 style={styles.deleteIcon}
                                 onPress={() =>
-                                  setSelectedFiles(prevFiles =>
-                                    prevFiles.filter(
-                                      fileObj => fileObj.id !== file.id,
-                                    ),
-                                  )
+                                  handleRemoveSlide(file.id, index)
                                 }>
                                 <Text style={styles.deleteIconText}>✕</Text>
                               </TouchableOpacity>
@@ -351,10 +425,8 @@ const TrailpointCheckIn = () => {
                 {selectedFiles?.length !== 0 && isCropOpen && (
                   <View style={styles.cropperContainer}>
                     <ImageCropper
-                      imageUri={
-                        showSingleFile?.file?.uri || selectedFiles[0]?.file?.uri
-                      }
-                      fileId={showSingleFile?.id || selectedFiles[0]?.id}
+                      imageUri={showSingleFile?.file?.uri}
+                      fileId={showSingleFile?.id}
                       onCropComplete={handleCropDone}
                     />
                   </View>
@@ -507,9 +579,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginHorizontal: 10,
   },
-  singleImage: {
-    marginHorizontal: 'auto',
-  },
   imageLoader: {
     position: 'absolute',
     top: 0,
@@ -526,8 +595,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   selectedImage: {
-    width: 300,
-    height: 400,
+    borderRadius: 8,
     resizeMode: 'cover',
   },
   deleteIcon: {
