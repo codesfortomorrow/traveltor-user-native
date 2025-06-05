@@ -7,6 +7,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Share as NativeShare,
+  Alert,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import moment from 'moment';

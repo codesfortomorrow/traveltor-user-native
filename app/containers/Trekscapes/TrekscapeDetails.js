@@ -12,6 +12,7 @@ import {
   Share as NativeShare,
   Dimensions,
   TextInput,
+  Alert,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
