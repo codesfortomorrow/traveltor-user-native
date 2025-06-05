@@ -245,28 +245,30 @@ const TrekscapeDetails = () => {
   return (
     <View style={styles.container}>
       <TrekscapeHeader />
-      <View style={styles.searchBarContainer}>
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Search for Trailpoint"
-            value={searchQuery}
-            onChangeText={value => setSearchQuery(value)}
-            placeholderTextColor="#999"
-          />
-          {searchQuery ? (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={() => setSearchQuery('')}>
-              <Text style={{fontSize: 15, top: 3}}>✕</Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.iconButton}>
-              <Search name="search" size={28} color="grey" />
-            </View>
-          )}
+      {(trailPoints?.length > 0 || searchQuery) && (
+        <View style={styles.searchBarContainer}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Search for Trailpoint"
+              value={searchQuery}
+              onChangeText={value => setSearchQuery(value)}
+              placeholderTextColor="#999"
+            />
+            {searchQuery ? (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setSearchQuery('')}>
+                <Text style={{fontSize: 15, top: 3}}>✕</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.iconButton}>
+                <Search name="search" size={28} color="grey" />
+              </View>
+            )}
+          </View>
         </View>
-      </View>
+      )}
       <View style={styles.mainContainer}>
         <View style={styles.relative}>
           <Image
@@ -501,7 +503,7 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingLeft: 20,
     paddingRight: 36,
-    paddingVertical: 8,
+    paddingVertical: 10,
     shadowColor: '#E7D6D0',
     shadowOffset: {
       width: 0,
@@ -519,7 +521,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
     top: '50%',
-    transform: [{translateY: -35}], // Adjust based on icon size
+    transform: [{translateY: -32}], // Adjust based on icon size
     backgroundColor: 'white',
     borderRadius: 12,
     padding: 2,
