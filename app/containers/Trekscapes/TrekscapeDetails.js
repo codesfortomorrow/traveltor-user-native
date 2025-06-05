@@ -11,6 +11,7 @@ import {
   TouchableWithoutFeedback,
   Share as NativeShare,
   Dimensions,
+  TextInput,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
@@ -31,6 +32,8 @@ import Signup from '../../components/Signup';
 import {setError} from '../../redux/Slices/errorPopup';
 import Constant from '../../utils/constant';
 import FastImage from 'react-native-fast-image';
+import Search from 'react-native-vector-icons/EvilIcons';
+import NoTrailpoint from 'react-native-vector-icons/FontAwesome6';
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -47,6 +50,8 @@ const TrekscapeDetails = () => {
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
   const [isEvent, setIsEvent] = useState(false);
   const [isFollowDisable, setIsFollowDisable] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [trailPoints, setTrailPoints] = useState([]);
   const {optimizeImageKitUrl} = Constant();
   const dispatch = useDispatch();
 
@@ -193,6 +198,20 @@ const TrekscapeDetails = () => {
     }
   };
 
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      setTrailPoints(() =>
+        treckScapeDetails?.trailPoints?.filter(trailpoint =>
+          trailpoint?.name
+            .toLowerCase()
+            .includes(searchQuery.trim().toLowerCase()),
+        ),
+      );
+    } else {
+      setTrailPoints(treckScapeDetails?.trailPoints);
+    }
+  }, [treckScapeDetails, searchQuery]);
+
   const onShare = async () => {
     try {
       const result = await NativeShare.share({
@@ -225,6 +244,30 @@ const TrekscapeDetails = () => {
   return (
     <View style={styles.container}>
       <TrekscapeHeader />
+      {trailPoints?.length > 0 && (
+        <View style={styles.searchBarContainer}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Search for Trailpoint"
+              value={searchQuery}
+              onChangeText={value => setSearchQuery(value)}
+              placeholderTextColor="#999"
+            />
+            {searchQuery ? (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setSearchQuery('')}>
+                <Text style={{fontSize: 15, top: 3}}>✕</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.iconButton}>
+                <Search name="search" size={28} color="grey" />
+              </View>
+            )}
+          </View>
+        </View>
+      )}
       <View style={styles.mainContainer}>
         <View style={styles.relative}>
           <Image
@@ -290,8 +333,13 @@ const TrekscapeDetails = () => {
         <ScrollView
           style={styles.trailPointsContainer}
           showsVerticalScrollIndicator={false}>
-          {treckScapeDetails?.trailPoints?.length > 0 &&
-            treckScapeDetails?.trailPoints?.map((item, index) => (
+          {trailPoints?.length === 0 ? (
+            <View style={styles.noTrailpointsWrapper}>
+              <NoTrailpoint name="road-barrier" size={34} color="#000" />
+              <Text style={styles.noTrailpoints}>No Trailpoints Found!</Text>
+            </View>
+          ) : (
+            trailPoints?.map((item, index) => (
               <View key={index} style={styles.trailPointCard}>
                 <TouchableOpacity onPress={() => handleTrailPoint(item)}>
                   <FastImage
@@ -407,7 +455,8 @@ const TrekscapeDetails = () => {
                   )}
                 </View>
               </View>
-            ))}
+            ))
+          )}
         </ScrollView>
       </View>
       {isLoginOpen && (
@@ -434,6 +483,47 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  searchBarContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 70,
+  },
+  inputContainer: {
+    position: 'relative',
+    width: '80%',
+    marginHorizontal: 'auto',
+    alignSelf: 'center',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#EFEFEF',
+    width: '100%',
+    paddingLeft: 20,
+    paddingRight: 36,
+    paddingVertical: 8,
+    shadowColor: '#E7D6D0',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    elevation: 5, // For Android shadow
+    borderRadius: 25,
+    fontFamily: 'Inter', // Make sure Inter font is installed
+    fontSize: 12,
+    backgroundColor: 'white',
+  },
+  iconButton: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: [{translateY: -35}], // Adjust based on icon size
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 2,
   },
   mainContainer: {
     flex: 1,
@@ -531,10 +621,24 @@ const styles = StyleSheet.create({
     height: 28,
     resizeMode: 'contain',
   },
+  noTrailpointsWrapper: {
+    // flex pt-7 flex-col justify-center items-center opacity-40
+    display: 'flex',
+    paddingTop: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.4,
+  },
+  noTrailpoints: {
+    fontSize: 20,
+    fontWeight: 'semibold',
+    paddingTop: 8,
+    textAlign: 'center',
+  },
   trailPointsContainer: {
     marginTop: 40,
     marginHorizontal: 10,
-    marginBottom: 70,
+    marginBottom: 100,
   },
   trailPointCard: {
     flexDirection: 'row',
