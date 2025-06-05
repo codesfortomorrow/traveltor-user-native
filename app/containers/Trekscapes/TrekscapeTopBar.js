@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {SvgUri, SvgXml} from 'react-native-svg';
+import FastImage from 'react-native-fast-image';
 
 const TrekscapeTopBar = ({
   categoryId,
@@ -250,13 +251,11 @@ const TrekscapeTopBar = ({
                 setCategoryId(item.id);
                 setCategorySlug(item.slug);
               }}>
-              {item.slug === 'live' ? (
-                <Image
+              {isLive ? (
+                <FastImage
                   source={item.icon}
-                  style={[
-                    styles.icon,
-                    isActive && !isLive && styles.filterIcon,
-                  ]}
+                  style={styles.icon}
+                  resizeMode={FastImage.resizeMode.contain}
                 />
               ) : isActive ? (
                 <View style={{minHeight: 20}}>
@@ -320,7 +319,6 @@ const styles = StyleSheet.create({
   icon: {
     width: 20,
     height: 20,
-    resizeMode: 'contain',
   },
   filterIcon: {
     tintColor: '#007e3b',
