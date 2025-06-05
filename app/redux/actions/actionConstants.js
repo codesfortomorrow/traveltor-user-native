@@ -1,0 +1,11 @@
+export const INIT = 'INIT';
+export const CLEANUP = 'CLEANUP';
+export const SET_USER = 'SET_USER';
+export const REFRESH_USER_DETAILS = 'REFRESH_USER_DETAILS';
+export const SET_UI = 'SET_UI';
+export const SET_SUCCESS = 'SET_SUCCESS';
+export const CLEAN_SUCCESS = 'CLEAN_SUCCESS';
+export const CLEAN_ERROR = 'CLEAN_ERROR';
+export const SET_ERROR = 'SET_ERROR';
+export const SET_TOKEN = 'SET_TOKEN';
+export const SET_LOCATION = 'SET_LOCATION';
