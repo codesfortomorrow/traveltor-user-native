@@ -119,26 +119,30 @@ const Setting = () => {
           <View key={index} style={styles.linkSection}>
             <Text style={styles.sectionTitle}> {item.title}</Text>
             <View>
-              {item.children?.map((link, i) => (
-                <TouchableOpacity
-                  onPress={() => {
-                    link?.name === 'Logout'
-                      ? handleLogout()
-                      : navigation.navigate(link?.path);
-                  }}
-                  key={i}
-                  style={styles.linkButton}>
-                  <View
-                    style={{height: 25, width: 25, justifyContent: 'center'}}>
-                    {link?.name === 'Logout' && isLogoutDisable ? (
-                      <ActivityIndicator size="small" color="#e93c00" />
-                    ) : (
-                      link?.icon
-                    )}
-                  </View>
-                  <Text style={styles.linkText}>{link.name}</Text>
-                </TouchableOpacity>
-              ))}
+              {item.children?.map((link, i) => {
+                const isLogoutbtn = link?.name === 'Logout';
+                return (
+                  <TouchableOpacity
+                    onPress={() => {
+                      isLogoutbtn
+                        ? handleLogout()
+                        : navigation.navigate(link?.path);
+                    }}
+                    key={i}
+                    disabled={isLogoutbtn ? isLogoutDisable : false}
+                    style={styles.linkButton}>
+                    <View
+                      style={{height: 28, width: 25, justifyContent: 'center'}}>
+                      {isLogoutbtn && isLogoutDisable ? (
+                        <ActivityIndicator size="small" color="#e93c00" />
+                      ) : (
+                        link?.icon
+                      )}
+                    </View>
+                    <Text style={styles.linkText}>{link.name}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         ))}

@@ -1,5 +1,12 @@
-import React, {useContext} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
+import React, {useContext, useState} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ActivityIndicator,
+} from 'react-native';
 import {launchImageLibrary} from 'react-native-image-picker';
 import {useDispatch, useSelector} from 'react-redux';
 import Toast from 'react-native-toast-message';
@@ -15,8 +22,11 @@ const UploadProfile = () => {
   const dispatch = useDispatch();
   const {isLoggedIn} = useContext(AuthContext);
   const {optimizeImageKitUrl} = Constant();
+  const [isUploading, setIsUploading] = useState(false);
 
   const handlePickImage = async () => {
+    setIsUploading(true);
+
     const options = {
       mediaType: 'photo',
       selectionLimit: 1,
@@ -26,6 +36,7 @@ const UploadProfile = () => {
 
     const result = await launchImageLibrary(options);
     if (result.didCancel) {
+      setIsUploading(false);
       return;
     }
 
@@ -34,6 +45,7 @@ const UploadProfile = () => {
         type: 'error',
         text1: result.errorMessage || 'Image picker error',
       });
+      setIsUploading(false);
       return;
     }
 
@@ -43,6 +55,7 @@ const UploadProfile = () => {
         type: 'error',
         text1: 'File size should not exceed 15MB',
       });
+      setIsUploading(false);
       return;
     }
 
@@ -63,6 +76,8 @@ const UploadProfile = () => {
       }
     } catch (err) {
       console.log(err);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -80,17 +95,27 @@ const UploadProfile = () => {
       </View>
       <TouchableOpacity
         style={styles.uploadContainer}
+        disabled={isUploading}
         onPress={handlePickImage}>
-        <View style={styles.uploadContent}>
-          <Image
-            source={require('../../../public/images/icons/upload.png')}
-            style={styles.uploadIcon}
-          />
-          <Text style={styles.uploadTitle}>Change your avatar</Text>
-        </View>
-        <Text style={styles.uploadDescription}>
-          Tap here to upload and update your profile picture.
-        </Text>
+        {!isUploading ? (
+          <>
+            <View style={styles.uploadContent}>
+              <Image
+                source={require('../../../public/images/icons/upload.png')}
+                style={styles.uploadIcon}
+              />
+              <Text style={styles.uploadTitle}>Change your avatar</Text>
+            </View>
+            <Text style={styles.uploadDescription}>
+              Tap here to upload and update your profile picture.
+            </Text>
+          </>
+        ) : (
+          <View style={styles.isUploading}>
+            <ActivityIndicator size="small" color="#e93c00" />
+            <Text>Uploading...</Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -118,6 +143,7 @@ const styles = StyleSheet.create({
     borderColor: 'black',
     padding: 8,
     flex: 1,
+    height: 58,
   },
   uploadContent: {
     flexDirection: 'row',
@@ -135,6 +161,14 @@ const styles = StyleSheet.create({
   uploadDescription: {
     fontSize: 10,
     fontWeight: '300',
+  },
+  isUploading: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'center',
+    marginVertical: 'auto',
+    paddingHorizontal: 4,
   },
 });
 
