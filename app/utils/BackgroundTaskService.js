@@ -1,4 +1,3 @@
-// BackgroundService.js
 import BackgroundActions from 'react-native-background-actions';
 import NetInfo from '@react-native-community/netinfo';
 import {syncDrafts} from './draftManager';
@@ -13,17 +12,15 @@ const backgroundTaskOptions = {
     type: 'mipmap',
   },
   color: '#ffffff',
-  linkingURI: 'traveltor://', // Optional deep linking URI
+  linkingURI: 'traveltor://',
   parameters: {
-    delay: 15 * 60 * 1000, // 15 minutes in milliseconds
+    delay: 15 * 60 * 1000,
   },
 };
 
-// The task that will be executed in the background
 const backgroundTask = async taskDataArguments => {
   const {delay} = taskDataArguments;
 
-  // This is how you'd implement a periodic task with react-native-background-actions
   const checkAndSync = async () => {
     // Check if we're online before attempting to sync
     const netInfo = await NetInfo.fetch();
@@ -39,7 +36,6 @@ const backgroundTask = async taskDataArguments => {
     // Run once immediately
     await checkAndSync();
 
-    // Then set up periodic execution
     const interval = setInterval(async () => {
       await checkAndSync();
 
@@ -52,10 +48,8 @@ const backgroundTask = async taskDataArguments => {
   });
 };
 
-// Initialize background task
 export const initBackgroundTask = async () => {
   try {
-    // Register for network events
     NetInfo.addEventListener(state => {
       if (state.isConnected) {
         retryDrafts();
@@ -74,7 +68,6 @@ export const initBackgroundTask = async () => {
   }
 };
 
-// Function to stop the background service
 export const stopBackgroundTask = async () => {
   try {
     await BackgroundActions.stop();
@@ -86,7 +79,6 @@ export const stopBackgroundTask = async () => {
   }
 };
 
-// Retry function
 export const retryDrafts = async () => {
   const netInfo = await NetInfo.fetch();
   if (netInfo.isConnected) {
@@ -94,10 +86,8 @@ export const retryDrafts = async () => {
   }
 };
 
-// Function to publish drafts (to be called from your components)
 export const publishDraft = async () => {
   try {
-    // Check if we're online
     const isConnected = await NetInfo.fetch().then(state => state.isConnected);
 
     if (isConnected) {

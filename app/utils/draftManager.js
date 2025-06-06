@@ -1,41 +1,29 @@
-// DraftManager.js
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import NetInfo from '@react-native-community/netinfo';
-import {Platform} from 'react-native';
 import SHA256 from 'crypto-js/sha256';
 import Hex from 'crypto-js/enc-hex';
 import {EventRegister} from 'react-native-event-listeners';
 import axios from 'axios';
-// BackgroundFetch has been removed
 
-// Constants
 const DRAFTS_STORAGE_KEY = 'uploadsDB:drafts';
 const RANDOM_ID_KEY = 'authDB:randomId';
 const AUTH_TOKEN_KEY = '__users__isLoggedIn';
-// const API_URL_KEY = process.env.API_URL;
 
-// The initBackgroundTask function has been moved to BackgroundService.js
-
-// Draft Storage Functions
 export const saveDraft = async fileData => {
   try {
-    // Get existing drafts
     const existingDraftsJson = await AsyncStorage.getItem(DRAFTS_STORAGE_KEY);
     const existingDrafts = existingDraftsJson
       ? JSON.parse(existingDraftsJson)
       : [];
 
-    // Add timestamp to draft
     const draftWithTimestamp = {
       ...fileData,
       createdAt: new Date().toISOString(),
     };
 
-    // Append new draft
     const updatedDrafts = [...existingDrafts, draftWithTimestamp];
 
-    // Save back to storage
     await AsyncStorage.setItem(
       DRAFTS_STORAGE_KEY,
       JSON.stringify(updatedDrafts),
@@ -97,7 +85,6 @@ export const updateDraftStatus = async (draftId, newStatus) => {
   }
 };
 
-// Auth Functions
 export const getAuthToken = async () => {
   try {
     const tokenn = await AsyncStorage.getItem(AUTH_TOKEN_KEY);
@@ -109,7 +96,6 @@ export const getAuthToken = async () => {
   }
 };
 
-// Random ID functions for synchronization
 export const generateRandomString = (length = 10) => {
   const chars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -184,7 +170,6 @@ export const publishDrafts = async (token, finalPayload, type, apiUrl) => {
   }
 };
 
-// Update progress status
 export const updateProgressStatus = (progress, status, isPending, imgUrl) => {
   EventRegister.emit('uploadProgress', {
     progress,
@@ -194,7 +179,6 @@ export const updateProgressStatus = (progress, status, isPending, imgUrl) => {
   });
 };
 
-// Main sync function
 export const syncDrafts = async () => {
   const randomId = generateRandomString(12);
 
@@ -225,7 +209,6 @@ export const syncDrafts = async () => {
       let uploadedFiles = 0;
 
       try {
-        // Handle file paths based on platform
         const filesToUpload = files.map(file => {
           if (typeof file === 'string') {
             return {
@@ -354,7 +337,6 @@ export const syncDrafts = async () => {
   }
 };
 
-// The retryDrafts function is kept for API compatibility but actual implementation moved to BackgroundService.js
 export const retryDrafts = async () => {
   const netInfo = await NetInfo.fetch();
   if (netInfo.isConnected) {
@@ -362,15 +344,13 @@ export const retryDrafts = async () => {
   }
 };
 
-// Hash generation for draft IDs
 export async function generateDraftId(payload, files) {
   const text =
     JSON.stringify(payload) +
     files.map(f => (typeof f === 'string' ? f : f.name || f.uri)).join(',');
 
-  // Generate SHA-256 hash using crypto-js
   const hash = SHA256(text);
-  return hash.toString(Hex); // Hex encoding
+  return hash.toString(Hex);
 }
 
 export async function getDraftById(draftId) {
@@ -392,25 +372,20 @@ export const processFilesForDraft = async selectedFiles => {
       let fileInfo;
 
       if (fileData.file) {
-        // If file has binary data, we need to handle it differently
         const file = fileData.file;
 
         if (file.uri) {
-          // File already has URI (from image picker)
           fileInfo = {
             uri: file.uri,
             name: file.name || file.fileName || `image_${Date.now()}.jpg`,
             type: file.type || 'image/jpeg',
           };
         } else if (file.data) {
-          // File has base64 data - save to disk first
           const fileName = file.name || `image_${Date.now()}.jpg`;
           const filePath = `${RNFS.DocumentDirectoryPath}/uploads/${fileName}`;
 
-          // Ensure directory exists
           await RNFS.mkdir(`${RNFS.DocumentDirectoryPath}/uploads`);
 
-          // Write base64 data to file
           await RNFS.writeFile(filePath, file.data, 'base64');
 
           fileInfo = {
@@ -419,12 +394,10 @@ export const processFilesForDraft = async selectedFiles => {
             type: file.type || 'image/jpeg',
           };
         } else {
-          // Handle other file object formats
           console.warn('Unknown file format:', file);
           continue;
         }
       } else {
-        // Direct file object
         fileInfo = {
           uri: fileData.uri,
           name: fileData.name || fileData.fileName || `image_${Date.now()}.jpg`,

@@ -1,4 +1,3 @@
-// components/ForegroundToast.js
 import React from 'react';
 import {View, Text, TouchableOpacity, Linking} from 'react-native';
 import Toast from 'react-native-toast-message';
@@ -12,7 +11,6 @@ export const showForegroundToast = (payload, user) => {
     props: {
       payload,
       user,
-      //   navigate,
     },
     position: 'top',
     autoHide: true,

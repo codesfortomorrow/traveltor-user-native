@@ -54,6 +54,7 @@ const Trekscapes = () => {
   const currentCategory = category?.find(item => item.id == categoryId);
   const paginationTimeoutRef = useRef(null);
   const latestRequestIdRef = useRef(0);
+  const isFirstRun = useRef(true);
 
   useEffect(() => {
     const loadCategoryId = async () => {
@@ -140,10 +141,14 @@ const Trekscapes = () => {
 
   const fetchTrekscape = async (searchTerm, categoryId, page, location) => {
     const requestId = ++latestRequestIdRef.current;
+    const isInitialTime = page === 0;
 
     try {
-      if (page === 0) {
-        setIsLoading(searchTerm ? false : true);
+      if (isInitialTime) {
+        if (isFirstRun.current) {
+          setIsLoading(searchTerm ? false : true);
+          isFirstRun.current = false;
+        }
         setContentLoading(false);
       } else {
         setIsLoadingMore(true);
@@ -162,25 +167,20 @@ const Trekscapes = () => {
       }
 
       if (response?.data) {
-        if (page !== 0) {
+        if (!isInitialTime) {
           setTreckScapeList(prev => [...prev, ...response?.data]);
-          setHasMore(response?.data?.length === 10);
         } else {
           setTreckScapeList(response?.data);
-          setHasMore(response?.data?.length === 10);
           setNoData(response?.data?.length === 0);
         }
+        setHasMore(response?.data?.length === 10);
       } else {
         setHasMore(false);
-        if (page === 0) {
-          setNoData(true);
-        }
+        isInitialTime && setNoData(true);
       }
     } catch (error) {
       console.error('Error fetching trekscape:', error);
-      if (page === 0) {
-        setNoData(true);
-      }
+      isInitialTime && setNoData(true);
       setHasMore(false);
     } finally {
       if (requestId === latestRequestIdRef.current) {

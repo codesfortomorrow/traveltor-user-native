@@ -70,12 +70,8 @@ const clearSessionKeys = async () => {
 };
 
 // Screens that should NOT have footer (if any)
-const SCREENS_WITHOUT_FOOTER = [
-  // Add screen names here if you want to exclude them from having footer
-  // Example: 'SomeModalScreen', 'FullScreenView'
-];
+const SCREENS_WITHOUT_FOOTER = [];
 
-// Higher-order component to wrap screens with FooterLayout conditionally
 const withFooterLayout = (Component, screenName) => {
   const WrappedComponent = React.memo(props => {
     const shouldShowFooter = !SCREENS_WITHOUT_FOOTER.includes(screenName);
@@ -97,7 +93,6 @@ const withFooterLayout = (Component, screenName) => {
   return WrappedComponent;
 };
 
-// Wrapped components with FooterLayout
 const WrappedComponents = {
   HomePage: withFooterLayout(HomePage, 'Home'),
   UserProfile: withFooterLayout(UserProfile, 'Profile'),

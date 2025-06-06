@@ -1,4 +1,3 @@
-// src/firebase/notificationBackgroundEventHandler.js
 import {EventType} from '@notifee/react-native';
 import {navigate} from './RootNavigation';
 
