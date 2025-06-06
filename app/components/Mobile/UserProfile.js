@@ -39,6 +39,7 @@ const UserProfile = () => {
   const user = useSelector(state => state.user);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [forgotPopup, setForgotPopup] = useState(false);
   const [feeds, setFeeds] = useState([]);
   const [reactionDisabled, setReactionDisabled] = useState(false);
   const [feedId, setFeedId] = useState('');
@@ -428,10 +429,10 @@ const UserProfile = () => {
 
       {isLoginOpen && (
         <Login
-          open={isLoginOpen}
-          handleClose={() => setIsLoginOpen(false)}
-          setOpen={setIsLoginOpen}
-          moveToSignUp={moveToSignUp}
+          visible={isLoginOpen}
+          onRequestClose={() => setIsLoginOpen(false)}
+          setIsLoginOpen={setIsLoginOpen}
+          moveToSignup={moveToSignUp}
         />
       )}
 
@@ -439,8 +440,16 @@ const UserProfile = () => {
         <Signup
           step1open={isSignUpOpen}
           handleCloseStep1={() => setIsSignUpOpen(false)}
-          setStep1open={setIsSignUpOpen}
           moveToLogin={moveToLogin}
+        />
+      )}
+
+      {forgotPopup && (
+        <ForgotPassword
+          visible={forgotPopup}
+          onRequestClose={() => setForgotPopup(false)}
+          setForgotPopup={setForgotPopup}
+          setIsLoginOpen={setIsLoginOpen}
         />
       )}
 

@@ -24,6 +24,7 @@ const Footer = () => {
   const [menuItems, setMenuItems] = useState(null);
   const route = useRoute();
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [forgotPopup, setForgotPopup] = useState(false);
   const {isLoggedIn} = useContext(AuthContext);
   const {navigate} = useNavigation();
   const user = useSelector(state => state?.user);
@@ -159,6 +160,14 @@ const Footer = () => {
         setStep1open={setIsSignUpOpen}
         moveToLogin={moveToLogin}
       />
+      {forgotPopup && (
+        <ForgotPassword
+          visible={forgotPopup}
+          onRequestClose={() => setForgotPopup(false)}
+          setForgotPopup={setForgotPopup}
+          setIsLoginOpen={setIsLoginOpen}
+        />
+      )}
     </>
   );
 };

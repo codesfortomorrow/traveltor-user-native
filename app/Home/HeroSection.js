@@ -13,13 +13,7 @@ import FastImage from 'react-native-fast-image';
 
 const screenWidth = Dimensions.get('window').width;
 
-function HeroSection({
-  search,
-  setSearch,
-  isSearchFocused,
-  onSearchFocus,
-  onSearchBlur,
-}) {
+function HeroSection({search, setSearch, isSearchFocused, onSearchFocus}) {
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef(null);
   const {heroSlider} = Constant();

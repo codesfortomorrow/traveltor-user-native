@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {
   Text,
   View,
@@ -10,12 +10,17 @@ import {
 import RightIcon from 'react-native-vector-icons/AntDesign';
 import useAuth from '../hooks/useAuth';
 import {useNavigation} from '@react-navigation/native';
+import {AuthContext} from '../context/AuthContext';
+import {useDispatch} from 'react-redux';
+import {setError} from '../redux/Slices/errorPopup';
 
 const Trailblazers = () => {
   const [trail, setTrail] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const {getTrailblazer} = useAuth();
   const {navigate} = useNavigation();
+  const dispatch = useDispatch();
+  const {isLoggedIn} = useContext(AuthContext);
 
   const fetchTreckScapeFeeds = useCallback(async () => {
     try {
@@ -34,6 +39,22 @@ const Trailblazers = () => {
   useEffect(() => {
     fetchTreckScapeFeeds();
   }, []);
+
+  const navigateToProfile = slide => {
+    if (isLoggedIn) {
+      navigate('Profile', {
+        userType: 'Trailblazer',
+        id: slide?.id,
+      });
+    } else {
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login first to see the profile',
+        }),
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -104,12 +125,7 @@ const Trailblazers = () => {
                       </View>
                       <TouchableOpacity
                         style={styles.arrowButton}
-                        onPress={() =>
-                          navigate('Profile', {
-                            userType: 'Trailblazer',
-                            id: slide?.id,
-                          })
-                        }>
+                        onPress={() => navigateToProfile(slide)}>
                         <RightIcon name="right" size={15} color="#e93c00" />
                       </TouchableOpacity>
                     </View>

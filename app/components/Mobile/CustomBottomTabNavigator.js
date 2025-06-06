@@ -33,6 +33,7 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [forgotPopup, setForgotPopup] = useState(false);
   const [menuItems, setMenuItems] = useState(null);
 
   // Context and Redux
@@ -191,6 +192,15 @@ const CustomTabBar = ({state, descriptors, navigation}) => {
         setStep1open={setIsSignUpOpen}
         moveToLogin={moveToLogin}
       />
+
+      {forgotPopup && (
+        <ForgotPassword
+          visible={forgotPopup}
+          onRequestClose={() => setForgotPopup(false)}
+          setForgotPopup={setForgotPopup}
+          setIsLoginOpen={setIsLoginOpen}
+        />
+      )}
     </>
   );
 };

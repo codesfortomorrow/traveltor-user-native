@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import {
   Alert,
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
-import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
+import {postAuthReq} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import TrekscapeHeader from './TrekscapeHeader';
@@ -35,6 +35,8 @@ import Constant from '../../utils/constant';
 import FastImage from 'react-native-fast-image';
 import Search from 'react-native-vector-icons/EvilIcons';
 import NoTrailpoint from 'react-native-vector-icons/FontAwesome6';
+import {AuthContext} from '../../context/AuthContext';
+import ForgotPassword from '../../components/Modal/ForgotPassword';
 
 const windowWidth = Dimensions.get('window').width;
 
@@ -42,13 +44,14 @@ const TrekscapeDetails = () => {
   const user = useSelector(state => state?.user);
   const navigation = useNavigation();
   const route = useRoute();
-  const isLogin = isLoggedIn();
+  const {isLoggedIn} = useContext(AuthContext);
   const {slug} = route.params || {};
   const [loading, setLoading] = useState(true); // Changed to true initially
   const {getSingleTrekscapeData, followOnTrekscape} = useAuth();
   const [treckScapeDetails, setTreckScapeDetails] = useState([]);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSignUpOpen, setIsSignUpOpen] = useState(false);
+  const [forgotPopup, setForgotPopup] = useState(false);
   const [isEvent, setIsEvent] = useState(false);
   const [isFollowDisable, setIsFollowDisable] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,7 +79,7 @@ const TrekscapeDetails = () => {
   }, []);
 
   const handleFollowUnFollow = async id => {
-    if (isLogin) {
+    if (isLoggedIn) {
       setIsFollowDisable(true);
       try {
         const response = await followOnTrekscape(id);
@@ -286,7 +289,7 @@ const TrekscapeDetails = () => {
                 <TouchableWithoutFeedback
                   disabled={isFollowDisable}
                   onPress={() => {
-                    if (isLogin) {
+                    if (isLoggedIn) {
                       handleFollowUnFollow(treckScapeDetails?.id);
                     } else {
                       setIsLoginOpen(true);
@@ -295,7 +298,7 @@ const TrekscapeDetails = () => {
                   <View style={styles.followButton}>
                     {isFollowDisable ? (
                       <ActivityIndicator size="small" color="#fff" />
-                    ) : !isLoggedIn() ? (
+                    ) : !isLoggedIn ? (
                       <Text style={styles.followButtonText}>Follow</Text>
                     ) : treckScapeDetails?.isFollowed === false ? (
                       <Text style={styles.followButtonText}>Follow</Text>
@@ -418,7 +421,7 @@ const TrekscapeDetails = () => {
                         <TouchableOpacity
                           style={styles.actionContainer}
                           onPress={() => {
-                            if (isLogin) {
+                            if (isLoggedIn) {
                               navigation.navigate('TrailpointCheckIn', {
                                 trailpointId: item?.slug,
                                 id: item?.id,
@@ -441,7 +444,7 @@ const TrekscapeDetails = () => {
                     <TouchableOpacity
                       style={styles.actionContainer}
                       onPress={() => {
-                        if (isLogin) {
+                        if (isLoggedIn) {
                           navigation.navigate('TrailpointCheckIn', {
                             id: item?.slug,
                             trailpointId: item?.id,
@@ -462,18 +465,25 @@ const TrekscapeDetails = () => {
       </View>
       {isLoginOpen && (
         <Login
-          open={isLoginOpen}
-          handleClose={() => setIsLoginOpen(false)}
-          setOpen={setIsLoginOpen}
-          moveToSignUp={moveToSignUp}
+          visible={isLoginOpen}
+          onRequestClose={() => setIsLoginOpen(false)}
+          moveToSignup={moveToSignUp}
+          setForgotPopup={setForgotPopup}
         />
       )}
       {isSignUpOpen && (
         <Signup
           step1open={isSignUpOpen}
           handleCloseStep1={() => setIsSignUpOpen(false)}
-          setStep1open={setIsSignUpOpen}
           moveToLogin={moveToLogin}
+        />
+      )}
+      {forgotPopup && (
+        <ForgotPassword
+          visible={forgotPopup}
+          onRequestClose={() => setForgotPopup(false)}
+          setForgotPopup={setForgotPopup}
+          setIsLoginOpen={setIsLoginOpen}
         />
       )}
     </View>

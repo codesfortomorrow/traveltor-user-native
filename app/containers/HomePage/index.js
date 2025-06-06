@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useEffect} from 'react';
+import React, {useState, useCallback, useEffect, useContext} from 'react';
 import {
   ScrollView,
   View,
@@ -21,6 +21,9 @@ import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Constant from '../../utils/constant';
 import FastImage from 'react-native-fast-image';
+import {useDispatch} from 'react-redux';
+import {AuthContext} from '../../context/AuthContext';
+import {setError} from '../../redux/Slices/errorPopup';
 
 const HomePage = () => {
   const [search, setSearch] = useState('');
@@ -29,6 +32,8 @@ const HomePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const {optimizeImageKitUrl} = Constant();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const {isLoggedIn} = useContext(AuthContext);
 
   // User search functionality
   const fetchUsers = async searchQuery => {
@@ -68,7 +73,17 @@ const HomePage = () => {
   };
 
   const handleSearchFocus = () => {
-    setIsSearchFocused(true);
+    if (isLoggedIn) {
+      setIsSearchFocused(true);
+    } else {
+      Keyboard.dismiss();
+      dispatch(
+        setError({
+          open: true,
+          custom_message: 'Please login first for user search',
+        }),
+      );
+    }
   };
 
   const handleBackPress = () => {

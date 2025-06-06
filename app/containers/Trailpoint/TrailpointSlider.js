@@ -1,12 +1,5 @@
 import React, {useRef, useState} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  FlatList,
-} from 'react-native';
+import {View, Text, StyleSheet, Dimensions, FlatList} from 'react-native';
 import moment from 'moment';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -53,7 +46,7 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
   const renderCheckInItem = ({item, index}) => (
     <View
       style={[styles.slide, {width: ITEM_WIDTH, marginRight: ITEM_SPACING}]}>
-      <TouchableOpacity
+      <View
         style={styles.slideContent}
         onPress={() => navigation.navigate('CheckIns', {slug: slug})}>
         <FastImage
@@ -110,7 +103,7 @@ const TrialPointSlider = ({check_ins, isLoading, trailpointImage}) => {
             {item?.review}
           </Text>
         </LinearGradient>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 

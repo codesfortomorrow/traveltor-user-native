@@ -95,7 +95,7 @@ const useAuth = () => {
           dispatch(
             setSuccess({
               open: true,
-              custom_message: ' logged in to the Traveltor',
+              custom_message: 'logged in to the Traveltor',
             }),
           );
           await setAuthToken(response?.data?.accessToken);

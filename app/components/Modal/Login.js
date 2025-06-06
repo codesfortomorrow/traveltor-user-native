@@ -17,12 +17,11 @@ import {loginSchema, renderError} from '../../utils/validation';
 import useAuth from '../../hooks/useAuth';
 import {correctEmail} from '../../utils/autoCorrection';
 
-const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
+const Login = ({visible, onRequestClose, moveToSignup, setForgotPopup}) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isDisabled, setIsDisabled] = useState(false);
   const [readOnly, setReadOnly] = useState(true);
   const [error, setError] = useState({});
-  const [forgotPopup, setForgotPopup] = useState(false);
   const {login} = useAuth();
   const {isIOSDevice, convertHindiToEnglishNumbers} = Constant();
   const [form, setForm] = useState({
@@ -216,12 +215,6 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
           </View>
         </View>
       </Modal>
-      <ForgotPassword
-        visible={forgotPopup}
-        onRequestClose={() => setForgotPopup(false)}
-        setForgotPopup={setForgotPopup}
-        setIsLoginOpen={setIsLoginOpen}
-      />
     </>
   );
 };

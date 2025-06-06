@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useContext, useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import useAuth from '../../hooks/useAuth';
 import {setError} from '../../redux/Slices/errorPopup';
-import {isLoggedIn, postAuthReq} from '../../utils/apiHandlers';
+import {postAuthReq} from '../../utils/apiHandlers';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import HTML from 'react-native-render-html';
@@ -24,6 +24,7 @@ import WhiteMarker from '../../../public/images/mobtrekscape/trialpoints/whitema
 import CheckIn from '../../../public/images/mobtrekscape/trialpoints/checkin.svg';
 import Reviews from '../../../public/images/mobtrekscape/trialpoints/reviews.svg';
 import Share from '../../../public/images/mobtrekscape/trialpoints/share.svg';
+import {AuthContext} from '../../context/AuthContext';
 
 const TrailpointDetails = () => {
   const dispatch = useDispatch();
@@ -33,7 +34,7 @@ const TrailpointDetails = () => {
   const route = useRoute();
   const {slug} = route.params;
   const {getTrailPointDetails, getTrailPointFeeds} = useAuth();
-  const isLogin = isLoggedIn();
+  const {isLoggedIn} = useContext(AuthContext);
   const [trekScapeReview, setTrekScapeReview] = useState([]);
   const user = useSelector(state => state?.user);
 
@@ -170,7 +171,7 @@ const TrailpointDetails = () => {
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => {
-                if (isLogin) {
+                if (isLoggedIn) {
                   navigation.navigate('TrailpointCheckIn', {
                     id: trailPoints?.slug,
                     trailpointId: trailPoints?.id,

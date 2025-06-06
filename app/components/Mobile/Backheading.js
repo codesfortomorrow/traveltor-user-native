@@ -1,14 +1,13 @@
-import React from 'react';
+import React, {useContext} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Notification from 'react-native-vector-icons/MaterialCommunityIcons';
 import {setError} from '../../redux/Slices/errorPopup';
-import {isLoggedIn} from '../../utils/tokenStorage';
 import CheckIn from '../../../public/images/mobtrekscape/checkin.svg';
 import Filter from 'react-native-vector-icons/AntDesign';
 import NotificationWithBadge from '../Comment/NotificationWithBadge';
+import {AuthContext} from '../../context/AuthContext';
 
 const Backheading = ({
   heading,
@@ -26,6 +25,7 @@ const Backheading = ({
   const route = useRoute();
   const dispatch = useDispatch();
   const {badgeCount} = useSelector(state => state.badge);
+  const {isLoggedIn} = useContext(AuthContext);
 
   const renderSkeleton = (width, height) => {
     return <View style={[styles.skeleton, {width, height}]} />;
@@ -111,7 +111,7 @@ const Backheading = ({
           </Text>
           <TouchableOpacity
             onPress={() => {
-              if (isLoggedIn()) {
+              if (isLoggedIn) {
                 navigation.navigate('TrailpointCheckIn', {
                   id: trailPoints?.slug,
                   trailpointId: trailPoints?.id,
