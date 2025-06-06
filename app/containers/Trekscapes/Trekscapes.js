@@ -459,6 +459,7 @@ const Trekscapes = () => {
                   <TextInput
                     style={styles.searchInput}
                     placeholder={`Search by ${currentCategory?.name?.trim()} Trekscapes`}
+                    placeholderTextColor="#888"
                     value={searchTerm}
                     onChangeText={handleSearchChange}
                   />
@@ -824,6 +825,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 25,
     fontSize: 12,
+    color: '#000',
   },
   searchIcon: {
     position: 'absolute',

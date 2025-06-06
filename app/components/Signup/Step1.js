@@ -184,6 +184,7 @@ const Step1 = ({
                 <Text style={styles.label}>First Name</Text>
                 <TextInput
                   placeholder="First name"
+                  placeholderTextColor="#888"
                   value={form.firstname}
                   onChangeText={value => handleChange('firstname', value)}
                   onBlur={() => trimmer('firstname')}
@@ -197,6 +198,7 @@ const Step1 = ({
                 <Text style={styles.label}>Last Name</Text>
                 <TextInput
                   placeholder="Last name"
+                  placeholderTextColor="#888"
                   value={form?.lastname}
                   onChangeText={value => handleChange('lastname', value)}
                   onBlur={() => trimmer('lastname')}
@@ -215,12 +217,14 @@ const Step1 = ({
                       formError?.email && styles.inputError,
                     ]}
                     placeholder="Email"
+                    placeholderTextColor="#888"
                     value={form.email}
                     onChangeText={value => handleChange('email', value)}
                   />
                 ) : (
                   <TextInput
                     placeholder="Email"
+                    placeholderTextColor="#888"
                     value={form.email}
                     onChangeText={value => handleChange('email', value)}
                     onBlur={() => {
@@ -267,6 +271,7 @@ const Step1 = ({
                   </View> */}
                   <TextInput
                     placeholder="Enter your phone number"
+                    placeholderTextColor="#888"
                     value={form.mobile}
                     onChangeText={value => {
                       if (value.length <= 20) {
@@ -285,6 +290,7 @@ const Step1 = ({
                   {isIOSDevice() ? (
                     <TextInput
                       placeholder="Password"
+                      placeholderTextColor="#888"
                       value={form.password}
                       onChangeText={value => handleChange('password', value)}
                       secureTextEntry={!showPassword}
@@ -300,6 +306,7 @@ const Step1 = ({
                         formError?.password && styles.inputError,
                       ]}
                       placeholder="Password"
+                      placeholderTextColor="#888"
                       secureTextEntry={!showPassword}
                       value={form.password}
                       onChangeText={value => handleChange('password', value)}
@@ -326,6 +333,7 @@ const Step1 = ({
                 <Text style={styles.label}>Referral Code</Text>
                 <TextInput
                   placeholder="Referral Code"
+                  placeholderTextColor="#888"
                   value={form.referralCode}
                   onChangeText={value => handleChange('referralCode', value)}
                   onBlur={() => validateField('referralCode')}
@@ -462,6 +470,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     marginTop: 4,
+    color: '#000',
   },
   inputError: {
     borderColor: '#dc2626',

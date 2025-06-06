@@ -206,7 +206,7 @@ const UpdateProfile = () => {
                       dial_code: item.dial_code,
                       name: item.name,
                     })}
-                    style={{fontSize: 14}}
+                    style={{fontSize: 14, color: '#000'}}
                   />
                 ))}
               </Picker>
@@ -236,7 +236,7 @@ const UpdateProfile = () => {
                     key={d}
                     label={d}
                     value={d}
-                    style={{fontSize: 14}}
+                    style={{fontSize: 14, color: '#000'}}
                   />
                 ))}
               </Picker>
@@ -254,7 +254,7 @@ const UpdateProfile = () => {
                     key={m}
                     label={m}
                     value={m}
-                    style={{fontSize: 14}}
+                    style={{fontSize: 14, color: '#000'}}
                   />
                 ))}
               </Picker>
@@ -272,7 +272,7 @@ const UpdateProfile = () => {
                     key={y}
                     label={y}
                     value={y}
-                    style={{fontSize: 14}}
+                    style={{fontSize: 14, color: '#000'}}
                   />
                 ))}
               </Picker>

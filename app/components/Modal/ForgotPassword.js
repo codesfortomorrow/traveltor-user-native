@@ -114,6 +114,7 @@ const ForgotPassword = ({
                         ) : (
                           <TextInput
                             placeholder="Email"
+                            placeholderTextColor="#888"
                             value={email}
                             onChangeText={text =>
                               setEmail(convertHindiToEnglishNumbers(text))
@@ -258,6 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     width: '100%',
+    color: '#000',
   },
   inputError: {
     borderColor: '#DC2626',

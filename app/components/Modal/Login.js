@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import Constant from '../../utils/constant';
 import EyeIcon from 'react-native-vector-icons/FontAwesome5';
@@ -81,7 +82,10 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
 
             <View style={styles.divider} />
 
-            <View style={styles.formContainer}>
+            <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}>
               <View style={styles.welcomeBlock}>
                 <Text style={styles.welcomeTitle}>Welcome to Traveltor</Text>
                 <Text style={styles.welcomeSubtitle}>
@@ -108,6 +112,7 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                       error.identifire && styles.inputError,
                     ]}
                     placeholder="Email"
+                    placeholderTextColor="#888"
                     value={form.identifire}
                     onChangeText={value => handleChange('identifire', value)}
                     onBlur={() => {
@@ -144,8 +149,10 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                       style={[
                         styles.input,
                         error.password && styles.inputError,
+                        {color: '#000'},
                       ]}
                       placeholder="Password"
+                      placeholderTextColor="#888"
                       secureTextEntry={!showPassword}
                       value={form.password}
                       onChangeText={value => handleChange('password', value)}
@@ -205,7 +212,7 @@ const Login = ({visible, onRequestClose, setIsLoginOpen, moveToSignup}) => {
                 </Text>{' '}
                 to continue.
               </Text>
-            </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -234,6 +241,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderWidth: 1,
     padding: 16,
+    overflow: 'hidden',
   },
   headerRow: {
     flexDirection: 'row',
@@ -253,9 +261,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
     marginVertical: 8,
   },
-  formContainer: {
-    flex: 1,
-    paddingHorizontal: 8,
+  scroll: {
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  scrollContent: {
+    paddingBottom: 30,
   },
   welcomeBlock: {
     marginBottom: 12,
@@ -284,6 +295,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     marginTop: 4,
+    color: '#000',
   },
   inputError: {
     borderColor: 'red',
